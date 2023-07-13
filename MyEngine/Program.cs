@@ -2,6 +2,7 @@
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
+using StbImageSharp;
 using System.Drawing;
 using System.Runtime.CompilerServices;
 
@@ -16,6 +17,7 @@ internal class Program
     private static uint _vertexArrayObject;
     private static uint _vertexBufferObject;
     private static uint _elementBufferObject;
+    private static uint _texture;
 
     private static uint _shaderProgram;
 
@@ -23,22 +25,32 @@ internal class Program
 #version 330 core
 
 layout (location = 0) in vec3 aPosition;
+layout (location = 1) in vec2 aTextCoords;
 
-out float out_red;
+out vec2 frag_texCoords;
 
 void main()
 {
     gl_Position = vec4(aPosition, 1.0);
+    frag_texCoords = aTextCoords;
 }";
 
         const string fragmentCode = @"
 #version 330 core
 
+in vec2 frag_texCoords;
+
 out vec4 out_color;
+
+// Now we define a uniform value!
+// A uniform in OpenGL is a value that can be changed outside of the shader by modifying its value.
+// A sampler2D contains both a texture and information on how to sample it.
+// Sampling a texture is basically calculating the color of a pixel on a texture at any given point.
+uniform sampler2D uTexture;
 
 void main()
 {
-    out_color = vec4(1.0, 0.5, 0.2, 1.0);
+    out_color = texture(uTexture, frag_texCoords);
 }";
 
     private static readonly uint[] Indices =
@@ -48,13 +60,13 @@ void main()
     };
 
     private static readonly float[] Vertices =
-        {
-            //X    Y      Z
-             0.5f,  0.5f, 0.0f,
-             0.5f, -0.5f, 0.0f,
-            -0.5f, -0.5f, 0.0f,
-            -0.5f,  0.5f, 0.5f
-        };
+    {
+        //X    Y      Z     aTextCoords
+         0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
+         0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
+        -0.5f,  0.5f, 0.5f, 0.0f, 1.0f
+    };
 
 
     private static void Main(string[] args)
@@ -70,6 +82,7 @@ void main()
         _window.Render += OnRender;
         _window.Load += OnLoad;
         _window.Update += OnUpdate;
+        _window.FramebufferResize += OnResize;
 
         _window.Run();
 
@@ -111,7 +124,7 @@ void main()
 
         fixed (float* buf = Vertices)
         {
-            _gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(Vertices.Length * sizeof(uint)), buf, BufferUsageARB.StaticDraw);
+            _gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(Vertices.Length * sizeof(float)), buf, BufferUsageARB.StaticDraw);
         }
 
         // create elementBufferObject
@@ -161,20 +174,69 @@ void main()
         _gl.DeleteShader(vertexShader);
         _gl.DeleteShader(fragmentShader);
 
+        const uint stride = (3 * sizeof(float)) + (2 * sizeof(float));
+
         const uint positionLoc = 0;
         _gl.EnableVertexAttribArray(positionLoc);
-        _gl.VertexAttribPointer(positionLoc, 3, VertexAttribPointerType.Float, normalized: false, 3 * sizeof(float), null);
+        _gl.VertexAttribPointer(positionLoc, 3, VertexAttribPointerType.Float, normalized: false, stride, null);
+
+        const uint textureLoc = 1;
+        const uint textureOffset = 3 * sizeof(float);
+        _gl.EnableVertexAttribArray(textureLoc);
+        _gl.VertexAttribPointer(textureLoc, 2, VertexAttribPointerType.Float, normalized: false, stride, (void*)textureOffset);
 
         // unbind everything
         _gl.BindVertexArray(0);
         _gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
         _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
 
+        _texture = _gl.GenTexture();
+        _gl.ActiveTexture(TextureUnit.Texture0);
+        _gl.BindTexture(TextureTarget.Texture2D, _texture);
+
+        ImageResult result = ImageResult.FromMemory(File.ReadAllBytes("silk.png"), ColorComponents.RedGreenBlueAlpha);
+
+        fixed (byte* ptr = result.Data)
+        {
+            _gl.TexImage2D(
+                TextureTarget.Texture2D,
+                0,
+                InternalFormat.Rgba,
+                (uint)result.Width,
+                (uint)result.Height,
+                0,
+                PixelFormat.Rgba,
+                PixelType.UnsignedByte,
+                ptr);
+        }
+
+        _gl.TextureParameter(_texture, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
+        _gl.TextureParameter(_texture, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
+
+        _gl.TextureParameter(_texture, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);
+        _gl.TextureParameter(_texture, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+
+        _gl.GenerateMipmap(TextureTarget.Texture2D);
+
+        // unbind texture
+        _gl.BindTexture(TextureTarget.Texture2D, 0);
+
+        int location = _gl.GetUniformLocation(_shaderProgram, "uTexture");
+        _gl.Uniform1(location, 0);
+
+        _gl.Enable(EnableCap.Blend);
+        _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+
         Console.WriteLine("Initialized OpenGL");
     }
 
-    static void OnUpdate(double dt)
+    private static void OnUpdate(double dt)
     {
+    }
+
+    private static void OnResize(Vector2D<int> size)
+    {
+        _gl.Viewport(0, 0, (uint) size.X, (uint) size.Y);
     }
 
     private unsafe static void OnRender(double dt)
@@ -184,6 +246,10 @@ void main()
         _gl.BindVertexArray(_vertexArrayObject);
 
         _gl.UseProgram(_shaderProgram);
+
+        _gl.ActiveTexture(TextureUnit.Texture0);
+        _gl.BindTexture(TextureTarget.Texture2D, _texture);
+
         _gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null);
     }
 }
