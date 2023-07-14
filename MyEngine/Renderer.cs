@@ -1,4 +1,5 @@
-﻿using Silk.NET.Input;
+﻿using MyEngine.OpenGL;
+using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
@@ -13,9 +14,6 @@ internal sealed class Renderer : IDisposable
     private GL _gl = null!;
     private IInputContext _inputContext = null!;
 
-    private uint _vertexArrayObject;
-    private uint _vertexBufferObject;
-    private uint _elementBufferObject;
     private uint _shaderProgram;
     private uint _texture;
 
@@ -37,6 +35,12 @@ internal sealed class Renderer : IDisposable
     private readonly string _vertexCode;
     private readonly string _fragmentCode;
 
+    // todo: handle stuff only being set on the OnLoad callback
+    private BufferObject<float> _vertexBuffer = null!;
+    private BufferObject<uint> _elementBuffer = null!;
+
+    private VertexArrayObject _vertexArrayObject = null!;
+
     private Renderer(IWindow window, string vertexCode, string fragmentCode)
     {
         _window = window;
@@ -46,6 +50,7 @@ internal sealed class Renderer : IDisposable
         _window.Load += OnLoad;
         _window.FramebufferResize += OnResize;
         _window.Render += OnRender;
+        _window.Closing += OnWindowClose;
     }
 
     private unsafe void OnLoad()
@@ -61,27 +66,10 @@ internal sealed class Renderer : IDisposable
         _gl.ClearColor(Color.CornflowerBlue);
 
         // create vertexArrayObject
-        _vertexArrayObject = _gl.GenVertexArray();
-        _gl.BindVertexArray(_vertexArrayObject);
+        _vertexArrayObject = new VertexArrayObject(_gl);
 
-        // create the vertexBufferObject
-        _vertexBufferObject = _gl.GenBuffer();
-        _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vertexBufferObject);
-
-        fixed (float* buf = Vertices)
-        {
-            _gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(Vertices.Length * sizeof(float)), buf, BufferUsageARB.StaticDraw);
-        }
-
-        // create elementBufferObject
-        _elementBufferObject = _gl.GenBuffer();
-
-        _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _elementBufferObject);
-
-        fixed (uint* buf = Indices)
-        {
-            _gl.BufferData(BufferTargetARB.ElementArrayBuffer, (nuint)(Indices.Length * sizeof(uint)), buf, BufferUsageARB.StaticDraw);
-        }
+        _vertexBuffer = new BufferObject<float>(_gl, Vertices, BufferTargetARB.ArrayBuffer, BufferUsageARB.StaticDraw);
+        _elementBuffer = new BufferObject<uint>(_gl, Indices, BufferTargetARB.ElementArrayBuffer, BufferUsageARB.StaticDraw);
 
         var vertexShader = _gl.CreateShader(ShaderType.VertexShader);
         _gl.ShaderSource(vertexShader, _vertexCode);
@@ -172,7 +160,6 @@ internal sealed class Renderer : IDisposable
 
         _gl.Enable(EnableCap.Blend);
         _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-
     }
 
     private void OnResize(Vector2D<int> size)
@@ -193,7 +180,7 @@ internal sealed class Renderer : IDisposable
     {
         _gl.Clear(ClearBufferMask.ColorBufferBit);
 
-        _gl.BindVertexArray(_vertexArrayObject);
+        _vertexArrayObject.Bind();
 
         _gl.UseProgram(_shaderProgram);
 
@@ -210,8 +197,8 @@ internal sealed class Renderer : IDisposable
 
     public static async Task<Renderer> CreateAsync(string windowTitle, Vector2D<int> size)
     {
-        var vertexTask = File.ReadAllTextAsync(Path.Join("Shaders", "Vertex.glsl"));
-        var fragmentTask = File.ReadAllTextAsync(Path.Join("Shaders", "Fragment.glsl"));
+        var vertexTask = File.ReadAllTextAsync(Path.Join("Shaders", "shader.vert"));
+        var fragmentTask = File.ReadAllTextAsync(Path.Join("Shaders", "shader.frag"));
 
         await Task.WhenAll(vertexTask, fragmentTask);
 
@@ -222,6 +209,13 @@ internal sealed class Renderer : IDisposable
         });
 
         return new Renderer(window, vertexTask.Result, fragmentTask.Result);
+    }
+
+    private void OnWindowClose()
+    {
+        _vertexBuffer.Dispose();
+        _elementBuffer.Dispose();
+        _vertexArrayObject.Dispose();
     }
 
     public void Close()
