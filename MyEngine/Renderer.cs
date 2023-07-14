@@ -3,7 +3,6 @@ using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
-using StbImageSharp;
 using System.Drawing;
 
 namespace MyEngine;
@@ -15,7 +14,6 @@ internal sealed class Renderer : IDisposable
     private IInputContext _inputContext = null!;
 
     private uint _shaderProgram;
-    private uint _texture;
 
     private static readonly uint[] Indices =
     {
@@ -40,6 +38,8 @@ internal sealed class Renderer : IDisposable
     private BufferObject<uint> _elementBuffer = null!;
 
     private VertexArrayObject _vertexArrayObject = null!;
+
+    private TextureObject _texture = null!;
 
     private Renderer(IWindow window, string vertexCode, string fragmentCode)
     {
@@ -108,49 +108,18 @@ internal sealed class Renderer : IDisposable
         _gl.DeleteShader(vertexShader);
         _gl.DeleteShader(fragmentShader);
 
-        const uint stride = (3 * sizeof(float)) + (2 * sizeof(float));
-
-        const uint positionLoc = 0;
-        _gl.EnableVertexAttribArray(positionLoc);
-        _gl.VertexAttribPointer(positionLoc, 3, VertexAttribPointerType.Float, normalized: false, stride, null);
-
-        const uint textureLoc = 1;
-        const uint textureOffset = 3 * sizeof(float);
-        _gl.EnableVertexAttribArray(textureLoc);
-        _gl.VertexAttribPointer(textureLoc, 2, VertexAttribPointerType.Float, normalized: false, stride, (void*)textureOffset);
-
+        uint stride = (3 * sizeof(float)) + (2 * sizeof(float)); // vec3 + vec2
+        // location
+        _vertexArrayObject.VertexArrayAttribute(0, 3, VertexAttribPointerType.Float, false, stride, 0);
+        // texture Coordinate
+        _vertexArrayObject.VertexArrayAttribute(1, 2, VertexAttribPointerType.Float, false, stride, 3 * sizeof(float));
+        
         // unbind everything
         _gl.BindVertexArray(0);
         _gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
         _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
 
-        _texture = _gl.GenTexture();
-        _gl.ActiveTexture(TextureUnit.Texture0);
-        _gl.BindTexture(TextureTarget.Texture2D, _texture);
-
-        ImageResult result = ImageResult.FromMemory(File.ReadAllBytes("silk.png"), ColorComponents.RedGreenBlueAlpha);
-
-        fixed (byte* ptr = result.Data)
-        {
-            _gl.TexImage2D(
-                TextureTarget.Texture2D,
-                0,
-                InternalFormat.Rgba,
-                (uint)result.Width,
-                (uint)result.Height,
-                0,
-                PixelFormat.Rgba,
-                PixelType.UnsignedByte,
-                ptr);
-        }
-
-        _gl.TextureParameter(_texture, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
-        _gl.TextureParameter(_texture, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
-
-        _gl.TextureParameter(_texture, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);
-        _gl.TextureParameter(_texture, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-
-        _gl.GenerateMipmap(TextureTarget.Texture2D);
+        _texture = TextureObject.Create(_gl, "silk.png", TextureTarget.Texture2D, TextureUnit.Texture0);
 
         // unbind texture
         _gl.BindTexture(TextureTarget.Texture2D, 0);
@@ -184,8 +153,7 @@ internal sealed class Renderer : IDisposable
 
         _gl.UseProgram(_shaderProgram);
 
-        _gl.ActiveTexture(TextureUnit.Texture0);
-        _gl.BindTexture(TextureTarget.Texture2D, _texture);
+        _texture.Bind(TextureUnit.Texture0);
 
         _gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null);
     }
@@ -216,6 +184,7 @@ internal sealed class Renderer : IDisposable
         _vertexBuffer.Dispose();
         _elementBuffer.Dispose();
         _vertexArrayObject.Dispose();
+        _texture.Dispose();
     }
 
     public void Close()

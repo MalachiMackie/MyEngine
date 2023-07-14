@@ -4,8 +4,8 @@ namespace MyEngine.OpenGL
 {
     internal class VertexArrayObject : IDisposable
     {
-        private uint _handle;
-        private GL _gl;
+        private readonly uint _handle;
+        private readonly GL _gl;
 
         public VertexArrayObject(GL gl)
         {
@@ -13,6 +13,12 @@ namespace MyEngine.OpenGL
 
             _handle = _gl.GenVertexArray();
             Bind();
+        }
+
+        public unsafe void VertexArrayAttribute(uint location, int count, VertexAttribPointerType type, bool normalized, uint stride, uint offset)
+        {
+            _gl.EnableVertexAttribArray(location);
+            _gl.VertexAttribPointer(location, count, type, normalized, stride, (void*)offset);
         }
 
         public void Bind()
