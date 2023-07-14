@@ -1,4 +1,5 @@
 ﻿using Silk.NET.OpenGL;
+using System.Numerics;
 
 namespace MyEngine.OpenGL
 {
@@ -48,8 +49,14 @@ namespace MyEngine.OpenGL
 
         public void SetUniform1(string uniformName, int value)
         {
-            var uniformLocation = _gl.GetUniformLocation(_handle, uniformName);
-            _gl.Uniform1(uniformLocation, value);
+            var location = _gl.GetUniformLocation(_handle, uniformName);
+            _gl.Uniform1(location, value);
+        }
+
+        public unsafe void SetUniform1(string uniformName, Matrix4x4 matrix)
+        {
+            var location = _gl.GetUniformLocation( _handle, uniformName);
+            _gl.UniformMatrix4(location, 1, false, (float*) &matrix);
         }
 
         public void UseProgram()

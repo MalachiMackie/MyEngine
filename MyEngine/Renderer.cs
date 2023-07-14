@@ -1,10 +1,10 @@
 ﻿using MyEngine.OpenGL;
 using Silk.NET.Input;
-using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 using StbImageSharp;
 using System.Drawing;
+using System.Numerics;
 
 namespace MyEngine;
 
@@ -13,7 +13,10 @@ internal sealed class Renderer : IDisposable
     private readonly IWindow _window;
     private GL _gl = null!;
     private IInputContext _inputContext = null!;
-
+    private BufferObject<float> _vertexBuffer = null!;
+    private BufferObject<uint> _elementBuffer = null!;
+    private VertexArrayObject<float, uint> _vertexArrayObject = null!;
+    private TextureObject _texture = null!;
     private ShaderProgram _shader = null!;
 
     private static readonly uint[] Indices =
@@ -34,13 +37,31 @@ internal sealed class Renderer : IDisposable
     private readonly string _vertexCode;
     private readonly string _fragmentCode;
 
-    // todo: handle stuff only being set on the OnLoad callback
-    private BufferObject<float> _vertexBuffer = null!;
-    private BufferObject<uint> _elementBuffer = null!;
-
-    private VertexArrayObject<float, uint> _vertexArrayObject = null!;
-
-    private TextureObject _texture = null!;
+    private Transform[] _transforms = {
+        new Transform {
+            position = new Vector3(),
+            rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, 15),
+            scale = Vector3.One
+        },
+        new Transform
+        {
+            position = new Vector3(-0.75f, -0.75f, 0),
+            rotation = Quaternion.Identity,
+            scale = new Vector3(0.25f)
+        },
+        new Transform
+        {
+            position = new Vector3(-0.5f, 0, -0.1f),
+            rotation = Quaternion.Identity,
+            scale = Vector3.One
+        },
+        new Transform
+        {
+            position = new Vector3(0.5f, 0, 0),
+            rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, 45),
+            scale = Vector3.One
+        }
+    };
 
     private Renderer(IWindow window, string vertexCode, string fragmentCode)
     {
@@ -96,7 +117,7 @@ internal sealed class Renderer : IDisposable
         _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
     }
 
-    private void OnResize(Vector2D<int> size)
+    private void OnResize(Silk.NET.Maths.Vector2D<int> size)
     {
         _gl.Viewport(0, 0, (uint) size.X, (uint) size.Y);
     }
@@ -120,7 +141,12 @@ internal sealed class Renderer : IDisposable
 
         _texture.Bind(TextureUnit.Texture0);
 
-        _gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null);
+        foreach (var transform in _transforms)
+        {
+            _shader.SetUniform1("uModel", transform.ViewMatrix);
+            _gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null);
+        }
+
     }
 
     public void Run()
@@ -128,7 +154,7 @@ internal sealed class Renderer : IDisposable
         _window.Run();
     }
 
-    public static async Task<Renderer> CreateAsync(string windowTitle, Vector2D<int> size)
+    public static async Task<Renderer> CreateAsync(string windowTitle, int width, int height)
     {
         var vertexTask = File.ReadAllTextAsync(Path.Join("Shaders", "shader.vert"));
         var fragmentTask = File.ReadAllTextAsync(Path.Join("Shaders", "shader.frag"));
@@ -138,7 +164,7 @@ internal sealed class Renderer : IDisposable
         var window = Window.Create(WindowOptions.Default with
         {
             Title = windowTitle,
-            Size = size
+            Size = new Silk.NET.Maths.Vector2D<int>(width, height)
         });
 
         return new Renderer(window, vertexTask.Result, fragmentTask.Result);

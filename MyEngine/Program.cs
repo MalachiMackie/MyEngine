@@ -13,7 +13,7 @@ internal class Program
 {
     private static async Task Main(string[] args)
     {
-        using var renderer = await Renderer.CreateAsync("My OpenGL App", new Vector2D<int>(800, 600));
+        using var renderer = await Renderer.CreateAsync("My OpenGL App", 800, 600);
 
         renderer.Run();
     }
