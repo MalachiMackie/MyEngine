@@ -14,7 +14,7 @@ namespace MyEngine.OpenGL
         private readonly GL _gl;
         private readonly TextureTarget _target;
 
-        private unsafe TextureObject(
+        public unsafe TextureObject(
             GL gl,
             byte[] bytes,
             uint width,
@@ -63,11 +63,9 @@ namespace MyEngine.OpenGL
             _gl.BindTexture(_target, _handle);
         }
 
-        public static TextureObject Create(GL gl, string path, TextureTarget target, TextureUnit unit)
+        public void Unbind()
         {
-            var bytes = File.ReadAllBytes(path);
-            var imageResult = ImageResult.FromMemory(bytes, ColorComponents.RedGreenBlueAlpha);
-            return new TextureObject(gl, imageResult.Data, (uint)imageResult.Width, (uint)imageResult.Height, target, unit);
+            _gl.BindTexture(_target, 0);
         }
 
         public void Dispose()

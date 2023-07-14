@@ -33,6 +33,11 @@ namespace MyEngine.OpenGL
             _gl.BindBuffer(_target, _handle);
         }
 
+        public void Unbind()
+        {
+            _gl.BindBuffer(_target, 0);
+        }
+
         public void Dispose()
         {
             _gl.DeleteBuffer(_handle);
