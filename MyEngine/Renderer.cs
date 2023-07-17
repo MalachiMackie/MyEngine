@@ -18,7 +18,18 @@ internal sealed class Renderer : IDisposable
     private VertexArrayObject<float, uint> _vertexArrayObject = null!;
     private TextureObject _texture = null!;
     private ShaderProgram _shader = null!;
+    private IKeyboard _primaryKeyboard = null!;
 
+    private Transform _cameraTransform = new Transform
+    {
+        position = new Vector3(0.0f, 0.0f, 3.0f),
+        rotation = Quaternion.CreateFromYawPitchRoll(0f, 0f, -90f),
+        scale = Vector3.One
+    };
+
+    private Vector3 _cameraFront = new Vector3(0.0f, 0.0f, -1.0f);
+
+        
     private static readonly uint[] Indices =
     {
         0, 1, 3,
@@ -28,10 +39,10 @@ internal sealed class Renderer : IDisposable
     private static readonly float[] Vertices =
     {
         //X    Y      Z     aTextCoords
-         0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
-         0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
-        -0.5f,  0.5f, 0.5f, 0.0f, 1.0f
+        0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
+        0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+       -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
+       -0.5f,  0.5f, 0.5f, 0.0f, 1.0f
     };
 
     private readonly string _vertexCode;
@@ -63,15 +74,22 @@ internal sealed class Renderer : IDisposable
         }
     };
 
-    private Renderer(IWindow window, string vertexCode, string fragmentCode)
+    private uint _width;
+    private uint _height;
+
+    private Renderer(IWindow window, string vertexCode, string fragmentCode, uint width, uint height)
     {
         _window = window;
         _vertexCode = vertexCode;
         _fragmentCode = fragmentCode;
+
+        _width = width;
+        _height = height;
         
         _window.Load += OnLoad;
         _window.FramebufferResize += OnResize;
         _window.Render += OnRender;
+        _window.Update += OnUpdate;
         _window.Closing += OnWindowClose;
     }
 
@@ -79,11 +97,14 @@ internal sealed class Renderer : IDisposable
     {
         _gl = _window.CreateOpenGL();
         _inputContext = _window.CreateInput();
+        _primaryKeyboard = _inputContext.Keyboards.First();
 
         foreach (var keyboard in _inputContext.Keyboards)
         {
             keyboard.KeyDown += OnKeyDown;
         }
+
+        _inputContext.Mice.First().MouseMove += OnMouseMove;
 
         _gl.ClearColor(Color.CornflowerBlue);
 
@@ -131,6 +152,53 @@ internal sealed class Renderer : IDisposable
         }
     }
 
+    private void OnUpdate(double dt)
+    {
+        var speed = 5.0f * (float)dt;
+        if (_primaryKeyboard.IsKeyPressed(Key.W))
+        {
+            _cameraTransform.position += (speed * _cameraFront);
+        }
+        if (_primaryKeyboard.IsKeyPressed(Key.S))
+        {
+            _cameraTransform.position -= (speed * _cameraFront);
+        }
+        if (_primaryKeyboard.IsKeyPressed(Key.A))
+        {
+            _cameraTransform.position -= speed * Vector3.Normalize(Vector3.Cross(_cameraFront, Vector3.UnitY));
+        }
+        if (_primaryKeyboard.IsKeyPressed(Key.D))
+        {
+            _cameraTransform.position += speed * Vector3.Normalize(Vector3.Cross(_cameraFront, Vector3.UnitY));
+        }
+    }
+
+    private Vector2 _lastMousePosition;
+
+    private void OnMouseMove(IMouse mouse, Vector2 position)
+    {
+        var lookSensitivity = 0.1f;
+
+        if (_lastMousePosition != default)
+        {
+            var yOffset = position.Y - _lastMousePosition.Y;
+            var xOffset = position.X - _lastMousePosition.X;
+
+            var q = _cameraTransform.rotation;
+
+            var direction = MathHelper.ToEulerAngles(q);
+
+            direction.X += xOffset * lookSensitivity;
+            direction.Y -= yOffset * lookSensitivity;
+
+            _cameraTransform.rotation = MathHelper.ToQuaternion(direction);
+
+            _cameraFront = Vector3.Normalize(direction);
+        }
+
+        _lastMousePosition = position;
+    }
+
     private unsafe void OnRender(double dt)
     {
         _gl.Clear(ClearBufferMask.ColorBufferBit);
@@ -141,9 +209,18 @@ internal sealed class Renderer : IDisposable
 
         _texture.Bind(TextureUnit.Texture0);
 
+        var view = Matrix4x4.CreateLookAt(_cameraTransform.position, _cameraTransform.position + _cameraFront, Vector3.UnitY);
+        var projection = Matrix4x4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), _width / _height, 0.1f, 100.0f);
+
+        _shader.SetUniform1("uView", view);
+        _shader.SetUniform1("uProjection", projection);
+
         foreach (var transform in _transforms)
         {
-            _shader.SetUniform1("uModel", transform.ViewMatrix);
+            var model = transform.ViewMatrix;
+
+            _shader.SetUniform1("uModel", model);
+
             _gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null);
         }
 
@@ -167,7 +244,7 @@ internal sealed class Renderer : IDisposable
             Size = new Silk.NET.Maths.Vector2D<int>(width, height)
         });
 
-        return new Renderer(window, vertexTask.Result, fragmentTask.Result);
+        return new Renderer(window, vertexTask.Result, fragmentTask.Result, (uint)width, (uint)height);
     }
 
     private void OnWindowClose()
