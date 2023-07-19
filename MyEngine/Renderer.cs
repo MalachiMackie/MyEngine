@@ -8,9 +8,8 @@ using System.Numerics;
 
 namespace MyEngine;
 
-internal sealed class Renderer : IDisposable
+internal sealed class Renderer
 {
-    private readonly IWindow _window;
     private GL _gl = null!;
     private IInputContext _inputContext = null!;
     private BufferObject<float> _vertexBuffer = null!;
@@ -20,16 +19,9 @@ internal sealed class Renderer : IDisposable
     private ShaderProgram _shader = null!;
     private IKeyboard _primaryKeyboard = null!;
 
-    private Transform _cameraTransform = new Transform
-    {
-        position = new Vector3(0.0f, 0.0f, 3.0f),
-        rotation = Quaternion.CreateFromYawPitchRoll(0f, 0f, -90f),
-        scale = Vector3.One
-    };
+    // todo: this is temporary to get input working
+    private TransformComponent _cameraTransform = null!;
 
-    private Vector3 _cameraFront = new Vector3(0.0f, 0.0f, -1.0f);
-
-        
     private static readonly uint[] Indices =
     {
         0, 1, 3,
@@ -77,26 +69,24 @@ internal sealed class Renderer : IDisposable
     private uint _width;
     private uint _height;
 
-    private Renderer(IWindow window, string vertexCode, string fragmentCode, uint width, uint height)
+    private Renderer(string vertexCode, string fragmentCode, uint width, uint height)
     {
-        _window = window;
         _vertexCode = vertexCode;
         _fragmentCode = fragmentCode;
 
         _width = width;
         _height = height;
         
-        _window.Load += OnLoad;
-        _window.FramebufferResize += OnResize;
-        _window.Render += OnRender;
-        _window.Update += OnUpdate;
-        _window.Closing += OnWindowClose;
+        // _window.FramebufferResize += OnResize;
+        // _window.Render += OnRender;
+        // _window.Update += OnUpdate;
+        // _window.Closing += OnWindowClose;
     }
 
-    private unsafe void OnLoad()
+    public unsafe void OnLoad(IWindow window)
     {
-        _gl = _window.CreateOpenGL();
-        _inputContext = _window.CreateInput();
+        _gl = window.CreateOpenGL();
+        _inputContext = window.CreateInput();
         _primaryKeyboard = _inputContext.Keyboards.First();
 
         foreach (var keyboard in _inputContext.Keyboards)
@@ -148,28 +138,33 @@ internal sealed class Renderer : IDisposable
         Console.WriteLine("KeyCode pressed. Key: {0}, KeyCode: {1}", key, keyCode);
         if (key == Key.Escape)
         {
-            Close();
+            // Close();
         }
     }
 
-    private void OnUpdate(double dt)
+    public void OnUpdate(double dt)
     {
+        var cameraTransform = _cameraTransform.Transform;
+        var cameraDirection = MathHelper.ToEulerAngles(_cameraTransform.Transform.rotation);
+
+        var cameraFront = Vector3.Normalize(cameraDirection);
+
         var speed = 5.0f * (float)dt;
         if (_primaryKeyboard.IsKeyPressed(Key.W))
         {
-            _cameraTransform.position += (speed * _cameraFront);
+            cameraTransform.position += (speed * cameraFront);
         }
         if (_primaryKeyboard.IsKeyPressed(Key.S))
         {
-            _cameraTransform.position -= (speed * _cameraFront);
+            cameraTransform.position -= (speed * cameraFront);
         }
         if (_primaryKeyboard.IsKeyPressed(Key.A))
         {
-            _cameraTransform.position -= speed * Vector3.Normalize(Vector3.Cross(_cameraFront, Vector3.UnitY));
+            cameraTransform.position -= speed * Vector3.Normalize(Vector3.Cross(cameraFront, Vector3.UnitY));
         }
         if (_primaryKeyboard.IsKeyPressed(Key.D))
         {
-            _cameraTransform.position += speed * Vector3.Normalize(Vector3.Cross(_cameraFront, Vector3.UnitY));
+            cameraTransform.position += speed * Vector3.Normalize(Vector3.Cross(cameraFront, Vector3.UnitY));
         }
     }
 
@@ -184,23 +179,22 @@ internal sealed class Renderer : IDisposable
             var yOffset = position.Y - _lastMousePosition.Y;
             var xOffset = position.X - _lastMousePosition.X;
 
-            var q = _cameraTransform.rotation;
+            var q = _cameraTransform.Transform.rotation;
 
             var direction = MathHelper.ToEulerAngles(q);
 
             direction.X += xOffset * lookSensitivity;
             direction.Y -= yOffset * lookSensitivity;
 
-            _cameraTransform.rotation = MathHelper.ToQuaternion(direction);
-
-            _cameraFront = Vector3.Normalize(direction);
+            _cameraTransform.Transform.rotation = MathHelper.ToQuaternion(direction);
         }
 
         _lastMousePosition = position;
     }
 
-    private unsafe void OnRender(double dt)
+    public unsafe void Render(double dt, TransformComponent cameraTransform)
     {
+        _cameraTransform = cameraTransform;
         _gl.Clear(ClearBufferMask.ColorBufferBit);
 
         _vertexArrayObject.Bind();
@@ -209,7 +203,11 @@ internal sealed class Renderer : IDisposable
 
         _texture.Bind(TextureUnit.Texture0);
 
-        var view = Matrix4x4.CreateLookAt(_cameraTransform.position, _cameraTransform.position + _cameraFront, Vector3.UnitY);
+        var cameraDirection = MathHelper.ToEulerAngles(cameraTransform.Transform.rotation);
+
+        var cameraFront = Vector3.Normalize(cameraDirection);
+
+        var view = Matrix4x4.CreateLookAt(cameraTransform.Transform.position, cameraTransform.Transform.position + cameraFront, Vector3.UnitY);
         var projection = Matrix4x4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), _width / _height, 0.1f, 100.0f);
 
         _shader.SetUniform1("uView", view);
@@ -226,11 +224,6 @@ internal sealed class Renderer : IDisposable
 
     }
 
-    public void Run()
-    {
-        _window.Run();
-    }
-
     public static async Task<Renderer> CreateAsync(string windowTitle, int width, int height)
     {
         var vertexTask = File.ReadAllTextAsync(Path.Join("Shaders", "shader.vert"));
@@ -238,13 +231,7 @@ internal sealed class Renderer : IDisposable
 
         await Task.WhenAll(vertexTask, fragmentTask);
 
-        var window = Window.Create(WindowOptions.Default with
-        {
-            Title = windowTitle,
-            Size = new Silk.NET.Maths.Vector2D<int>(width, height)
-        });
-
-        return new Renderer(window, vertexTask.Result, fragmentTask.Result, (uint)width, (uint)height);
+        return new Renderer(vertexTask.Result, fragmentTask.Result, (uint)width, (uint)height);
     }
 
     private void OnWindowClose()
@@ -253,15 +240,5 @@ internal sealed class Renderer : IDisposable
         _elementBuffer?.Dispose();
         _vertexArrayObject?.Dispose();
         _texture?.Dispose();
-    }
-
-    public void Close()
-    {
-        _window.Close();
-    }
-
-    public void Dispose()
-    {
-        _window.Dispose();
     }
 }

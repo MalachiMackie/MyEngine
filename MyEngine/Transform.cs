@@ -1,8 +1,8 @@
 ﻿using System.Numerics;
 
-namespace MyEngine.OpenGL
+namespace MyEngine
 {
-    internal struct Transform
+    internal class Transform
     {
         public Vector3 position;
         public Quaternion rotation;

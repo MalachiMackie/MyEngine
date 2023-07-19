@@ -13,8 +13,8 @@ internal class Program
 {
     private static async Task Main(string[] args)
     {
-        using var renderer = await Renderer.CreateAsync("My OpenGL App", 800, 600);
+        using var application = await Application.CreateAsync();
 
-        renderer.Run();
+        application.Run();
     }
 }
