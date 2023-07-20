@@ -12,7 +12,5 @@ namespace MyEngine
         }
 
         public EntityId EntityId { get; }
-
-        public Vector3 CameraFront { get; set; }
     }
 }

@@ -1,36 +1,47 @@
 ﻿using System.Collections.Generic;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 
 namespace MyEngine
 {
-    internal class ComponentCollection<TComponent> : IReadOnlyCollection<TComponent>
+    internal class ComponentCollection<TComponent>
         where TComponent : IComponent
     {
-        private readonly List<TComponent> _components = new();
-        private readonly HashSet<EntityId> _entityIds = new();
+        private readonly Dictionary<EntityId, List<TComponent>> _components = new();
 
-        public int Count => _components.Count;
-
-        public bool DoesEntityHaveComponent(EntityId entityId) => _entityIds.Contains(entityId);
+        public bool DoesEntityHaveComponent(EntityId entityId) => _components.ContainsKey(entityId);
 
         public void AddComponent(TComponent component)
         {
-            if (!TComponent.AllowMultiple && DoesEntityHaveComponent(component.EntityId))
+            if (TComponent.AllowMultiple)
+            {
+                if (!_components.TryGetValue(component.EntityId, out var components))
+                {
+                    components = new List<TComponent>();
+                    _components[component.EntityId] = components;
+                }
+                components.Add(component);
+                return;
+            }
+
+            if (_components.ContainsKey(component.EntityId))
             {
                 throw new InvalidOperationException($"Component has already been added");
             }
 
-            _components.Add(component);
+            _components.Add(component.EntityId, new List<TComponent>{component});
         }
 
-        public IEnumerator<TComponent> GetEnumerator()
+        public bool TryGetComponents(EntityId entityId, [NotNullWhen(true)] out IReadOnlyList<TComponent>? components)
         {
-            return _components.GetEnumerator();
-        }
+            if (_components.TryGetValue(entityId, out var innerComponents))
+            {
+                components = innerComponents;
+                return true;
+            }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return _components.GetEnumerator();
+            components = null;
+            return false;
         }
     }
 }

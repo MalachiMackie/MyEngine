@@ -8,6 +8,8 @@ namespace MyEngine
         private readonly IInputContext _context;
         private readonly IKeyboard _primaryKeyboard;
 
+        internal readonly IMouse Mouse;
+
         public MyInput(MyWindow window)
         {
             _context = window.InnerWindow.CreateInput();
@@ -16,11 +18,9 @@ namespace MyEngine
             {
                 keyboard.KeyDown += OnKeyDown;
             }
+            Mouse = _context.Mice[0];
 
-            foreach (var mouse in _context.Mice)
-            {
-                mouse.MouseMove += OnMouseMove;
-            }
+            Mouse.MouseMove += OnMouseMove;
 
             _primaryKeyboard = _context.Keyboards[0];
         }
@@ -54,6 +54,7 @@ namespace MyEngine
                 _ => throw new ArgumentOutOfRangeException(nameof(key))
             };
         }
+
 
         private static Key MapKey(MyKey key)
         {

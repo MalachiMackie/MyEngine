@@ -10,7 +10,10 @@ namespace MyEngine
         private readonly HashSet<EntityId> _entityIds = new ();
         private readonly List<Entity> _entities = new();
         private readonly ComponentCollection<TransformComponent> _transformComponents = new ();
+        private readonly ComponentCollection<CameraComponent> _cameraComponents = new ();
         private MyInput _input = null!;
+        private InputResource? _inputResource;
+        private readonly CameraMovementSystem _movementSystem = new();
 
         private Application(Renderer renderer)
         {
@@ -24,11 +27,10 @@ namespace MyEngine
             _window.Update += OnUpdate;
             _window.Resize += OnResize;
 
-
             var cameraEntity = new Entity();
             AddEntity(cameraEntity);
-            var cameraTransform = new TransformComponent(cameraEntity.Id);
-            AddTransformComponent(cameraTransform);
+            _transformComponents.AddComponent(new TransformComponent(cameraEntity.Id));
+            _cameraComponents.AddComponent(new CameraComponent(cameraEntity.Id));
         }
 
         private void OnLoad()
@@ -36,12 +38,21 @@ namespace MyEngine
             _renderer.Load(_window.InnerWindow);
             _input = new MyInput(_window);
             _input.KeyDown += OnKeyDown;
-            _input.MouseMove += OnMouseMove;
+            _inputResource = new InputResource(_input);
         }
 
         private void OnRender(double dt)
         {
-            _renderer.Render(_transformComponents.First().Transform);
+            foreach (var entityId in _entityIds)
+            {
+                if (_transformComponents.TryGetComponents(entityId, out var transforms))
+                {
+                    if (_cameraComponents.DoesEntityHaveComponent(entityId))
+                    {
+                        _renderer.Render(transforms[0].Transform);
+                    }
+                }
+            }
         }
 
         private void OnResize(Vector2 size)
@@ -59,16 +70,6 @@ namespace MyEngine
 
             _entities.Add(entity);
             _entityIds.Add(entity.Id);
-        }
-
-        private void AddTransformComponent(TransformComponent component)
-        {
-            if (!_entityIds.Contains(component.EntityId))
-            {
-                throw new InvalidOperationException($"Entity {component.EntityId.Value} has not been added yet");
-            }
-
-            _transformComponents.AddComponent(component);
         }
 
         public static async Task<Application> CreateAsync()
@@ -92,53 +93,32 @@ namespace MyEngine
             }
         }
 
-        private Vector2 _lastMousePosition;
-        private void OnMouseMove(object? sender, MyInput.MouseMoveEvent e)
-        {
-            var lookSensitivity = 0.1f;
-            var cameraTransform = _transformComponents.First().Transform;
-
-            if (_lastMousePosition != default)
-            {
-                var yOffset = e.Position.Y - _lastMousePosition.Y;
-                var xOffset = e.Position.X - _lastMousePosition.X;
-
-                var q = cameraTransform.rotation;
-
-                var direction = MathHelper.ToEulerAngles(q);
-
-                direction.X += xOffset * lookSensitivity;
-                direction.Y -= yOffset * lookSensitivity;
-
-                cameraTransform.rotation = MathHelper.ToQuaternion(direction);
-            }
-
-            _lastMousePosition = e.Position;
-        }
-
+        private Vector2 _previousMousePosition;
         private void OnUpdate(double dt)
         {
-            var cameraTransform = _transformComponents.First().Transform;
-            var cameraDirection = MathHelper.ToEulerAngles(cameraTransform.rotation);
+            if (_inputResource is not null)
+            {
+                var position = _inputResource.Input.Mouse.Position;
+                if (_previousMousePosition != default)
+                {
+                    _inputResource.MouseDelta = position - _previousMousePosition;
+                }
 
-            var cameraFront = Vector3.Normalize(cameraDirection);
+                _previousMousePosition = position;
+            }
 
-            var speed = 5.0f * (float)dt;
-            if (_input.IsKeyPressed(MyKey.W))
+            foreach (var entityId in _entityIds)
             {
-                cameraTransform.position += (speed * cameraFront);
-            }
-            if (_input.IsKeyPressed(MyKey.S))
-            {
-                cameraTransform.position -= (speed * cameraFront);
-            }
-            if (_input.IsKeyPressed(MyKey.A))
-            {
-                cameraTransform.position -= speed * Vector3.Normalize(Vector3.Cross(cameraFront, Vector3.UnitY));
-            }
-            if (_input.IsKeyPressed(MyKey.D))
-            {
-                cameraTransform.position += speed * Vector3.Normalize(Vector3.Cross(cameraFront, Vector3.UnitY));
+                if (_transformComponents.TryGetComponents(entityId, out var transforms))
+                {
+                    if (_cameraComponents.TryGetComponents(entityId, out var cameraComponents))
+                    {
+                        if (_inputResource is not null)
+                        {
+                            _movementSystem.Run(dt, transforms[0], cameraComponents[0], _inputResource);
+                        }
+                    }
+                }
             }
         }
 
