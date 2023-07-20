@@ -1,5 +1,4 @@
 ﻿using MyEngine.OpenGL;
-using Silk.NET.Input;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 using StbImageSharp;
@@ -8,19 +7,14 @@ using System.Numerics;
 
 namespace MyEngine;
 
-internal sealed class Renderer
+internal sealed class Renderer : IDisposable
 {
     private GL _gl = null!;
-    private IInputContext _inputContext = null!;
     private BufferObject<float> _vertexBuffer = null!;
     private BufferObject<uint> _elementBuffer = null!;
     private VertexArrayObject<float, uint> _vertexArrayObject = null!;
     private TextureObject _texture = null!;
     private ShaderProgram _shader = null!;
-    private IKeyboard _primaryKeyboard = null!;
-
-    // todo: this is temporary to get input working
-    private TransformComponent _cameraTransform = null!;
 
     private static readonly uint[] Indices =
     {
@@ -40,7 +34,7 @@ internal sealed class Renderer
     private readonly string _vertexCode;
     private readonly string _fragmentCode;
 
-    private Transform[] _transforms = {
+    private readonly Transform[] _transforms = {
         new Transform {
             position = new Vector3(),
             rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, 15),
@@ -65,7 +59,7 @@ internal sealed class Renderer
             scale = Vector3.One
         }
     };
-
+ 
     private uint _width;
     private uint _height;
 
@@ -76,25 +70,11 @@ internal sealed class Renderer
 
         _width = width;
         _height = height;
-        
-        // _window.FramebufferResize += OnResize;
-        // _window.Render += OnRender;
-        // _window.Update += OnUpdate;
-        // _window.Closing += OnWindowClose;
     }
 
-    public unsafe void OnLoad(IWindow window)
+    public unsafe void Load(IWindow window)
     {
         _gl = window.CreateOpenGL();
-        _inputContext = window.CreateInput();
-        _primaryKeyboard = _inputContext.Keyboards.First();
-
-        foreach (var keyboard in _inputContext.Keyboards)
-        {
-            keyboard.KeyDown += OnKeyDown;
-        }
-
-        _inputContext.Mice.First().MouseMove += OnMouseMove;
 
         _gl.ClearColor(Color.CornflowerBlue);
 
@@ -102,7 +82,6 @@ internal sealed class Renderer
         _elementBuffer = new BufferObject<uint>(_gl, Indices, BufferTargetARB.ElementArrayBuffer, BufferUsageARB.StaticDraw);
 
         _vertexArrayObject = new VertexArrayObject<float, uint>(_gl, _vertexBuffer, _elementBuffer);
-
 
         _vertexArrayObject.VertexArrayAttribute(0, 3, VertexAttribPointerType.Float, false, 5, 0); // location
         _vertexArrayObject.VertexArrayAttribute(1, 2, VertexAttribPointerType.Float, false, 5, 3); // texture coordinate
@@ -128,73 +107,15 @@ internal sealed class Renderer
         _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
     }
 
-    private void OnResize(Silk.NET.Maths.Vector2D<int> size)
+    public void Resize(Vector2 size)
     {
         _gl.Viewport(0, 0, (uint) size.X, (uint) size.Y);
+        _width = (uint)size.X;
+        _height = (uint)size.Y;
     }
 
-    private void OnKeyDown(IKeyboard keyboard, Key key, int keyCode)
+    public unsafe void Render(Transform cameraTransform)
     {
-        Console.WriteLine("KeyCode pressed. Key: {0}, KeyCode: {1}", key, keyCode);
-        if (key == Key.Escape)
-        {
-            // Close();
-        }
-    }
-
-    public void OnUpdate(double dt)
-    {
-        var cameraTransform = _cameraTransform.Transform;
-        var cameraDirection = MathHelper.ToEulerAngles(_cameraTransform.Transform.rotation);
-
-        var cameraFront = Vector3.Normalize(cameraDirection);
-
-        var speed = 5.0f * (float)dt;
-        if (_primaryKeyboard.IsKeyPressed(Key.W))
-        {
-            cameraTransform.position += (speed * cameraFront);
-        }
-        if (_primaryKeyboard.IsKeyPressed(Key.S))
-        {
-            cameraTransform.position -= (speed * cameraFront);
-        }
-        if (_primaryKeyboard.IsKeyPressed(Key.A))
-        {
-            cameraTransform.position -= speed * Vector3.Normalize(Vector3.Cross(cameraFront, Vector3.UnitY));
-        }
-        if (_primaryKeyboard.IsKeyPressed(Key.D))
-        {
-            cameraTransform.position += speed * Vector3.Normalize(Vector3.Cross(cameraFront, Vector3.UnitY));
-        }
-    }
-
-    private Vector2 _lastMousePosition;
-
-    private void OnMouseMove(IMouse mouse, Vector2 position)
-    {
-        var lookSensitivity = 0.1f;
-
-        if (_lastMousePosition != default)
-        {
-            var yOffset = position.Y - _lastMousePosition.Y;
-            var xOffset = position.X - _lastMousePosition.X;
-
-            var q = _cameraTransform.Transform.rotation;
-
-            var direction = MathHelper.ToEulerAngles(q);
-
-            direction.X += xOffset * lookSensitivity;
-            direction.Y -= yOffset * lookSensitivity;
-
-            _cameraTransform.Transform.rotation = MathHelper.ToQuaternion(direction);
-        }
-
-        _lastMousePosition = position;
-    }
-
-    public unsafe void Render(double dt, TransformComponent cameraTransform)
-    {
-        _cameraTransform = cameraTransform;
         _gl.Clear(ClearBufferMask.ColorBufferBit);
 
         _vertexArrayObject.Bind();
@@ -203,11 +124,11 @@ internal sealed class Renderer
 
         _texture.Bind(TextureUnit.Texture0);
 
-        var cameraDirection = MathHelper.ToEulerAngles(cameraTransform.Transform.rotation);
+        var cameraDirection = MathHelper.ToEulerAngles(cameraTransform.rotation);
 
         var cameraFront = Vector3.Normalize(cameraDirection);
 
-        var view = Matrix4x4.CreateLookAt(cameraTransform.Transform.position, cameraTransform.Transform.position + cameraFront, Vector3.UnitY);
+        var view = Matrix4x4.CreateLookAt(cameraTransform.position, cameraTransform.position + cameraFront, Vector3.UnitY);
         var projection = Matrix4x4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), _width / _height, 0.1f, 100.0f);
 
         _shader.SetUniform1("uView", view);
@@ -224,7 +145,7 @@ internal sealed class Renderer
 
     }
 
-    public static async Task<Renderer> CreateAsync(string windowTitle, int width, int height)
+    public static async Task<Renderer> CreateAsync(int width, int height)
     {
         var vertexTask = File.ReadAllTextAsync(Path.Join("Shaders", "shader.vert"));
         var fragmentTask = File.ReadAllTextAsync(Path.Join("Shaders", "shader.frag"));
@@ -234,7 +155,7 @@ internal sealed class Renderer
         return new Renderer(vertexTask.Result, fragmentTask.Result, (uint)width, (uint)height);
     }
 
-    private void OnWindowClose()
+    public void Dispose()
     {
         _vertexBuffer?.Dispose();
         _elementBuffer?.Dispose();

@@ -1,9 +1,5 @@
 ﻿using Silk.NET.Windowing;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Numerics;
 
 namespace MyEngine
 {
@@ -13,10 +9,7 @@ namespace MyEngine
 
         public MyWindow(string appTitle,
             uint width,
-            uint height,
-            Action<double> onRender,
-            Action<double> onUpdate,
-            Action onLoad)
+            uint height)
         {
             _window = Window.Create(WindowOptions.Default with
             {
@@ -24,9 +17,10 @@ namespace MyEngine
                 Size = new Silk.NET.Maths.Vector2D<int>((int)width, (int)height)
             });
 
-            _window.Render += onRender;
-            _window.Update += onUpdate;
-            _window.Load += onLoad;
+            _window.Resize += size => Resize?.Invoke((Vector2)size);
+            _window.Load += () => Load?.Invoke();
+            _window.Render += dt => Render?.Invoke(dt);
+            _window.Update += dt => Update?.Invoke(dt);
         }
 
         public void Dispose()
@@ -39,7 +33,17 @@ namespace MyEngine
             _window.Run();
         }
 
+        public void Close()
+        {
+            _window.Close();
+        }
+
+        public event Action<Vector2>? Resize;
+        public event Action? Load;
+        public event Action<double>? Render;
+        public event Action<double>? Update;
+
         // todo: better encapsulation
-        public IWindow InnerWindow => _window;
+        internal IWindow InnerWindow => _window;
     }
 }

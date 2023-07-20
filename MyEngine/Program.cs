@@ -1,11 +1,4 @@
 ﻿using MyEngine;
-using Silk.NET.Input;
-using Silk.NET.Maths;
-using Silk.NET.OpenGL;
-using Silk.NET.Windowing;
-using StbImageSharp;
-using System.Drawing;
-using System.Runtime.CompilerServices;
 
 // https://github.com/dotnet/Silk.NET/blob/main/examples/CSharp/OpenGL%20Tutorials/Tutorial%201.2%20-%20Hello%20quad/Program.cs 
 

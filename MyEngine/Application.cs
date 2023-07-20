@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Numerics;
 
 namespace MyEngine
 {
@@ -10,20 +6,24 @@ namespace MyEngine
     {
         private readonly MyWindow _window;
         private readonly Renderer _renderer;
-        private HashSet<EntityId> _entityIds = new ();
-        private List<Entity> _entities = new();
-        private HashSet<EntityId> _transformComponentEntityIds = new ();
-        private List<TransformComponent> _transformComponents = new();
+        private readonly HashSet<EntityId> _entityIds = new ();
+        private readonly List<Entity> _entities = new();
+        private readonly HashSet<EntityId> _transformComponentEntityIds = new();
+        private readonly List<TransformComponent> _transformComponents = new();
+        private MyInput _input = null!;
 
         private Application(Renderer renderer)
         {
             _renderer = renderer;
             _window = new MyWindow("My OpenGL App",
                 800,
-                600,
-                Render,
-                OnUpdate,
-                OnLoad);
+                600);
+
+            _window.Load += OnLoad;
+            _window.Render += OnRender;
+            _window.Update += OnUpdate;
+            _window.Resize += OnResize;
+
 
             var cameraEntity = new Entity();
             AddEntity(cameraEntity);
@@ -33,13 +33,20 @@ namespace MyEngine
 
         private void OnLoad()
         {
-            _renderer.OnLoad(_window.InnerWindow);
+            _renderer.Load(_window.InnerWindow);
+            _input = new MyInput(_window);
+            _input.KeyDown += OnKeyDown;
+            _input.MouseMove += OnMouseMove;
         }
 
-        private void Render(double dt)
+        private void OnRender(double dt)
         {
-            _renderer.Render(dt, _transformComponents[0]);
-            _skipUpdate = false;
+            _renderer.Render(_transformComponents[0].Transform);
+        }
+
+        private void OnResize(Vector2 size)
+        {
+            _renderer.Resize(size);
         }
 
         // todo: result
@@ -72,7 +79,7 @@ namespace MyEngine
 
         public static async Task<Application> CreateAsync()
         {
-            var renderer = await Renderer.CreateAsync("My OpenGL App", 800, 600);
+            var renderer = await Renderer.CreateAsync(800, 600);
 
             return new Application(renderer);
         }
@@ -82,12 +89,68 @@ namespace MyEngine
             _window.Run();
         }
 
-        private bool _skipUpdate = true;
+        private void OnKeyDown(object? sender, MyInput.KeyDownEvent e)
+        {
+            Console.WriteLine("KeyCode pressed. Key: {0}, KeyCode: {1}", e.Key, e.KeyCode);
+            if (e.Key == MyKey.Escape)
+            {
+                Close();
+            }
+        }
+
+        private Vector2 _lastMousePosition;
+        private void OnMouseMove(object? sender, MyInput.MouseMoveEvent e)
+        {
+            var lookSensitivity = 0.1f;
+            var cameraTransform = _transformComponents[0].Transform;
+
+            if (_lastMousePosition != default)
+            {
+                var yOffset = e.Position.Y - _lastMousePosition.Y;
+                var xOffset = e.Position.X - _lastMousePosition.X;
+
+                var q = cameraTransform.rotation;
+
+                var direction = MathHelper.ToEulerAngles(q);
+
+                direction.X += xOffset * lookSensitivity;
+                direction.Y -= yOffset * lookSensitivity;
+
+                cameraTransform.rotation = MathHelper.ToQuaternion(direction);
+            }
+
+            _lastMousePosition = e.Position;
+        }
+
         private void OnUpdate(double dt)
         {
-            if (_skipUpdate) return;
+            var cameraTransform = _transformComponents[0].Transform;
+            var cameraDirection = MathHelper.ToEulerAngles(cameraTransform.rotation);
 
-            _renderer.OnUpdate(dt);
+            var cameraFront = Vector3.Normalize(cameraDirection);
+
+            var speed = 5.0f * (float)dt;
+            if (_input.IsKeyPressed(MyKey.W))
+            {
+                cameraTransform.position += (speed * cameraFront);
+            }
+            if (_input.IsKeyPressed(MyKey.S))
+            {
+                cameraTransform.position -= (speed * cameraFront);
+            }
+            if (_input.IsKeyPressed(MyKey.A))
+            {
+                cameraTransform.position -= speed * Vector3.Normalize(Vector3.Cross(cameraFront, Vector3.UnitY));
+            }
+            if (_input.IsKeyPressed(MyKey.D))
+            {
+                cameraTransform.position += speed * Vector3.Normalize(Vector3.Cross(cameraFront, Vector3.UnitY));
+            }
+        }
+
+        private void Close()
+        {
+            _window.Close();
         }
 
         public void Dispose()
