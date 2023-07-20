@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Collections;
+using System.Numerics;
 
 namespace MyEngine
 {
@@ -8,8 +9,7 @@ namespace MyEngine
         private readonly Renderer _renderer;
         private readonly HashSet<EntityId> _entityIds = new ();
         private readonly List<Entity> _entities = new();
-        private readonly HashSet<EntityId> _transformComponentEntityIds = new();
-        private readonly List<TransformComponent> _transformComponents = new();
+        private readonly ComponentCollection<TransformComponent> _transformComponents = new ();
         private MyInput _input = null!;
 
         private Application(Renderer renderer)
@@ -41,7 +41,7 @@ namespace MyEngine
 
         private void OnRender(double dt)
         {
-            _renderer.Render(_transformComponents[0].Transform);
+            _renderer.Render(_transformComponents.First().Transform);
         }
 
         private void OnResize(Vector2 size)
@@ -68,13 +68,7 @@ namespace MyEngine
                 throw new InvalidOperationException($"Entity {component.EntityId.Value} has not been added yet");
             }
 
-            if (!TransformComponent.AllowMultiple && _transformComponentEntityIds.Contains(component.EntityId))
-            {
-                throw new InvalidOperationException($"Transform component has already been added");
-            }
-
-            _transformComponentEntityIds.Add(component.EntityId);
-            _transformComponents.Add(component);
+            _transformComponents.AddComponent(component);
         }
 
         public static async Task<Application> CreateAsync()
@@ -102,7 +96,7 @@ namespace MyEngine
         private void OnMouseMove(object? sender, MyInput.MouseMoveEvent e)
         {
             var lookSensitivity = 0.1f;
-            var cameraTransform = _transformComponents[0].Transform;
+            var cameraTransform = _transformComponents.First().Transform;
 
             if (_lastMousePosition != default)
             {
@@ -124,7 +118,7 @@ namespace MyEngine
 
         private void OnUpdate(double dt)
         {
-            var cameraTransform = _transformComponents[0].Transform;
+            var cameraTransform = _transformComponents.First().Transform;
             var cameraDirection = MathHelper.ToEulerAngles(cameraTransform.rotation);
 
             var cameraFront = Vector3.Normalize(cameraDirection);
