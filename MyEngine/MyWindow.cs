@@ -1,7 +1,7 @@
 ﻿using Silk.NET.Windowing;
 using System.Numerics;
 
-namespace MyEngine
+namespace MyEngine.Runtime
 {
     internal class MyWindow : IDisposable
     {

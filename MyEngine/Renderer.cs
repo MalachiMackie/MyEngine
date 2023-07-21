@@ -1,11 +1,12 @@
-﻿using MyEngine.OpenGL;
+﻿using MyEngine.Core;
+using MyEngine.Runtime.OpenGL;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 using StbImageSharp;
 using System.Drawing;
 using System.Numerics;
 
-namespace MyEngine;
+namespace MyEngine.Runtime;
 
 internal sealed class Renderer : IDisposable
 {
@@ -59,7 +60,7 @@ internal sealed class Renderer : IDisposable
             scale = Vector3.One
         }
     };
- 
+
     private uint _width;
     private uint _height;
 
@@ -109,7 +110,7 @@ internal sealed class Renderer : IDisposable
 
     public void Resize(Vector2 size)
     {
-        _gl.Viewport(0, 0, (uint) size.X, (uint) size.Y);
+        _gl.Viewport(0, 0, (uint)size.X, (uint)size.Y);
         _width = (uint)size.X;
         _height = (uint)size.Y;
     }

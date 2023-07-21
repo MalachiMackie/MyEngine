@@ -1,8 +1,8 @@
 ﻿using System.Numerics;
 
-namespace MyEngine
+namespace MyEngine.Core.Ecs.Components
 {
-    internal class CameraComponent : IComponent
+    public class CameraComponent : IComponent
     {
         public static bool AllowMultiple => false;
 

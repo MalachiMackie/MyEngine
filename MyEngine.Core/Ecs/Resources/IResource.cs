@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MyEngine
+namespace MyEngine.Core.Ecs.Resources
 {
-    internal interface IResource
+    public interface IResource
     {
     }
 }

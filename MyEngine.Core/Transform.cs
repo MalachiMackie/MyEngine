@@ -1,8 +1,8 @@
 ﻿using System.Numerics;
 
-namespace MyEngine
+namespace MyEngine.Core
 {
-    internal class Transform
+    public class Transform
     {
         public Vector3 position;
         public Quaternion rotation;

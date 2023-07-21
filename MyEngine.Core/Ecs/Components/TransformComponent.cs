@@ -1,10 +1,11 @@
 ﻿using System.Numerics;
+using MyEngine.Core;
 
-namespace MyEngine
+namespace MyEngine.Core.Ecs.Components
 {
-    internal class TransformComponent : IComponent
+    public class TransformComponent : IComponent
     {
-        public TransformComponent(EntityId entityId) 
+        public TransformComponent(EntityId entityId)
         {
             EntityId = entityId;
             Transform = new Transform()

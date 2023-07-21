@@ -1,31 +1,35 @@
 ﻿using System.Numerics;
+using MyEngine.Core;
+using MyEngine.Core.Ecs.Components;
+using MyEngine.Core.Ecs.Resources;
+using MyEngine.Core.Ecs.Systems;
+using MyEngine.Core.Input;
 
-namespace MyEngine
+namespace MyGame.Systems
 {
-    internal class CameraMovementSystem : ISystem<TransformComponent, CameraComponent, InputResource>
+    public class CameraMovementSystem : ISystem<TransformComponent, CameraComponent, InputResource>
     {
         public void Run(double deltaTime, TransformComponent transformComponent, CameraComponent _, InputResource inputResource)
         {
-            var input = inputResource.Input;
             var cameraTransform = transformComponent.Transform;
             var cameraDirection = MathHelper.ToEulerAngles(cameraTransform.rotation);
 
             var cameraFront = Vector3.Normalize(cameraDirection);
 
             var speed = 5.0f * (float)deltaTime;
-            if (input.IsKeyPressed(MyKey.W))
+            if (inputResource.Keyboard.IsKeyDown(MyKey.W))
             {
-                cameraTransform.position += (speed * cameraFront);
+                cameraTransform.position += speed * cameraFront;
             }
-            if (input.IsKeyPressed(MyKey.S))
+            if (inputResource.Keyboard.IsKeyDown(MyKey.S))
             {
-                cameraTransform.position -= (speed * cameraFront);
+                cameraTransform.position -= speed * cameraFront;
             }
-            if (input.IsKeyPressed(MyKey.A))
+            if (inputResource.Keyboard.IsKeyDown(MyKey.A))
             {
                 cameraTransform.position -= speed * Vector3.Normalize(Vector3.Cross(cameraFront, Vector3.UnitY));
             }
-            if (input.IsKeyPressed(MyKey.D))
+            if (inputResource.Keyboard.IsKeyDown(MyKey.D))
             {
                 cameraTransform.position += speed * Vector3.Normalize(Vector3.Cross(cameraFront, Vector3.UnitY));
             }

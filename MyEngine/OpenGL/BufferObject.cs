@@ -1,6 +1,6 @@
 ﻿using Silk.NET.OpenGL;
 
-namespace MyEngine.OpenGL
+namespace MyEngine.Runtime.OpenGL
 {
     internal class BufferObject<TData> : IDisposable
         where TData : unmanaged

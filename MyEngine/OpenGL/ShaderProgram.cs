@@ -1,7 +1,7 @@
 ﻿using Silk.NET.OpenGL;
 using System.Numerics;
 
-namespace MyEngine.OpenGL
+namespace MyEngine.Runtime.OpenGL
 {
     internal class ShaderProgram : IDisposable
     {
@@ -55,8 +55,8 @@ namespace MyEngine.OpenGL
 
         public unsafe void SetUniform1(string uniformName, Matrix4x4 matrix)
         {
-            var location = _gl.GetUniformLocation( _handle, uniformName);
-            _gl.UniformMatrix4(location, 1, false, (float*) &matrix);
+            var location = _gl.GetUniformLocation(_handle, uniformName);
+            _gl.UniformMatrix4(location, 1, false, (float*)&matrix);
         }
 
         public void UseProgram()

@@ -1,19 +1,25 @@
 ﻿using System.Collections;
 using System.Numerics;
+using MyEngine.Core.Ecs;
+using MyEngine.Core.Ecs.Components;
+using MyEngine.Core.Ecs.Resources;
+using MyEngine.Core.Input;
+using MyGame.Systems;
 
-namespace MyEngine
+namespace MyEngine.Runtime
 {
     internal class Application : IDisposable
     {
         private readonly MyWindow _window;
         private readonly Renderer _renderer;
-        private readonly HashSet<EntityId> _entityIds = new ();
+        private readonly HashSet<EntityId> _entityIds = new();
         private readonly List<Entity> _entities = new();
-        private readonly ComponentCollection<TransformComponent> _transformComponents = new ();
-        private readonly ComponentCollection<CameraComponent> _cameraComponents = new ();
+        private readonly ComponentCollection<TransformComponent> _transformComponents = new();
+        private readonly ComponentCollection<CameraComponent> _cameraComponents = new();
         private MyInput _input = null!;
         private InputResource? _inputResource;
         private readonly CameraMovementSystem _movementSystem = new();
+        private InputSystem? _inputSystem;
 
         private Application(Renderer renderer)
         {
@@ -38,7 +44,8 @@ namespace MyEngine
             _renderer.Load(_window.InnerWindow);
             _input = new MyInput(_window);
             _input.KeyDown += OnKeyDown;
-            _inputResource = new InputResource(_input);
+            _inputResource = new InputResource(new MyKeyboard(), new MyMouse());
+            _inputSystem = new InputSystem(_inputResource, _input);
         }
 
         private void OnRender(double dt)
@@ -93,18 +100,11 @@ namespace MyEngine
             }
         }
 
-        private Vector2 _previousMousePosition;
         private void OnUpdate(double dt)
         {
-            if (_inputResource is not null)
+            if (_inputSystem is not null)
             {
-                var position = _inputResource.Input.Mouse.Position;
-                if (_previousMousePosition != default)
-                {
-                    _inputResource.MouseDelta = position - _previousMousePosition;
-                }
-
-                _previousMousePosition = position;
+                _inputSystem.Run(dt);
             }
 
             foreach (var entityId in _entityIds)

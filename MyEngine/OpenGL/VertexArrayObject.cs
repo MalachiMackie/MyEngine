@@ -1,6 +1,6 @@
 ﻿using Silk.NET.OpenGL;
 
-namespace MyEngine.OpenGL
+namespace MyEngine.Runtime.OpenGL
 {
     internal class VertexArrayObject<TVertexType, TIndexType> : IDisposable
         where TVertexType : unmanaged

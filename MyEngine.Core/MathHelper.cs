@@ -1,8 +1,8 @@
 ﻿using System.Numerics;
 
-namespace MyEngine
+namespace MyEngine.Core
 {
-    internal static class MathHelper
+    public static class MathHelper
     {
         public static float DegreesToRadians(float degrees)
         {
@@ -55,10 +55,10 @@ namespace MyEngine
 
             return new Quaternion
             {
-                W = (cr * cp * cy + sr * sp * sy),
-                X = (sr * cp * cy - cr * sp * sy),
-                Y = (cr * sp * cy + sr * cp * sy),
-                Z = (cr * cp * sy - sr * sp * cy)
+                W = cr * cp * cy + sr * sp * sy,
+                X = sr * cp * cy - cr * sp * sy,
+                Y = cr * sp * cy + sr * cp * sy,
+                Z = cr * cp * sy - sr * sp * cy
             };
 
         }

@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
+using MyEngine.Core.Ecs;
+using MyEngine.Core.Ecs.Components;
 
-namespace MyEngine
+namespace MyEngine.Runtime
 {
     internal class ComponentCollection<TComponent>
         where TComponent : IComponent
@@ -29,7 +31,7 @@ namespace MyEngine
                 throw new InvalidOperationException($"Component has already been added");
             }
 
-            _components.Add(component.EntityId, new List<TComponent>{component});
+            _components.Add(component.EntityId, new List<TComponent> { component });
         }
 
         public bool TryGetComponents(EntityId entityId, [NotNullWhen(true)] out IReadOnlyList<TComponent>? components)
