@@ -6,7 +6,7 @@ using System.Diagnostics;
 
 namespace MyEngine.Runtime
 {
-    internal partial class SystemRunner
+    internal partial class EcsEngine
     {
         public partial void Update(double dt);
 
@@ -18,7 +18,7 @@ namespace MyEngine.Runtime
     }
 
     // todo: source generate this
-    internal partial class SystemRunner
+    internal partial class EcsEngine
     {
         // resources
         private readonly ResourceContainer _resourceContainer = new();

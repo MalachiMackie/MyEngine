@@ -9,7 +9,7 @@ namespace MyEngine.Runtime
         private readonly MyWindow _window;
         private readonly Renderer _renderer;
 
-        private readonly SystemRunner _systemRunner = new();
+        private readonly EcsEngine _systemRunner = new();
 
         private Application(Renderer renderer)
         {
