@@ -9,7 +9,9 @@ namespace MyEngine.Runtime
         private readonly MyInput _input;
         private readonly InputResource _inputResource;
 
-        public InputSystem(MyInput input, InputResource inputResource)
+        public InputSystem(
+            MyInput input,
+            InputResource inputResource)
         {
             _input = input;
             _inputResource = inputResource;

@@ -1,20 +1,31 @@
-﻿using MyEngine.Core.Ecs.Components;
+﻿using MyEngine.Core.Ecs;
+using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Systems;
 
 namespace MyEngine.Runtime
 {
-    internal class RenderSystem : IRenderSystem<CameraComponent, TransformComponent>
+    internal class RenderSystem : IRenderSystem
     {
-        private Renderer _renderer;
+        private readonly Renderer _renderer;
+        private readonly MyQuery<CameraComponent, TransformComponent> _cameraQuery;
 
-        public RenderSystem(Renderer renderer)
+        public RenderSystem(
+            Renderer renderer,
+            MyQuery<CameraComponent, TransformComponent> cameraQuery)
         {
             _renderer = renderer;
+            _cameraQuery = cameraQuery;
         }
 
-        public void Render(double deltaTime, CameraComponent _, TransformComponent transform)
+        public void Render(double deltaTime)
         {
-            _renderer.Render(transform.Transform);
+            var (_, transformComponent) = _cameraQuery.FirstOrDefault();
+            if (transformComponent is null)
+            {
+                return;
+            }
+
+            _renderer.Render(transformComponent.Transform);
         }
     }
 }

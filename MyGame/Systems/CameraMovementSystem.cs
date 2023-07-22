@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using MyEngine.Core;
+using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
@@ -7,17 +8,27 @@ using MyEngine.Core.Input;
 
 namespace MyGame.Systems
 {
-    public class CameraMovementSystem : ISystem<TransformComponent, CameraComponent>
+    public class CameraMovementSystem : ISystem
     {
-        private InputResource _inputResource { get; }
+        private readonly InputResource _inputResource;
+        private readonly MyQuery<CameraComponent, TransformComponent> _cameraQuery;
 
-        public CameraMovementSystem(InputResource inputResource)
+        public CameraMovementSystem(
+            InputResource inputResource,
+            MyQuery<CameraComponent, TransformComponent> cameraQuery)
         {
             _inputResource = inputResource;
+            _cameraQuery = cameraQuery;
         }
 
-        public void Run(double deltaTime, TransformComponent transformComponent, CameraComponent _)
+        public void Run(double deltaTime)
         {
+            var (_, transformComponent) = _cameraQuery.FirstOrDefault();
+            if (transformComponent is null)
+            {
+                return;
+            }
+
             var cameraTransform = transformComponent.Transform;
             var cameraDirection = MathHelper.ToEulerAngles(cameraTransform.rotation);
 

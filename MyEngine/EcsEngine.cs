@@ -57,38 +57,14 @@ namespace MyEngine.Runtime
 
         public partial void Render(double dt)
         {
-            foreach (var entity in _entities)
-            {
-                if (_cameraComponents.TryGetComponents(entity, out var cameraComponents))
-                {
-                    if (_transformComponents.TryGetComponents(entity, out var transformComponents))
-                    {
-                        _renderSystem?.Render(dt, cameraComponents[0], transformComponents[0]);
-                    }
-                }
-            }
-            
+            _renderSystem?.Render(dt);
         }
 
 
         public partial void Update(double dt)
         {
             _inputSystem?.Run(dt);
-
-            foreach (var entityId in _entities)
-            {
-                if (_cameraMovementSystem is not null)
-                {
-                    if (_transformComponents.TryGetComponents(entityId, out var transforms))
-                    {
-                        if (_cameraComponents.TryGetComponents(entityId, out var cameraComponents))
-                        {
-                            _cameraMovementSystem.Run(dt, transforms[0], cameraComponents[0]);
-                        }
-                    }
-                }
-            }
-
+            _cameraMovementSystem?.Run(dt);
             _quitOnEscapeSystem?.Run(dt);
 
             AddNewEntities();
@@ -134,7 +110,20 @@ namespace MyEngine.Runtime
                 if (_cameraMovementSystem is null
                     && _resourceContainer.TryGetResource<InputResource>(out var inputResource))
                 {
-                    _cameraMovementSystem = new CameraMovementSystem(inputResource);
+                    IEnumerable<(CameraComponent, TransformComponent)> GetComponents()
+                    {
+                        foreach (var entityId in _entities)
+                        {
+                            if (_transformComponents.TryGetComponents(entityId, out var transforms))
+                            {
+                                if (_cameraComponents.TryGetComponents(entityId, out var cameraComponents))
+                                {
+                                    yield return (cameraComponents[0], transforms[0]);
+                                }
+                            }
+                        }
+                    }
+                    _cameraMovementSystem = new CameraMovementSystem(inputResource, new MyQuery<CameraComponent, TransformComponent>(GetComponents));
                 }
             }
             {
@@ -149,7 +138,20 @@ namespace MyEngine.Runtime
                 if (_renderSystem is null
                     && _resourceContainer.TryGetResource<Renderer>(out var renderer))
                 {
-                    _renderSystem = new RenderSystem(renderer);
+                    IEnumerable<(CameraComponent, TransformComponent)> GetComponents()
+                    {
+                        foreach (var entityId in _entities)
+                        {
+                            if (_transformComponents.TryGetComponents(entityId, out var transforms))
+                            {
+                                if (_cameraComponents.TryGetComponents(entityId, out var cameraComponents))
+                                {
+                                    yield return (cameraComponents[0], transforms[0]);
+                                }
+                            }
+                        }
+                    }
+                    _renderSystem = new RenderSystem(renderer, new MyQuery<CameraComponent, TransformComponent>(GetComponents));
                 }
             }
             {
