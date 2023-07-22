@@ -1,23 +1,19 @@
 ﻿using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 using MyEngine.Core.Input;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MyEngine.Runtime
 {
     internal class InputSystem : ISystem
     {
-        private InputResource _inputResource;
-        private MyInput _input;
+        private readonly MyInput _input;
+        private readonly InputResource _inputResource;
 
-        public InputSystem(InputResource inputResource, MyInput input)
+        public InputSystem(MyInput input, InputResource inputResource)
         {
-            _inputResource = inputResource;
             _input = input;
+            _inputResource = inputResource;
+
         }
 
         public void Run(double deltaTime)
@@ -72,10 +68,6 @@ namespace MyEngine.Runtime
                             }
                             break;
                         }
-                }
-
-                if (_input.IsKeyPressed(key))
-                {
                 }
             }
         }

@@ -1,4 +1,5 @@
 ﻿using MyEngine.Core;
+using MyEngine.Core.Ecs.Resources;
 using MyEngine.Runtime.OpenGL;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
@@ -8,7 +9,7 @@ using System.Numerics;
 
 namespace MyEngine.Runtime;
 
-internal sealed class Renderer : IDisposable
+internal sealed class Renderer : IDisposable, IResource
 {
     private GL _gl = null!;
     private BufferObject<float> _vertexBuffer = null!;

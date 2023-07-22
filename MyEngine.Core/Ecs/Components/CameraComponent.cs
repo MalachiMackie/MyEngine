@@ -1,6 +1,4 @@
-﻿using System.Numerics;
-
-namespace MyEngine.Core.Ecs.Components
+﻿namespace MyEngine.Core.Ecs.Components
 {
     public class CameraComponent : IComponent
     {

@@ -1,6 +1,4 @@
-﻿using MyEngine.Core.Ecs;
-
-namespace MyEngine.Core.Ecs.Components
+﻿namespace MyEngine.Core.Ecs.Components
 {
     public interface IComponent
     {

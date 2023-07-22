@@ -1,10 +1,6 @@
-﻿using System.Collections;
-using System.Numerics;
-using MyEngine.Core.Ecs;
-using MyEngine.Core.Ecs.Components;
+﻿using System.Numerics;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Input;
-using MyGame.Systems;
 
 namespace MyEngine.Runtime
 {
@@ -12,18 +8,13 @@ namespace MyEngine.Runtime
     {
         private readonly MyWindow _window;
         private readonly Renderer _renderer;
-        private readonly HashSet<EntityId> _entityIds = new();
-        private readonly List<Entity> _entities = new();
-        private readonly ComponentCollection<TransformComponent> _transformComponents = new();
-        private readonly ComponentCollection<CameraComponent> _cameraComponents = new();
-        private MyInput _input = null!;
-        private InputResource? _inputResource;
-        private readonly CameraMovementSystem _movementSystem = new();
-        private InputSystem? _inputSystem;
+
+        private SystemRunner _systemRunner = new();
 
         private Application(Renderer renderer)
         {
             _renderer = renderer;
+            _systemRunner.RegisterResource(_renderer);
             _window = new MyWindow("My OpenGL App",
                 800,
                 600);
@@ -33,33 +24,22 @@ namespace MyEngine.Runtime
             _window.Update += OnUpdate;
             _window.Resize += OnResize;
 
-            var cameraEntity = new Entity();
-            AddEntity(cameraEntity);
-            _transformComponents.AddComponent(new TransformComponent(cameraEntity.Id));
-            _cameraComponents.AddComponent(new CameraComponent(cameraEntity.Id));
         }
 
         private void OnLoad()
         {
             _renderer.Load(_window.InnerWindow);
-            _input = new MyInput(_window);
-            _input.KeyDown += OnKeyDown;
-            _inputResource = new InputResource(new MyKeyboard(), new MyMouse());
-            _inputSystem = new InputSystem(_inputResource, _input);
+            var input = new MyInput(_window);
+            input.KeyDown += OnKeyDown;
+
+            _systemRunner.RegisterResource(new InputResource(new MyKeyboard(), new MyMouse()));
+            _systemRunner.RegisterResource(input);
+            _systemRunner.Startup();
         }
 
         private void OnRender(double dt)
         {
-            foreach (var entityId in _entityIds)
-            {
-                if (_transformComponents.TryGetComponents(entityId, out var transforms))
-                {
-                    if (_cameraComponents.DoesEntityHaveComponent(entityId))
-                    {
-                        _renderer.Render(transforms[0].Transform);
-                    }
-                }
-            }
+            _systemRunner.Render(dt);
         }
 
         private void OnResize(Vector2 size)
@@ -67,17 +47,6 @@ namespace MyEngine.Runtime
             _renderer.Resize(size);
         }
 
-        // todo: result
-        private void AddEntity(Entity entity)
-        {
-            if (_entityIds.Contains(entity.Id))
-            {
-                throw new InvalidOperationException($"Entity {entity.Id.Value} has already been added");
-            }
-
-            _entities.Add(entity);
-            _entityIds.Add(entity.Id);
-        }
 
         public static async Task<Application> CreateAsync()
         {
@@ -102,24 +71,7 @@ namespace MyEngine.Runtime
 
         private void OnUpdate(double dt)
         {
-            if (_inputSystem is not null)
-            {
-                _inputSystem.Run(dt);
-            }
-
-            foreach (var entityId in _entityIds)
-            {
-                if (_transformComponents.TryGetComponents(entityId, out var transforms))
-                {
-                    if (_cameraComponents.TryGetComponents(entityId, out var cameraComponents))
-                    {
-                        if (_inputResource is not null)
-                        {
-                            _movementSystem.Run(dt, transforms[0], cameraComponents[0], _inputResource);
-                        }
-                    }
-                }
-            }
+            _systemRunner.Run(dt);
         }
 
         private void Close()

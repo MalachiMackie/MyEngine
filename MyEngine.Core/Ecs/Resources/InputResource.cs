@@ -1,5 +1,4 @@
-﻿using MyEngine.Core;
-using MyEngine.Core.Input;
+﻿using MyEngine.Core.Input;
 using System.Numerics;
 
 namespace MyEngine.Core.Ecs.Resources

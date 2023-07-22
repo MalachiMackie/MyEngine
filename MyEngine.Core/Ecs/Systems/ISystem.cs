@@ -1,5 +1,4 @@
 ﻿using MyEngine.Core.Ecs.Components;
-using MyEngine.Core.Ecs.Resources;
 
 namespace MyEngine.Core.Ecs.Systems
 {
@@ -22,20 +21,10 @@ namespace MyEngine.Core.Ecs.Systems
         void Run(double deltaTime, TComponent1 component1, TComponent2 component2);
     }
 
-    public interface ISystem<TComponent1, TComponent2, TResource>
+    public interface IRenderSystem<TComponent1, TComponent2>
         where TComponent1 : IComponent
         where TComponent2 : IComponent
-        where TResource : IResource
     {
-        void Run(double deltaTime, TComponent1 component1, TComponent2 component2, TResource resource);
-    }
-
-    public interface ISystem<TComponent1, TComponent2, TResource1, TResource2>
-        where TComponent1 : IComponent
-        where TComponent2 : IComponent
-        where TResource1 : IResource
-        where TResource2 : IResource
-    {
-        void Run(double deltaTime, TComponent1 component1, TComponent2 component2, TResource1 resource1, TResource2 resource2);
+        void Render(double deltaTime, TComponent1 component1, TComponent2 component2);
     }
 }

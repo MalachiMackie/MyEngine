@@ -7,9 +7,16 @@ using MyEngine.Core.Input;
 
 namespace MyGame.Systems
 {
-    public class CameraMovementSystem : ISystem<TransformComponent, CameraComponent, InputResource>
+    public class CameraMovementSystem : ISystem<TransformComponent, CameraComponent>
     {
-        public void Run(double deltaTime, TransformComponent transformComponent, CameraComponent _, InputResource inputResource)
+        private InputResource _inputResource { get; }
+
+        public CameraMovementSystem(InputResource inputResource)
+        {
+            _inputResource = inputResource;
+        }
+
+        public void Run(double deltaTime, TransformComponent transformComponent, CameraComponent _)
         {
             var cameraTransform = transformComponent.Transform;
             var cameraDirection = MathHelper.ToEulerAngles(cameraTransform.rotation);
@@ -17,25 +24,25 @@ namespace MyGame.Systems
             var cameraFront = Vector3.Normalize(cameraDirection);
 
             var speed = 5.0f * (float)deltaTime;
-            if (inputResource.Keyboard.IsKeyDown(MyKey.W))
+            if (_inputResource.Keyboard.IsKeyDown(MyKey.W))
             {
                 cameraTransform.position += speed * cameraFront;
             }
-            if (inputResource.Keyboard.IsKeyDown(MyKey.S))
+            if (_inputResource.Keyboard.IsKeyDown(MyKey.S))
             {
                 cameraTransform.position -= speed * cameraFront;
             }
-            if (inputResource.Keyboard.IsKeyDown(MyKey.A))
+            if (_inputResource.Keyboard.IsKeyDown(MyKey.A))
             {
                 cameraTransform.position -= speed * Vector3.Normalize(Vector3.Cross(cameraFront, Vector3.UnitY));
             }
-            if (inputResource.Keyboard.IsKeyDown(MyKey.D))
+            if (_inputResource.Keyboard.IsKeyDown(MyKey.D))
             {
                 cameraTransform.position += speed * Vector3.Normalize(Vector3.Cross(cameraFront, Vector3.UnitY));
             }
 
             var lookSensitivity = 0.1f;
-            var mouseDelta = inputResource.MouseDelta;
+            var mouseDelta = _inputResource.MouseDelta;
 
             var q = cameraTransform.rotation;
 
@@ -45,7 +52,6 @@ namespace MyGame.Systems
             direction.Y -= mouseDelta.Y * lookSensitivity;
 
             cameraTransform.rotation = MathHelper.ToQuaternion(direction);
-
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System.Numerics;
-using MyEngine.Core;
 
 namespace MyEngine.Core.Ecs.Components
 {

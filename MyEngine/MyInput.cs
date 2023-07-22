@@ -1,10 +1,11 @@
-﻿using MyEngine.Core.Input;
+﻿using MyEngine.Core.Ecs.Resources;
+using MyEngine.Core.Input;
 using Silk.NET.Input;
 using System.Numerics;
 
 namespace MyEngine.Runtime
 {
-    internal class MyInput
+    internal class MyInput : IResource
     {
         private readonly IInputContext _context;
         private readonly IKeyboard _primaryKeyboard;
