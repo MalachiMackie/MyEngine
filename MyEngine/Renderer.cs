@@ -36,32 +36,6 @@ internal sealed class Renderer : IDisposable, IResource
     private readonly string _vertexCode;
     private readonly string _fragmentCode;
 
-    private readonly Transform[] _transforms = {
-        new Transform {
-            position = new Vector3(),
-            rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, 15),
-            scale = Vector3.One
-        },
-        new Transform
-        {
-            position = new Vector3(-0.75f, -0.75f, 0),
-            rotation = Quaternion.Identity,
-            scale = new Vector3(0.25f)
-        },
-        new Transform
-        {
-            position = new Vector3(-0.5f, 0, -0.1f),
-            rotation = Quaternion.Identity,
-            scale = Vector3.One
-        },
-        new Transform
-        {
-            position = new Vector3(0.5f, 0, 0),
-            rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, 45),
-            scale = Vector3.One
-        }
-    };
-
     private uint _width;
     private uint _height;
 
@@ -116,7 +90,7 @@ internal sealed class Renderer : IDisposable, IResource
         _height = (uint)size.Y;
     }
 
-    public unsafe void Render(Transform cameraTransform)
+    public unsafe void Render(Transform cameraTransform, IEnumerable<Transform> transforms)
     {
         _gl.Clear(ClearBufferMask.ColorBufferBit);
 
@@ -136,7 +110,7 @@ internal sealed class Renderer : IDisposable, IResource
         _shader.SetUniform1("uView", view);
         _shader.SetUniform1("uProjection", projection);
 
-        foreach (var transform in _transforms)
+        foreach (var transform in transforms)
         {
             var model = transform.ViewMatrix;
 

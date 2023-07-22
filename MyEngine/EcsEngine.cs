@@ -33,6 +33,7 @@ namespace MyEngine.Runtime
         private CameraMovementSystem? _cameraMovementSystem;
         private InputSystem? _inputSystem;
         private QuitOnEscapeSystem? _quitOnEscapeSystem;
+        private AddSpritesSystem? _addSpritesSystem;
 
         // render systems
         private RenderSystem? _renderSystem;
@@ -48,6 +49,8 @@ namespace MyEngine.Runtime
                 {
                     new AddCameraStartupSystem(componentContainer, entityContainer)
                         .Run();
+                    new AddStartupSpritesSystem(entityContainer, componentContainer)
+                        .Run();
                 }
             }
         }
@@ -61,8 +64,10 @@ namespace MyEngine.Runtime
         public partial void Update(double dt)
         {
             _inputSystem?.Run(dt);
+
             _cameraMovementSystem?.Run(dt);
             _quitOnEscapeSystem?.Run(dt);
+            _addSpritesSystem?.Run(dt);
 
             AddNewEntities();
             AddNewComponents();
@@ -96,18 +101,7 @@ namespace MyEngine.Runtime
                 if (_cameraMovementSystem is null
                     && _resourceContainer.TryGetResource<InputResource>(out var inputResource))
                 {
-                    IEnumerable<(CameraComponent, TransformComponent)> GetComponents()
-                    {
-                        foreach (var entityId in _entities)
-                        {
-                            if (_components.TryGetComponent<TransformComponent>(entityId, out var transformComponent)
-                                && _components.TryGetComponent<CameraComponent>(entityId, out var cameraComponent))
-                            {
-                                yield return (cameraComponent, transformComponent);
-                            }
-                        }
-                    }
-                    _cameraMovementSystem = new CameraMovementSystem(inputResource, new MyQuery<CameraComponent, TransformComponent>(GetComponents));
+                    _cameraMovementSystem = new CameraMovementSystem(inputResource, CreateQuery<CameraComponent, TransformComponent>());
                 }
             }
             {
@@ -122,18 +116,9 @@ namespace MyEngine.Runtime
                 if (_renderSystem is null
                     && _resourceContainer.TryGetResource<Renderer>(out var renderer))
                 {
-                    IEnumerable<(CameraComponent, TransformComponent)> GetComponents()
-                    {
-                        foreach (var entityId in _entities)
-                        {
-                            if (_components.TryGetComponent<TransformComponent>(entityId, out var transformComponent)
-                                && _components.TryGetComponent<CameraComponent>(entityId, out var cameraComponent))
-                            {
-                                yield return (cameraComponent, transformComponent);
-                            }
-                        }
-                    }
-                    _renderSystem = new RenderSystem(renderer, new MyQuery<CameraComponent, TransformComponent>(GetComponents));
+                    _renderSystem = new RenderSystem(renderer,
+                        CreateQuery<CameraComponent, TransformComponent>(),
+                        CreateQuery<SpriteComponent, TransformComponent>());
                 }
             }
             {
@@ -142,6 +127,53 @@ namespace MyEngine.Runtime
                     && _resourceContainer.TryGetResource<InputResource>(out var inputResource))
                 {
                     _quitOnEscapeSystem = new QuitOnEscapeSystem(window, inputResource);
+                }
+            }
+            {
+                if (_addSpritesSystem is null
+                    && _resourceContainer.TryGetResource<InputResource>(out var inputResource)
+                    && _resourceContainer.TryGetResource<EntityContainerResource>(out var entityContainer)
+                    && _resourceContainer.TryGetResource<ComponentContainerResource>(out var componentContainer))
+                {
+                    _addSpritesSystem = new AddSpritesSystem(
+                        inputResource,
+                        entityContainer,
+                        componentContainer,
+                        CreateQuery<SpriteComponent, TransformComponent>());
+                }
+            }
+        }
+
+
+        private IEnumerable<T> GetComponents<T>()
+            where T : class, IComponent
+        {
+            foreach (var entityId in _entities)
+            {
+                if (_components.TryGetComponent<T>(entityId, out var component))
+                {
+                    yield return component;
+                }
+            }
+        }
+
+        private MyQuery<T1, T2> CreateQuery<T1, T2>()
+            where T1 : class, IComponent
+            where T2 : class, IComponent
+        {
+            return new MyQuery<T1, T2>(GetComponents<T1, T2>);
+        }
+
+        private IEnumerable<(T1, T2)> GetComponents<T1, T2>()
+            where T1 : class, IComponent
+            where T2 : class, IComponent
+        {
+            foreach (var entityId in _entities)
+            {
+                if (_components.TryGetComponent<T1>(entityId, out var component1)
+                    && _components.TryGetComponent<T2>(entityId, out var component2))
+                {
+                    yield return (component1, component2);
                 }
             }
         }

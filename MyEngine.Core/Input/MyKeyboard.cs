@@ -7,6 +7,11 @@
         public IReadOnlyDictionary<MyKey, KeyState> KeyStates => InternalKeyStates;
 
         public bool IsKeyDown(MyKey key) => KeyStates[key] is KeyState.Pressed or KeyState.Held;
+
+        public bool IsKeyPressed(MyKey key)
+        {
+            return KeyStates[key] == KeyState.Pressed;
+        }
     }
 
     public enum KeyState

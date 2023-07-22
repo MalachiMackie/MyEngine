@@ -2,7 +2,7 @@
 
 namespace MyEngine.Core.Ecs.Resources
 {
-    internal class ComponentContainerResource : IResource
+    public class ComponentContainerResource : IResource
     {
         internal Queue<IComponent> NewComponents { get; } = new();
 

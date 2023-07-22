@@ -1,6 +1,6 @@
 ﻿namespace MyEngine.Core.Ecs.Systems
 {
-    internal interface IStartupSystem
+    public interface IStartupSystem
     {
         void Run();
     }

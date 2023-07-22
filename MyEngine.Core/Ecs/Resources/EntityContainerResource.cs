@@ -1,6 +1,6 @@
 ﻿namespace MyEngine.Core.Ecs.Resources
 {
-    internal class EntityContainerResource : IResource
+    public class EntityContainerResource : IResource
     {
         internal Queue<Entity> NewEntities { get; } = new();
 

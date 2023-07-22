@@ -15,6 +15,12 @@ namespace MyEngine.Core.Ecs.Components
             };
         }
 
+        public TransformComponent(EntityId entityId, Transform transform)
+        {
+            EntityId = entityId;
+            Transform = transform;
+        }
+
         public EntityId EntityId { get; }
 
         public Transform Transform { get; }

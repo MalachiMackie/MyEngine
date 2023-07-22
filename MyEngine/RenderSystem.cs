@@ -8,13 +8,16 @@ namespace MyEngine.Runtime
     {
         private readonly Renderer _renderer;
         private readonly MyQuery<CameraComponent, TransformComponent> _cameraQuery;
+        private readonly MyQuery<SpriteComponent, TransformComponent> _spriteQuery;
 
         public RenderSystem(
             Renderer renderer,
-            MyQuery<CameraComponent, TransformComponent> cameraQuery)
+            MyQuery<CameraComponent, TransformComponent> cameraQuery,
+            MyQuery<SpriteComponent, TransformComponent> spriteQuery)
         {
             _renderer = renderer;
             _cameraQuery = cameraQuery;
+            _spriteQuery = spriteQuery;
         }
 
         public void Render(double deltaTime)
@@ -25,7 +28,7 @@ namespace MyEngine.Runtime
                 return;
             }
 
-            _renderer.Render(transformComponent.Transform);
+            _renderer.Render(transformComponent.Transform, _spriteQuery.Select(x => x.Item2.Transform));
         }
     }
 }
