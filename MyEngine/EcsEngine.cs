@@ -24,11 +24,10 @@ namespace MyEngine.Runtime
         private readonly ResourceContainer _resourceContainer = new();
 
         // entities
-        private HashSet<EntityId> _entities = new();
+        private readonly HashSet<EntityId> _entities = new();
 
         // components
-        private ComponentCollection<TransformComponent> _transformComponents = new();
-        private ComponentCollection<CameraComponent> _cameraComponents = new();
+        private readonly ComponentCollection _components = new();
 
         // systems
         private CameraMovementSystem? _cameraMovementSystem;
@@ -86,15 +85,7 @@ namespace MyEngine.Runtime
             Debug.Assert(_resourceContainer.TryGetResource<ComponentContainerResource>(out var components));
             while (components.NewComponents.TryDequeue(out var component))
             {
-                switch (component)
-                {
-                    case TransformComponent transformComponent:
-                        _transformComponents.AddComponent(transformComponent);
-                        break;
-                    case CameraComponent cameraComponent:
-                        _cameraComponents.AddComponent(cameraComponent);
-                        break;
-                }
+                _components.AddComponent(component);
             }
         }
 
@@ -109,12 +100,10 @@ namespace MyEngine.Runtime
                     {
                         foreach (var entityId in _entities)
                         {
-                            if (_transformComponents.TryGetComponents(entityId, out var transforms))
+                            if (_components.TryGetComponent<TransformComponent>(entityId, out var transformComponent)
+                                && _components.TryGetComponent<CameraComponent>(entityId, out var cameraComponent))
                             {
-                                if (_cameraComponents.TryGetComponents(entityId, out var cameraComponents))
-                                {
-                                    yield return (cameraComponents[0], transforms[0]);
-                                }
+                                yield return (cameraComponent, transformComponent);
                             }
                         }
                     }
@@ -137,12 +126,10 @@ namespace MyEngine.Runtime
                     {
                         foreach (var entityId in _entities)
                         {
-                            if (_transformComponents.TryGetComponents(entityId, out var transforms))
+                            if (_components.TryGetComponent<TransformComponent>(entityId, out var transformComponent)
+                                && _components.TryGetComponent<CameraComponent>(entityId, out var cameraComponent))
                             {
-                                if (_cameraComponents.TryGetComponents(entityId, out var cameraComponents))
-                                {
-                                    yield return (cameraComponents[0], transforms[0]);
-                                }
+                                yield return (cameraComponent, transformComponent);
                             }
                         }
                     }
