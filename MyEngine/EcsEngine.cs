@@ -41,15 +41,13 @@ namespace MyEngine.Runtime
         public partial void Startup()
         {
             RegisterResource(new EntityContainerResource());
-            RegisterResource(new ComponentContainerResource<TransformComponent>());
-            RegisterResource(new ComponentContainerResource<CameraComponent>());
+            RegisterResource(new ComponentContainerResource());
 
             {
-                if (_resourceContainer.TryGetResource<EntityContainerResource>(out var entityContainerResource)
-                    && _resourceContainer.TryGetResource<ComponentContainerResource<TransformComponent>>(out var transformComponents)
-                    && _resourceContainer.TryGetResource<ComponentContainerResource<CameraComponent>>(out var cameraComponents))
+                if (_resourceContainer.TryGetResource<EntityContainerResource>(out var entityContainer)
+                    && _resourceContainer.TryGetResource<ComponentContainerResource>(out var componentContainer))
                 {
-                    new AddCameraStartupSystem(cameraComponents, transformComponents, entityContainerResource)
+                    new AddCameraStartupSystem(componentContainer, entityContainer)
                         .Run();
                 }
             }
@@ -85,21 +83,18 @@ namespace MyEngine.Runtime
 
         private void AddNewComponents()
         {
-            AddComponents(_transformComponents);
-            AddComponents(_cameraComponents);
-        }
-
-        private void AddComponents<T>(ComponentCollection<T> componentCollection)
-            where T : IComponent
-        {
-            Debug.Assert(_resourceContainer.TryGetResource<ComponentContainerResource<T>>(out var components));
+            Debug.Assert(_resourceContainer.TryGetResource<ComponentContainerResource>(out var components));
             while (components.NewComponents.TryDequeue(out var component))
             {
-                if (!_entities.Contains(component.EntityId))
+                switch (component)
                 {
-                    throw new InvalidOperationException("Cannot add a component before its entity");
+                    case TransformComponent transformComponent:
+                        _transformComponents.AddComponent(transformComponent);
+                        break;
+                    case CameraComponent cameraComponent:
+                        _cameraComponents.AddComponent(cameraComponent);
+                        break;
                 }
-                componentCollection.AddComponent(component);
             }
         }
 

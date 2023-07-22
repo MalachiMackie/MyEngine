@@ -7,17 +7,14 @@ namespace MyEngine.Runtime
 {
     internal class AddCameraStartupSystem : IStartupSystem
     {
-        private readonly ComponentContainerResource<CameraComponent> _cameraComponentContainer;
-        private readonly ComponentContainerResource<TransformComponent> _transformComponentContainer;
+        private readonly ComponentContainerResource _componentContainer;
         private readonly EntityContainerResource _entityContainer;
 
         public AddCameraStartupSystem(
-            ComponentContainerResource<CameraComponent> cameraComponentContainer,
-            ComponentContainerResource<TransformComponent> transformComponents,
+            ComponentContainerResource componentContainer,
             EntityContainerResource entityContainer)
         {
-            _cameraComponentContainer = cameraComponentContainer;
-            _transformComponentContainer = transformComponents;
+            _componentContainer = componentContainer;
             _entityContainer = entityContainer;
         }
 
@@ -25,8 +22,8 @@ namespace MyEngine.Runtime
         {
             var entity = new Entity();
             _entityContainer.AddEntity(entity);
-            _cameraComponentContainer.AddComponent(new CameraComponent(entity.Id));
-            _transformComponentContainer.AddComponent(new TransformComponent(entity.Id));
+            _componentContainer.AddComponent(new CameraComponent(entity.Id));
+            _componentContainer.AddComponent(new TransformComponent(entity.Id));
         }
     }
 }

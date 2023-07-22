@@ -2,12 +2,11 @@
 
 namespace MyEngine.Core.Ecs.Resources
 {
-    internal class ComponentContainerResource<T> : IResource
-        where T : IComponent
+    internal class ComponentContainerResource : IResource
     {
-        internal Queue<T> NewComponents { get; } = new();
+        internal Queue<IComponent> NewComponents { get; } = new();
 
-        public void AddComponent(T component)
+        public void AddComponent(IComponent component)
         {
             NewComponents.Enqueue(component);
         }

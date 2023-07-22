@@ -13,17 +13,6 @@ namespace MyEngine.Runtime
 
         public void AddComponent(TComponent component)
         {
-            if (TComponent.AllowMultiple)
-            {
-                if (!_components.TryGetValue(component.EntityId, out var components))
-                {
-                    components = new List<TComponent>();
-                    _components[component.EntityId] = components;
-                }
-                components.Add(component);
-                return;
-            }
-
             if (_components.ContainsKey(component.EntityId))
             {
                 throw new InvalidOperationException($"Component has already been added");
