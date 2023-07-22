@@ -1,9 +1,10 @@
-﻿using Silk.NET.Windowing;
+﻿using MyEngine.Core.Ecs.Resources;
+using Silk.NET.Windowing;
 using System.Numerics;
 
 namespace MyEngine.Runtime
 {
-    internal class MyWindow : IDisposable
+    internal class MyWindow : IDisposable, IResource
     {
         private readonly IWindow _window;
 

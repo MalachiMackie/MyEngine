@@ -8,7 +8,7 @@ namespace MyEngine.Runtime
 {
     internal partial class SystemRunner
     {
-        public partial void Run(double dt);
+        public partial void Update(double dt);
 
         public partial void Render(double dt);
 
@@ -33,6 +33,7 @@ namespace MyEngine.Runtime
         // systems
         private CameraMovementSystem? _cameraMovementSystem;
         private InputSystem? _inputSystem;
+        private QuitOnEscapeSystem? _quitOnEscapeSystem;
 
         // render systems
         private RenderSystem? _renderSystem;
@@ -70,12 +71,9 @@ namespace MyEngine.Runtime
         }
 
 
-        public partial void Run(double dt)
+        public partial void Update(double dt)
         {
-            if (_inputSystem is not null)
-            {
-                _inputSystem.Run(dt);
-            }
+            _inputSystem?.Run(dt);
 
             foreach (var entityId in _entities)
             {
@@ -90,6 +88,8 @@ namespace MyEngine.Runtime
                     }
                 }
             }
+
+            _quitOnEscapeSystem?.Run(dt);
 
             AddNewEntities();
             AddNewComponents();
@@ -150,6 +150,14 @@ namespace MyEngine.Runtime
                     && _resourceContainer.TryGetResource<Renderer>(out var renderer))
                 {
                     _renderSystem = new RenderSystem(renderer);
+                }
+            }
+            {
+                if (_quitOnEscapeSystem is null
+                    && _resourceContainer.TryGetResource<MyWindow>(out var window)
+                    && _resourceContainer.TryGetResource<InputResource>(out var inputResource))
+                {
+                    _quitOnEscapeSystem = new QuitOnEscapeSystem(window, inputResource);
                 }
             }
         }

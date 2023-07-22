@@ -9,7 +9,7 @@ namespace MyEngine.Runtime
         private readonly MyWindow _window;
         private readonly Renderer _renderer;
 
-        private SystemRunner _systemRunner = new();
+        private readonly SystemRunner _systemRunner = new();
 
         private Application(Renderer renderer)
         {
@@ -24,6 +24,7 @@ namespace MyEngine.Runtime
             _window.Update += OnUpdate;
             _window.Resize += OnResize;
 
+            _systemRunner.RegisterResource(_window);
         }
 
         private void OnLoad()
@@ -63,20 +64,11 @@ namespace MyEngine.Runtime
         private void OnKeyDown(object? sender, MyInput.KeyDownEvent e)
         {
             Console.WriteLine("KeyCode pressed. Key: {0}, KeyCode: {1}", e.Key, e.KeyCode);
-            if (e.Key == MyKey.Escape)
-            {
-                Close();
-            }
         }
 
         private void OnUpdate(double dt)
         {
-            _systemRunner.Run(dt);
-        }
-
-        private void Close()
-        {
-            _window.Close();
+            _systemRunner.Update(dt);
         }
 
         public void Dispose()
