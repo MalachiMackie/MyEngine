@@ -27,6 +27,8 @@ namespace MyGame.Systems
 
         public void Run(double deltaTime)
         {
+            return;
+
             if (!_inputResource.Keyboard.IsKeyPressed(MyKey.Space))
             {
                 return;

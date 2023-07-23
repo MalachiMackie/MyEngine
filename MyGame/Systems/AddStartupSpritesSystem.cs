@@ -24,28 +24,10 @@ namespace MyGame.Systems
             var transforms = new[]
             {
                 new Transform {
-                    position = new Vector3(),
-                    rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, 15),
-                    scale = Vector3.One
-                },
-                new Transform
-                {
-                    position = new Vector3(-0.75f, -0.75f, 0),
-                    rotation = Quaternion.Identity,
-                    scale = new Vector3(0.25f)
-                },
-                new Transform
-                {
-                    position = new Vector3(-0.5f, 0, -0.1f),
+                    position = new Vector3(0f, 2f, 0f),
                     rotation = Quaternion.Identity,
                     scale = Vector3.One
                 },
-                new Transform
-                {
-                    position = new Vector3(0.5f, 0, 0),
-                    rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, 45),
-                    scale = Vector3.One
-                }
             };
 
             foreach (var transform in transforms)
@@ -54,7 +36,20 @@ namespace MyGame.Systems
                 _entityContainerResource.AddEntity(entity);
                 _componentContainerResource.AddComponent(new TransformComponent(entity.Id, transform));
                 _componentContainerResource.AddComponent(new SpriteComponent(entity.Id));
+                _componentContainerResource.AddComponent(new StaticBody2DComponent(entity.Id, Vector2.One));
             }
+
+            var playerEntity = new Entity();
+            _entityContainerResource.AddEntity(playerEntity);
+            _componentContainerResource.AddComponent(new PlayerComponent(playerEntity.Id));
+            _componentContainerResource.AddComponent(new SpriteComponent(playerEntity.Id));
+            _componentContainerResource.AddComponent(new TransformComponent(playerEntity.Id, new Transform
+            {
+                position = new Vector3(0f, -1f, 0f),
+                rotation = Quaternion.Identity,
+                scale = new Vector3(0.25f, 0.25f, 1f)
+            }));
+            _componentContainerResource.AddComponent(new DynamicBody2DComponent(playerEntity.Id, Vector2.One));
         }
     }
 }

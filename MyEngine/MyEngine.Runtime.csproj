@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MyEngine.Core\MyEngine.Core.csproj" />
+    <ProjectReference Include="..\MyEngine.Physics\MyEngine.Physics.csproj" />
     <ProjectReference Include="..\MyGame\MyGame.csproj" />
   </ItemGroup>
 

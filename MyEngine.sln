@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyGame", "MyGame\MyGame.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Core", "MyEngine.Core\MyEngine.Core.csproj", "{CEC6FBDA-043A-47F2-A8B6-B887EF927315}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Physics", "MyEngine.Physics\MyEngine.Physics.csproj", "{C840458F-F5E0-42EA-9927-DB6F62EF593F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{CEC6FBDA-043A-47F2-A8B6-B887EF927315}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CEC6FBDA-043A-47F2-A8B6-B887EF927315}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CEC6FBDA-043A-47F2-A8B6-B887EF927315}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C840458F-F5E0-42EA-9927-DB6F62EF593F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C840458F-F5E0-42EA-9927-DB6F62EF593F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C840458F-F5E0-42EA-9927-DB6F62EF593F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C840458F-F5E0-42EA-9927-DB6F62EF593F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

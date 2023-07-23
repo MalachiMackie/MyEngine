@@ -1,6 +1,7 @@
 ﻿using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
+using MyEngine.Physics;
 using MyGame.Systems;
 using System.Diagnostics;
 
@@ -34,6 +35,7 @@ namespace MyEngine.Runtime
         private InputSystem? _inputSystem;
         private QuitOnEscapeSystem? _quitOnEscapeSystem;
         private AddSpritesSystem? _addSpritesSystem;
+        private PhysicsSystem? _physicsSystem;
 
         // render systems
         private RenderSystem? _renderSystem;
@@ -42,6 +44,7 @@ namespace MyEngine.Runtime
         {
             RegisterResource(new EntityContainerResource());
             RegisterResource(new ComponentContainerResource());
+            RegisterResource(new PhysicsResource());
 
             {
                 if (_resourceContainer.TryGetResource<EntityContainerResource>(out var entityContainer)
@@ -65,9 +68,12 @@ namespace MyEngine.Runtime
         {
             _inputSystem?.Run(dt);
 
+            _physicsSystem?.Run(dt);
+
             _cameraMovementSystem?.Run(dt);
             _quitOnEscapeSystem?.Run(dt);
             _addSpritesSystem?.Run(dt);
+
 
             AddNewEntities();
             AddNewComponents();
@@ -140,6 +146,15 @@ namespace MyEngine.Runtime
                         entityContainer,
                         componentContainer,
                         CreateQuery<SpriteComponent, TransformComponent>());
+                }
+            }
+            {
+                if (_resourceContainer.TryGetResource<PhysicsResource>(out var physicsResource))
+                {
+                    _physicsSystem = new PhysicsSystem(
+                        physicsResource,
+                        CreateQuery<TransformComponent, StaticBody2DComponent>(),
+                        CreateQuery<TransformComponent, DynamicBody2DComponent>());
                 }
             }
         }
