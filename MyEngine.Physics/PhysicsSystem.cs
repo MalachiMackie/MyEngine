@@ -1,6 +1,7 @@
 ﻿using MyEngine.Core;
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
+using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,7 @@ namespace MyEngine.Physics
     public class PhysicsSystem : ISystem
     {
         private readonly PhysicsResource _physicsResource;
+        private readonly MyPhysics _myPhysics;
         private readonly MyQuery<TransformComponent, StaticBody2DComponent> _staticBodiesQuery;
         private readonly MyQuery<TransformComponent, DynamicBody2DComponent> _dynamicBodiesQuery;
 
@@ -20,16 +22,19 @@ namespace MyEngine.Physics
         private readonly HashSet<EntityId> _dynamicBodies = new();
 
         public PhysicsSystem(PhysicsResource physicsResource,
+            MyPhysics myPhysics,
             MyQuery<TransformComponent, StaticBody2DComponent> staticBodiesQuery,
             MyQuery<TransformComponent, DynamicBody2DComponent> dynamicBodiesQuery)
         {
             _physicsResource = physicsResource;
+            _myPhysics = myPhysics;
             _staticBodiesQuery = staticBodiesQuery;
             _dynamicBodiesQuery = dynamicBodiesQuery;
         }
 
         public void Run(double deltaTime)
         {
+
             var extraStaticBodies = new HashSet<EntityId>(_staticBodies);
             var extraDynamicBodies = new HashSet<EntityId>(_dynamicBodies);
             var staticTransformsToUpdate = new Dictionary<EntityId, Transform>();
@@ -75,6 +80,42 @@ namespace MyEngine.Physics
             _physicsResource.Update(deltaTime);
 
             UpdateTransforms(staticTransformsToUpdate.Select(x => (x.Key, x.Value)), dynamicTransformsToUpdate.Select(x => (x.Key, x.Value)));
+
+            ProcessCommands();
+        }
+
+        private void ProcessCommands()
+        {
+            while (_physicsResource.PhysicsCommands.TryDequeue(out var cmd))
+            {
+                switch (cmd)
+                {
+                    case PhysicsResource.ApplyImpulseCommand applyImpulse:
+                        _myPhysics.ApplyImpulse(applyImpulse.entityId, applyImpulse.impulse);
+                        break;
+                    case PhysicsResource.UpdateStaticTransformCommand updateStaticTransform:
+                        _myPhysics.UpdateStaticTransform(updateStaticTransform.entityId, updateStaticTransform.transform);
+                        break;
+                    case PhysicsResource.UpdateDynamicTransformCommand updateDynamicTransform:
+                        _myPhysics.UpdateDynamicTransform(updateDynamicTransform.entityId, updateDynamicTransform.transform);
+                        break;
+                    case PhysicsResource.AddStaticBodyCommand addStaticBody:
+                        _myPhysics.AddStaticBody(addStaticBody.entityId, addStaticBody.transform);
+                        break;
+                    case PhysicsResource.AddDynamicBodyCommand addDynamicBody:
+                        _myPhysics.AddDynamicBody(addDynamicBody.entityId, addDynamicBody.transform);
+                        break;
+                    case PhysicsResource.RemoveStaticBodyCommand removeStaticBody:
+                        _myPhysics.RemoveStaticBody(removeStaticBody.entityId);
+                        break;
+                    case PhysicsResource.RemoveDynamicBodyCommand removeDynamicBody:
+                        _myPhysics.RemoveDynamicBody(removeDynamicBody.entityId);
+                        break;
+                    case PhysicsResource.UpdateCommand update:
+                        _myPhysics.Update(update.dt);
+                        break;
+                }
+            }
         }
 
         private void UpdateTransforms(IEnumerable<(EntityId, Transform)> staticTransforms, IEnumerable<(EntityId, Transform)> dynamicTransforms)

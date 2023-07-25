@@ -8,10 +8,25 @@ using System.Threading.Tasks;
 
 namespace MyEngine.Core.Ecs
 {
-    public class MyQuery<T>
+    public class MyQuery<T> : IEnumerable<T>
         where T : IComponent
     {
-        public IEnumerable<T>? Components { get; internal set; }
+        internal MyQuery(Func<IEnumerable<T>> components)
+        {
+            ComponentsFunc = components;
+        }
+
+        internal Func<IEnumerable<T>> ComponentsFunc { get; set; }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            return ComponentsFunc().GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
     }
 
     public class MyQuery<T1, T2> : IEnumerable<(T1, T2)>

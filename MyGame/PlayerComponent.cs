@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace MyGame
 {
-    internal class PlayerComponent : IComponent
+    public class PlayerComponent : IComponent
     {
         public EntityId EntityId { get; }
 

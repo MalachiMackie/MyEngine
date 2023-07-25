@@ -2,6 +2,7 @@
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Physics;
+using MyGame;
 using MyGame.Systems;
 using System.Diagnostics;
 
@@ -36,6 +37,7 @@ namespace MyEngine.Runtime
         private QuitOnEscapeSystem? _quitOnEscapeSystem;
         private AddSpritesSystem? _addSpritesSystem;
         private PhysicsSystem? _physicsSystem;
+        private ApplyImpulseSystem? _applyImpulseSystem;
 
         // render systems
         private RenderSystem? _renderSystem;
@@ -45,6 +47,7 @@ namespace MyEngine.Runtime
             RegisterResource(new EntityContainerResource());
             RegisterResource(new ComponentContainerResource());
             RegisterResource(new PhysicsResource());
+            RegisterResource(new MyPhysics());
 
             {
                 if (_resourceContainer.TryGetResource<EntityContainerResource>(out var entityContainer)
@@ -73,6 +76,7 @@ namespace MyEngine.Runtime
             _cameraMovementSystem?.Run(dt);
             _quitOnEscapeSystem?.Run(dt);
             _addSpritesSystem?.Run(dt);
+            _applyImpulseSystem?.Run(dt);
 
 
             AddNewEntities();
@@ -149,12 +153,26 @@ namespace MyEngine.Runtime
                 }
             }
             {
-                if (_resourceContainer.TryGetResource<PhysicsResource>(out var physicsResource))
+                if (_physicsSystem is null
+                    && _resourceContainer.TryGetResource<PhysicsResource>(out var physicsResource)
+                    && _resourceContainer.TryGetResource<MyPhysics>(out var myPhysics))
                 {
                     _physicsSystem = new PhysicsSystem(
                         physicsResource,
+                        myPhysics,
                         CreateQuery<TransformComponent, StaticBody2DComponent>(),
                         CreateQuery<TransformComponent, DynamicBody2DComponent>());
+                }
+            }
+            {
+                if (_applyImpulseSystem is null
+                    && _resourceContainer.TryGetResource<InputResource>(out var inputResource)
+                    && _resourceContainer.TryGetResource<PhysicsResource>(out var physicsResource))
+                {
+                    _applyImpulseSystem = new ApplyImpulseSystem(
+                        physicsResource,
+                        inputResource,
+                        CreateQuery<PlayerComponent>());
                 }
             }
         }
@@ -170,6 +188,12 @@ namespace MyEngine.Runtime
                     yield return component;
                 }
             }
+        }
+
+        private MyQuery<T> CreateQuery<T>()
+            where T : class, IComponent
+        {
+            return new MyQuery<T>(GetComponents<T>);
         }
 
         private MyQuery<T1, T2> CreateQuery<T1, T2>()
