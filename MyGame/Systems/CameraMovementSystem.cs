@@ -29,7 +29,11 @@ namespace MyGame.Systems
                 return;
             }
 
-            var cameraTransform = transformComponent.Transform;
+            Move2D(transformComponent.Transform, deltaTime);
+        }
+
+        private void Move3D(Transform cameraTransform, double deltaTime)
+        {
             var cameraDirection = MathHelper.ToEulerAngles(cameraTransform.rotation);
 
             var cameraFront = Vector3.Normalize(cameraDirection);
@@ -55,14 +59,32 @@ namespace MyGame.Systems
             var lookSensitivity = 0.1f;
             var mouseDelta = _inputResource.MouseDelta;
 
-            var q = cameraTransform.rotation;
+            cameraDirection.X += mouseDelta.X * lookSensitivity;
+            cameraDirection.Y -= mouseDelta.Y * lookSensitivity;
 
-            var direction = MathHelper.ToEulerAngles(q);
+            cameraTransform.rotation = MathHelper.ToQuaternion(cameraDirection);
 
-            direction.X += mouseDelta.X * lookSensitivity;
-            direction.Y -= mouseDelta.Y * lookSensitivity;
+        }
 
-            cameraTransform.rotation = MathHelper.ToQuaternion(direction);
+        private void Move2D(Transform cameraTransform, double deltaTime)
+        {
+            var speed = 5.0f * (float)deltaTime;
+            if (_inputResource.Keyboard.IsKeyDown(MyKey.W))
+            {
+                cameraTransform.position += speed * Vector3.UnitY;
+            }
+            if (_inputResource.Keyboard.IsKeyDown(MyKey.S))
+            {
+                cameraTransform.position -= speed * Vector3.UnitY;
+            }
+            if (_inputResource.Keyboard.IsKeyDown(MyKey.A))
+            {
+                cameraTransform.position -= speed * Vector3.UnitX;
+            }
+            if (_inputResource.Keyboard.IsKeyDown(MyKey.D))
+            {
+                cameraTransform.position += speed * Vector3.UnitX;
+            }
         }
     }
 }
