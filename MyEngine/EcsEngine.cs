@@ -160,8 +160,8 @@ namespace MyEngine.Runtime
                     _physicsSystem = new PhysicsSystem(
                         physicsResource,
                         myPhysics,
-                        CreateQuery<TransformComponent, StaticBody2DComponent>(),
-                        CreateQuery<TransformComponent, DynamicBody2DComponent>());
+                        CreateQuery<TransformComponent, StaticBody2DComponent, BoxCollider2DComponent>(),
+                        CreateQuery<TransformComponent, DynamicBody2DComponent, BoxCollider2DComponent>());
                 }
             }
             {
@@ -203,6 +203,14 @@ namespace MyEngine.Runtime
             return new MyQuery<T1, T2>(GetComponents<T1, T2>);
         }
 
+        private MyQuery<T1, T2, T3> CreateQuery<T1, T2, T3>()
+            where T1 : class, IComponent
+            where T2 : class, IComponent
+            where T3 : class, IComponent
+        {
+            return new MyQuery<T1, T2, T3>(GetComponents<T1, T2, T3>);
+        }
+
         private IEnumerable<(T1, T2)> GetComponents<T1, T2>()
             where T1 : class, IComponent
             where T2 : class, IComponent
@@ -213,6 +221,22 @@ namespace MyEngine.Runtime
                     && _components.TryGetComponent<T2>(entityId, out var component2))
                 {
                     yield return (component1, component2);
+                }
+            }
+        }
+
+        private IEnumerable<(T1, T2, T3)> GetComponents<T1, T2, T3>()
+            where T1 : class, IComponent
+            where T2 : class, IComponent
+            where T3 : class, IComponent
+        {
+            foreach (var entityId in _entities)
+            {
+                if (_components.TryGetComponent<T1>(entityId, out var component1)
+                    && _components.TryGetComponent<T2>(entityId, out var component2)
+                    && _components.TryGetComponent<T3>(entityId, out var component3))
+                {
+                    yield return (component1, component2, component3);
                 }
             }
         }

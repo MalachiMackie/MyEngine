@@ -3,11 +3,7 @@ using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Numerics;
 
 namespace MyEngine.Physics
 {
@@ -15,16 +11,16 @@ namespace MyEngine.Physics
     {
         private readonly PhysicsResource _physicsResource;
         private readonly MyPhysics _myPhysics;
-        private readonly MyQuery<TransformComponent, StaticBody2DComponent> _staticBodiesQuery;
-        private readonly MyQuery<TransformComponent, DynamicBody2DComponent> _dynamicBodiesQuery;
+        private readonly MyQuery<TransformComponent, StaticBody2DComponent, BoxCollider2DComponent> _staticBodiesQuery;
+        private readonly MyQuery<TransformComponent, DynamicBody2DComponent, BoxCollider2DComponent> _dynamicBodiesQuery;
 
         private readonly HashSet<EntityId> _staticBodies = new();
         private readonly HashSet<EntityId> _dynamicBodies = new();
 
         public PhysicsSystem(PhysicsResource physicsResource,
             MyPhysics myPhysics,
-            MyQuery<TransformComponent, StaticBody2DComponent> staticBodiesQuery,
-            MyQuery<TransformComponent, DynamicBody2DComponent> dynamicBodiesQuery)
+            MyQuery<TransformComponent, StaticBody2DComponent, BoxCollider2DComponent> staticBodiesQuery,
+            MyQuery<TransformComponent, DynamicBody2DComponent, BoxCollider2DComponent> dynamicBodiesQuery)
         {
             _physicsResource = physicsResource;
             _myPhysics = myPhysics;
@@ -40,23 +36,38 @@ namespace MyEngine.Physics
             var staticTransformsToUpdate = new Dictionary<EntityId, Transform>();
             var dynamicTransformsToUpdate = new Dictionary<EntityId, Transform>();
 
-            foreach (var (transform, staticBody) in _staticBodiesQuery)
+            foreach (var (transform, staticBody, collider) in _staticBodiesQuery)
             {
                 if (!extraStaticBodies.Remove(staticBody.EntityId))
                 {
                     // this is a new static body
-                    _physicsResource.AddStaticBody(transform.EntityId, transform.Transform);
+                    var scale = transform.Transform.scale * new Vector3(collider.Dimensions, 1f);
+
+                    _physicsResource.AddStaticBody(transform.EntityId, new Transform
+                    {
+                        position = transform.Transform.position,
+                        rotation = transform.Transform.rotation,
+                        scale = scale,
+                    });
+
                     _staticBodies.Add(transform.EntityId);
                 }
 
                 staticTransformsToUpdate.Add(transform.EntityId, transform.Transform);
             }
-            foreach (var (transform, dynamicBody) in _dynamicBodiesQuery)
+            foreach (var (transform, dynamicBody, collider) in _dynamicBodiesQuery)
             {
                 if (!extraDynamicBodies.Remove(dynamicBody.EntityId))
                 {
                     // this is a new dynamic body
-                    _physicsResource.AddDynamicBody(transform.EntityId, transform.Transform);
+                    var scale = transform.Transform.scale * new Vector3(collider.Dimensions, 1f);
+
+                    _physicsResource.AddDynamicBody(transform.EntityId, new Transform
+                    {
+                        position = transform.Transform.position,
+                        rotation = transform.Transform.rotation,
+                        scale = scale,
+                    });
                     _dynamicBodies.Add(transform.EntityId);
                 }
 

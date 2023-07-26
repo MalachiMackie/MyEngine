@@ -36,7 +36,8 @@ namespace MyGame.Systems
                 _entityContainerResource.AddEntity(entity);
                 _componentContainerResource.AddComponent(new TransformComponent(entity.Id, transform));
                 _componentContainerResource.AddComponent(new SpriteComponent(entity.Id));
-                _componentContainerResource.AddComponent(new StaticBody2DComponent(entity.Id, Vector2.One));
+                _componentContainerResource.AddComponent(new StaticBody2DComponent(entity.Id));
+                _componentContainerResource.AddComponent(new BoxCollider2DComponent(entity.Id, Vector2.One));
             }
 
             var playerEntity = new Entity();
@@ -49,7 +50,8 @@ namespace MyGame.Systems
                 rotation = Quaternion.Identity,
                 scale = new Vector3(0.25f, 0.25f, 1f)
             }));
-            _componentContainerResource.AddComponent(new DynamicBody2DComponent(playerEntity.Id, Vector2.One));
+            _componentContainerResource.AddComponent(new DynamicBody2DComponent(playerEntity.Id));
+            _componentContainerResource.AddComponent(new BoxCollider2DComponent(playerEntity.Id, Vector2.One));
         }
     }
 }
