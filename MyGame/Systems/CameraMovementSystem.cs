@@ -11,29 +11,37 @@ namespace MyGame.Systems
     public class CameraMovementSystem : ISystem
     {
         private readonly InputResource _inputResource;
-        private readonly MyQuery<CameraComponent, TransformComponent> _cameraQuery;
+        private readonly MyQuery<Camera3DComponent, TransformComponent> _camera3DQuery;
+        private readonly MyQuery<Camera2DComponent, TransformComponent> _camera2DQuery;
 
         public CameraMovementSystem(
             InputResource inputResource,
-            MyQuery<CameraComponent, TransformComponent> cameraQuery)
+            MyQuery<Camera3DComponent, TransformComponent> camera3dQuery,
+            MyQuery<Camera2DComponent, TransformComponent> camera2dQuery)
         {
             _inputResource = inputResource;
-            _cameraQuery = cameraQuery;
+            _camera3DQuery = camera3dQuery;
+            _camera2DQuery = camera2dQuery;
         }
 
         public void Run(double deltaTime)
         {
-            var (_, transformComponent) = _cameraQuery.FirstOrDefault();
-            if (transformComponent is null)
+            if (!TryMove3D(deltaTime))
             {
-                return;
+                TryMove2D(deltaTime);
             }
-
-            Move3D(transformComponent.Transform, deltaTime);
         }
 
-        private void Move3D(Transform cameraTransform, double deltaTime)
+        private bool TryMove3D(double deltaTime)
         {
+            var (_, transformComponent) = _camera3DQuery.FirstOrDefault();
+            if (transformComponent is null)
+            {
+                return false;
+            }
+
+            var cameraTransform = transformComponent.Transform;
+
             var cameraDirection = MathHelper.ToEulerAngles(cameraTransform.rotation);
 
             var cameraFront = Vector3.Normalize(cameraDirection);
@@ -64,10 +72,19 @@ namespace MyGame.Systems
 
             cameraTransform.rotation = MathHelper.ToQuaternion(cameraDirection);
 
+            return true;
         }
 
-        private void Move2D(Transform cameraTransform, double deltaTime)
+        private bool TryMove2D(double deltaTime)
         {
+            var (_, transformComponent) = _camera2DQuery.FirstOrDefault();
+            if (transformComponent is null)
+            {
+                return false;
+            }
+
+            var cameraTransform = transformComponent.Transform;
+
             var speed = 5.0f * (float)deltaTime;
             if (_inputResource.Keyboard.IsKeyDown(MyKey.W))
             {
@@ -85,6 +102,8 @@ namespace MyGame.Systems
             {
                 cameraTransform.position += speed * Vector3.UnitX;
             }
+
+            return true;
         }
     }
 }

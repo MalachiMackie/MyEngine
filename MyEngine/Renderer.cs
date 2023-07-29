@@ -90,6 +90,33 @@ internal sealed class Renderer : IDisposable, IResource
         _height = (uint)size.Y;
     }
 
+    public unsafe void RenderOrthographic(Vector3 cameraPosition, Vector2 viewSize, IEnumerable<Transform> transforms)
+    {
+        _gl.Clear(ClearBufferMask.ColorBufferBit);
+
+        _vertexArrayObject.Bind();
+
+        _shader.UseProgram();
+
+        _texture.Bind(TextureUnit.Texture0);
+
+        var view = Matrix4x4.CreateLookAt(cameraPosition, cameraPosition - Vector3.UnitZ, Vector3.UnitY);
+        var projection = Matrix4x4.CreateOrthographic(viewSize.X, viewSize.Y, 0.1f, 100f);
+
+        _shader.SetUniform1("uView", view);
+        _shader.SetUniform1("uProjection", projection);
+
+        foreach (var transform in transforms)
+        {
+            var model = transform.ViewMatrix;
+
+            _shader.SetUniform1("uModel", model);
+
+            _gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null);
+        }
+
+    } 
+
     public unsafe void Render(Transform cameraTransform, IEnumerable<Transform> transforms)
     {
         _gl.Clear(ClearBufferMask.ColorBufferBit);

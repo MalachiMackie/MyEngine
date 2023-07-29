@@ -1,10 +1,9 @@
 ﻿namespace MyEngine.Core.Ecs.Components
 {
-    public class CameraComponent : IComponent
+    public class Camera3DComponent : IComponent
     {
-        public static bool AllowMultiple => false;
 
-        public CameraComponent(EntityId entityId)
+        public Camera3DComponent(EntityId entityId)
         {
             EntityId = entityId;
         }

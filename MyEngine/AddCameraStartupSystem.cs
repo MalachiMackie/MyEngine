@@ -2,6 +2,7 @@
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
+using System.Numerics;
 
 namespace MyEngine.Runtime
 {
@@ -22,7 +23,7 @@ namespace MyEngine.Runtime
         {
             var entity = new Entity();
             _entityContainer.AddEntity(entity);
-            _componentContainer.AddComponent(new CameraComponent(entity.Id));
+            _componentContainer.AddComponent(new Camera2DComponent(entity.Id, new Vector2(8f, 4.5f)));
             _componentContainer.AddComponent(new TransformComponent(entity.Id));
         }
     }

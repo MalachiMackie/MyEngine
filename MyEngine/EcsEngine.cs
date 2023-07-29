@@ -119,7 +119,10 @@ namespace MyEngine.Runtime
             {
                 if (_resourceContainer.TryGetResource<InputResource>(out var inputResource))
                 {
-                    _cameraMovementSystem = new CameraMovementSystem(inputResource, CreateQuery<CameraComponent, TransformComponent>());
+                    _cameraMovementSystem = new CameraMovementSystem(
+                        inputResource,
+                        CreateQuery<Camera3DComponent, TransformComponent>(),
+                        CreateQuery<Camera2DComponent, TransformComponent>());
                     _uninstantiatedSystems.Remove(typeof(CameraMovementSystem));
                 }
             });
@@ -138,7 +141,11 @@ namespace MyEngine.Runtime
             {
                 if (_resourceContainer.TryGetResource<Renderer>(out var renderer))
                 {
-                    _renderSystem = new RenderSystem(renderer, CreateQuery<CameraComponent, TransformComponent>(), CreateQuery<SpriteComponent, TransformComponent>());
+                    _renderSystem = new RenderSystem(
+                        renderer,
+                        CreateQuery<Camera3DComponent, TransformComponent>(),
+                        CreateQuery<Camera2DComponent, TransformComponent>(),
+                        CreateQuery<SpriteComponent, TransformComponent>());
                     _uninstantiatedSystems.Remove(typeof(RenderSystem));
                 }
             });
