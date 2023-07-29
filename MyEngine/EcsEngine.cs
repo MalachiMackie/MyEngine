@@ -43,6 +43,11 @@ namespace MyEngine.Runtime
         // render systems
         private RenderSystem? _renderSystem;
 
+        public EcsEngine()
+        {
+            AddSystemInstantiations();
+        }
+
         public partial void Startup()
         {
             RegisterResource(new EntityContainerResource());
@@ -106,44 +111,51 @@ namespace MyEngine.Runtime
             }
         }
 
-        public partial void RegisterResource<T>(T resource) where T : IResource
+        private readonly Dictionary<Type, Action> _systemInstantiations = new();
+
+        private void AddSystemInstantiations()
         {
-            _resourceContainer.RegisterResource(resource);
+            _systemInstantiations.Add(typeof(CameraMovementSystem), () =>
             {
-                if (_cameraMovementSystem is null
-                    && _resourceContainer.TryGetResource<InputResource>(out var inputResource))
+                if (_resourceContainer.TryGetResource<InputResource>(out var inputResource))
                 {
                     _cameraMovementSystem = new CameraMovementSystem(inputResource, CreateQuery<CameraComponent, TransformComponent>());
+                    _uninstantiatedSystems.Remove(typeof(CameraMovementSystem));
                 }
-            }
+            });
+
+            _systemInstantiations.Add(typeof(InputSystem), () =>
             {
-                if (_inputSystem is null
-                    && _resourceContainer.TryGetResource<InputResource>(out var inputResource)
+                if (_resourceContainer.TryGetResource<InputResource>(out var inputResource)
                     && _resourceContainer.TryGetResource<MyInput>(out var myInput))
                 {
                     _inputSystem = new InputSystem(myInput, inputResource);
+                    _uninstantiatedSystems.Remove(typeof(InputSystem));
                 }
-            }
+            });
+
+            _systemInstantiations.Add(typeof(RenderSystem), () =>
             {
-                if (_renderSystem is null
-                    && _resourceContainer.TryGetResource<Renderer>(out var renderer))
+                if (_resourceContainer.TryGetResource<Renderer>(out var renderer))
                 {
-                    _renderSystem = new RenderSystem(renderer,
-                        CreateQuery<CameraComponent, TransformComponent>(),
-                        CreateQuery<SpriteComponent, TransformComponent>());
+                    _renderSystem = new RenderSystem(renderer, CreateQuery<CameraComponent, TransformComponent>(), CreateQuery<SpriteComponent, TransformComponent>());
+                    _uninstantiatedSystems.Remove(typeof(RenderSystem));
                 }
-            }
+            });
+
+            _systemInstantiations.Add(typeof(QuitOnEscapeSystem), () =>
             {
-                if (_quitOnEscapeSystem is null
-                    && _resourceContainer.TryGetResource<MyWindow>(out var window)
+                if (_resourceContainer.TryGetResource<MyWindow>(out var window)
                     && _resourceContainer.TryGetResource<InputResource>(out var inputResource))
                 {
                     _quitOnEscapeSystem = new QuitOnEscapeSystem(window, inputResource);
+                    _uninstantiatedSystems.Remove(typeof(QuitOnEscapeSystem));
                 }
-            }
+            });
+
+            _systemInstantiations.Add(typeof(AddSpritesSystem), () =>
             {
-                if (_addSpritesSystem is null
-                    && _resourceContainer.TryGetResource<InputResource>(out var inputResource)
+                if (_resourceContainer.TryGetResource<InputResource>(out var inputResource)
                     && _resourceContainer.TryGetResource<EntityContainerResource>(out var entityContainer)
                     && _resourceContainer.TryGetResource<ComponentContainerResource>(out var componentContainer))
                 {
@@ -152,11 +164,13 @@ namespace MyEngine.Runtime
                         entityContainer,
                         componentContainer,
                         CreateQuery<SpriteComponent, TransformComponent>());
+                    _uninstantiatedSystems.Remove(typeof(AddSpritesSystem));
                 }
-            }
+            });
+
+            _systemInstantiations.Add(typeof(PhysicsSystem), () =>
             {
-                if (_physicsSystem is null
-                    && _resourceContainer.TryGetResource<PhysicsResource>(out var physicsResource)
+                if (_resourceContainer.TryGetResource<PhysicsResource>(out var physicsResource)
                     && _resourceContainer.TryGetResource<MyPhysics>(out var myPhysics))
                 {
                     _physicsSystem = new PhysicsSystem(
@@ -164,28 +178,57 @@ namespace MyEngine.Runtime
                         myPhysics,
                         CreateQuery<TransformComponent, StaticBody2DComponent, BoxCollider2DComponent>(),
                         CreateQuery<TransformComponent, DynamicBody2DComponent, BoxCollider2DComponent>());
+                    _uninstantiatedSystems.Remove(typeof(PhysicsSystem));
                 }
-            }
+            });
+
+            _systemInstantiations.Add(typeof(ApplyImpulseSystem), () =>
             {
-                if (_applyImpulseSystem is null
-                    && _resourceContainer.TryGetResource<InputResource>(out var inputResource)
+                if (_resourceContainer.TryGetResource<InputResource>(out var inputResource)
                     && _resourceContainer.TryGetResource<PhysicsResource>(out var physicsResource))
                 {
                     _applyImpulseSystem = new ApplyImpulseSystem(
                         physicsResource,
                         inputResource,
                         CreateQuery<PlayerComponent>());
+                    _uninstantiatedSystems.Remove(typeof(ApplyImpulseSystem));
                 }
-            }
+            });
+
+            _systemInstantiations.Add(typeof(RotatePlayerSystem), () =>
             {
-                if (_rotatePlayerSystem is null
-                    && _resourceContainer.TryGetResource<InputResource>(out var inputResource)
+                if (_resourceContainer.TryGetResource<InputResource>(out var inputResource)
                     && _resourceContainer.TryGetResource<PhysicsResource>(out var physicsResource))
                 {
                     _rotatePlayerSystem = new RotatePlayerSystem(
                         CreateQuery<PlayerComponent>(),
                         physicsResource,
                         inputResource);
+                    _uninstantiatedSystems.Remove(typeof(RotatePlayerSystem));
+                }
+            });
+        }
+
+        private Dictionary<Type, Type[]> _uninstantiatedSystems = new Dictionary<Type, Type[]>
+        {
+            { typeof(CameraMovementSystem), new [] { typeof(InputResource) } },
+            { typeof(InputSystem), new[] { typeof(InputResource), typeof(MyInput) } },
+            { typeof(RenderSystem), new[] { typeof(Renderer) } },
+            { typeof(QuitOnEscapeSystem), new[] { typeof(InputResource), typeof(MyWindow) } },
+            { typeof(AddSpritesSystem), new[] { typeof(InputResource), typeof(EntityContainerResource), typeof(ComponentContainerResource) } },
+            { typeof(PhysicsSystem), new[] { typeof(PhysicsResource), typeof(MyPhysics) } },
+            { typeof(ApplyImpulseSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } },
+            { typeof(RotatePlayerSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } }
+        };
+
+        public partial void RegisterResource<T>(T resource) where T : IResource
+        {
+            _resourceContainer.RegisterResource(resource);
+            foreach (var (systemType, resourceTypes) in _uninstantiatedSystems)
+            {
+                if (resourceTypes.Contains(typeof(T)))
+                {
+                    _systemInstantiations[systemType].Invoke();
                 }
             }
         }
