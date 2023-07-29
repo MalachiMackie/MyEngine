@@ -39,6 +39,7 @@ namespace MyEngine.Runtime
         private PhysicsSystem? _physicsSystem;
         private ApplyImpulseSystem? _applyImpulseSystem;
         private RotatePlayerSystem? _rotatePlayerSystem;
+        private ToggleSpriteSystem? _toggleSpriteSystem;
 
         // render systems
         private RenderSystem? _renderSystem;
@@ -84,7 +85,11 @@ namespace MyEngine.Runtime
             _addSpritesSystem?.Run(dt);
             _applyImpulseSystem?.Run(dt);
             _rotatePlayerSystem?.Run(dt);
+            _toggleSpriteSystem?.Run(dt);
 
+            // todo: do users expect components/entities to be removed from the scene immediately?
+            RemoveComponents();
+            RemoveEntities();
 
             AddNewEntities();
             AddNewComponents();
@@ -102,12 +107,31 @@ namespace MyEngine.Runtime
             }
         }
 
+        private void RemoveEntities()
+        {
+            Debug.Assert(_resourceContainer.TryGetResource<EntityContainerResource>(out var entityContainer));
+            while (entityContainer.DeleteEntities.TryDequeue(out var entity))
+            {
+                _components.DeleteComponentsForEntity(entity);
+                _entities.Remove(entity);
+            }
+        }
+
         private void AddNewComponents()
         {
             Debug.Assert(_resourceContainer.TryGetResource<ComponentContainerResource>(out var components));
             while (components.NewComponents.TryDequeue(out var component))
             {
                 _components.AddComponent(component);
+            }
+        }
+
+        private void RemoveComponents()
+        {
+            Debug.Assert(_resourceContainer.TryGetResource<ComponentContainerResource>(out var components));
+            while (components.RemoveComponents.TryDequeue(out var removeComponent))
+            {
+                _components.DeleteComponent(removeComponent.EntityId, removeComponent.ComponentType);
             }
         }
 
@@ -214,8 +238,25 @@ namespace MyEngine.Runtime
                     _uninstantiatedSystems.Remove(typeof(RotatePlayerSystem));
                 }
             });
+
+            _systemInstantiations.Add(typeof(ToggleSpriteSystem), () =>
+            {
+                if (_resourceContainer.TryGetResource<InputResource>(out var inputResource)
+                    && _resourceContainer.TryGetResource<ComponentContainerResource>(out var componentContainer))
+                {
+                    _toggleSpriteSystem = new ToggleSpriteSystem(
+                        CreateQuery<PlayerComponent>(),
+                        CreateQuery<PlayerComponent, SpriteComponent>(),
+                        componentContainer,
+                        inputResource);
+                    _uninstantiatedSystems.Remove(typeof(ToggleSpriteSystem));
+                }
+            });
         }
 
+        /// <summary>
+        /// Dictionary of uninstantiated systems, and the list of resource dependencies they have
+        /// </summary>
         private Dictionary<Type, Type[]> _uninstantiatedSystems = new Dictionary<Type, Type[]>
         {
             { typeof(CameraMovementSystem), new [] { typeof(InputResource) } },
@@ -225,7 +266,8 @@ namespace MyEngine.Runtime
             { typeof(AddSpritesSystem), new[] { typeof(InputResource), typeof(EntityContainerResource), typeof(ComponentContainerResource) } },
             { typeof(PhysicsSystem), new[] { typeof(PhysicsResource), typeof(MyPhysics) } },
             { typeof(ApplyImpulseSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } },
-            { typeof(RotatePlayerSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } }
+            { typeof(RotatePlayerSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } },
+            { typeof(ToggleSpriteSystem), new[] { typeof(InputResource), typeof(ComponentContainerResource) } }
         };
 
         public partial void RegisterResource<T>(T resource) where T : IResource

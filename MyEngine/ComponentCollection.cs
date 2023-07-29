@@ -33,6 +33,22 @@ namespace MyEngine.Runtime
             components.Add(component.EntityId, component);
         }
 
+        public void DeleteComponentsForEntity(EntityId entityId)
+        {
+            foreach (var (_, components) in _components)
+            {
+                components.Remove(entityId);
+            }
+        }
+
+        public void DeleteComponent(EntityId entityId, Type componentType)
+        {
+            if (_components.TryGetValue(componentType, out var entityComponents))
+            {
+                entityComponents.Remove(entityId);
+            }
+        }
+
         public bool TryGetComponent<TComponent>(EntityId entityId, [NotNullWhen(true)] out TComponent? component)
             where TComponent : class, IComponent
         {
