@@ -38,6 +38,7 @@ namespace MyEngine.Runtime
         private AddSpritesSystem? _addSpritesSystem;
         private PhysicsSystem? _physicsSystem;
         private ApplyImpulseSystem? _applyImpulseSystem;
+        private RotatePlayerSystem? _rotatePlayerSystem;
 
         // render systems
         private RenderSystem? _renderSystem;
@@ -77,6 +78,7 @@ namespace MyEngine.Runtime
             _quitOnEscapeSystem?.Run(dt);
             _addSpritesSystem?.Run(dt);
             _applyImpulseSystem?.Run(dt);
+            _rotatePlayerSystem?.Run(dt);
 
 
             AddNewEntities();
@@ -173,6 +175,17 @@ namespace MyEngine.Runtime
                         physicsResource,
                         inputResource,
                         CreateQuery<PlayerComponent>());
+                }
+            }
+            {
+                if (_rotatePlayerSystem is null
+                    && _resourceContainer.TryGetResource<InputResource>(out var inputResource)
+                    && _resourceContainer.TryGetResource<PhysicsResource>(out var physicsResource))
+                {
+                    _rotatePlayerSystem = new RotatePlayerSystem(
+                        CreateQuery<PlayerComponent>(),
+                        physicsResource,
+                        inputResource);
                 }
             }
         }

@@ -27,6 +27,11 @@ namespace MyEngine.Core.Ecs.Resources
             PhysicsCommands.Enqueue(new AddStaticBodyCommand(entityId, transform));
         }
 
+        public void AddStaticBody2D(EntityId entityId, Transform transform)
+        {
+            PhysicsCommands.Enqueue(new AddStaticBody2DCommand(entityId, transform));
+        }
+
         public void RemoveDynamicBody(EntityId entityId)
         {
             PhysicsCommands.Enqueue(new RemoveDynamicBodyCommand(entityId));
@@ -35,6 +40,11 @@ namespace MyEngine.Core.Ecs.Resources
         public void AddDynamicBody(EntityId entityId, Transform transform)
         {
             PhysicsCommands.Enqueue(new AddDynamicBodyCommand(entityId, transform));
+        }
+
+        public void AddDynamicBody2D(EntityId entityId, Transform transform)
+        {
+            PhysicsCommands.Enqueue(new AddDynamicBody2DCommand(entityId, transform));
         }
 
         public void UpdateStaticTransform(EntityId entityId, Transform transform)
@@ -52,17 +62,25 @@ namespace MyEngine.Core.Ecs.Resources
             PhysicsCommands.Enqueue(new ApplyImpulseCommand(entityId, impulse));
         }
 
+        public void ApplyAngularImpulse(EntityId entityId, Vector3 impulse)
+        {
+            PhysicsCommands.Enqueue(new ApplyAngularImpulseCommand(entityId, impulse));
+        }
+
         internal interface IPhysicsCommand
         {
         }
 
         internal record UpdateCommand(double dt) : IPhysicsCommand;
         internal record AddDynamicBodyCommand(EntityId entityId, Transform transform) : IPhysicsCommand;
+        internal record AddDynamicBody2DCommand(EntityId entityId, Transform transform) : IPhysicsCommand;
         internal record AddStaticBodyCommand(EntityId entityId, Transform transform) : IPhysicsCommand;
+        internal record AddStaticBody2DCommand(EntityId entityId, Transform transform) : IPhysicsCommand;
         internal record RemoveDynamicBodyCommand(EntityId entityId) : IPhysicsCommand;
         internal record RemoveStaticBodyCommand(EntityId entityId) : IPhysicsCommand;
         internal record UpdateStaticTransformCommand(EntityId entityId, Transform transform) : IPhysicsCommand;
         internal record UpdateDynamicTransformCommand(EntityId entityId, Transform transform) : IPhysicsCommand;
         internal record ApplyImpulseCommand(EntityId entityId, Vector3 impulse) : IPhysicsCommand;
+        internal record ApplyAngularImpulseCommand(EntityId entityId, Vector3 impulse) : IPhysicsCommand;
     }
 }

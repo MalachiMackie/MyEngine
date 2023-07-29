@@ -99,7 +99,14 @@ namespace MyEngine.Physics
 
         public void AddStaticBody(EntityId entityId, Transform transform)
         {
-            var shape = _simulation.Shapes.Add(new Box(transform.scale.X, transform.scale.Y, 100f));
+            var shape = _simulation.Shapes.Add(new Box(transform.scale.X, transform.scale.Y, transform.scale.Z));
+            var handle = _simulation.Statics.Add(new StaticDescription(transform.position, transform.rotation, shape));
+            _staticHandles[entityId] = (handle, shape);
+        }
+
+        public void AddStaticBody2D(EntityId entityId, Transform transform)
+        {
+            var shape = _simulation.Shapes.Add(new Box(transform.scale.X, transform.scale.Y, 1000f));
             var handle = _simulation.Statics.Add(new StaticDescription(transform.position, transform.rotation, shape));
             _staticHandles[entityId] = (handle, shape);
         }
@@ -114,7 +121,7 @@ namespace MyEngine.Physics
 
         public void AddDynamicBody(EntityId entityId, Transform transform)
         {
-            var shape = new Box(transform.scale.X, transform.scale.Y, 100f);
+            var shape = new Box(transform.scale.X, transform.scale.Y, transform.scale.Z);
             var shapeIndex = _simulation.Shapes.Add(shape);
             var handle = _simulation.Bodies.Add(BodyDescription.CreateDynamic(
                 new RigidPose(transform.position, transform.rotation),
@@ -122,6 +129,33 @@ namespace MyEngine.Physics
                 shape.ComputeInertia(10f),
                 new CollidableDescription(shapeIndex),
                 new BodyActivityDescription(0.01f)));
+
+            _dynamicHandles.Add(entityId, (handle, shapeIndex));
+        }
+
+        public void AddDynamicBody2D(EntityId entityId, Transform transform)
+        {
+            var shape = new Box(transform.scale.X, transform.scale.Y, transform.scale.Z);
+            var shapeIndex = _simulation.Shapes.Add(shape);
+
+            var inertia = shape.ComputeInertia(10f);
+            var inverseInertiaTensor = inertia.InverseInertiaTensor;
+
+            // dont allow rotation along X or Y Axis for 2D
+            inverseInertiaTensor.XX = 0f;
+            inverseInertiaTensor.YY = 0f;
+
+            inertia.InverseInertiaTensor = inverseInertiaTensor;
+
+            var body = BodyDescription.CreateDynamic(
+                new RigidPose(transform.position, transform.rotation),
+                new BodyVelocity(),
+                inertia, // todo: inertia probably needs to be handled differently for 2d
+                new CollidableDescription(shapeIndex),
+                new BodyActivityDescription(0.01f));
+
+            var handle = _simulation.Bodies.Add(body);
+
             _dynamicHandles.Add(entityId, (handle, shapeIndex));
         }
 
@@ -131,6 +165,14 @@ namespace MyEngine.Physics
             var bodyReference = _simulation.Bodies[handle];
             bodyReference.Awake = true;
             bodyReference.ApplyLinearImpulse(impulse);
+        }
+
+        public void ApplyAngularImpulse(EntityId entityId, Vector3 impulse)
+        {
+            var (handle, _) = _dynamicHandles[entityId];
+            var bodyReference = _simulation.Bodies[handle];
+            bodyReference.Awake = true;
+            bodyReference.ApplyAngularImpulse(impulse);
         }
 
         public void UpdateStaticTransform(EntityId entityId, Transform transform)

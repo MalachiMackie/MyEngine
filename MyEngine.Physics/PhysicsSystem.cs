@@ -43,7 +43,7 @@ namespace MyEngine.Physics
                     // this is a new static body
                     var scale = transform.Transform.scale * new Vector3(collider.Dimensions, 1f);
 
-                    _physicsResource.AddStaticBody(transform.EntityId, new Transform
+                    _physicsResource.AddStaticBody2D(transform.EntityId, new Transform
                     {
                         position = transform.Transform.position,
                         rotation = transform.Transform.rotation,
@@ -62,7 +62,7 @@ namespace MyEngine.Physics
                     // this is a new dynamic body
                     var scale = transform.Transform.scale * new Vector3(collider.Dimensions, 1f);
 
-                    _physicsResource.AddDynamicBody(transform.EntityId, new Transform
+                    _physicsResource.AddDynamicBody2D(transform.EntityId, new Transform
                     {
                         position = transform.Transform.position,
                         rotation = transform.Transform.rotation,
@@ -104,6 +104,9 @@ namespace MyEngine.Physics
                     case PhysicsResource.ApplyImpulseCommand applyImpulse:
                         _myPhysics.ApplyImpulse(applyImpulse.entityId, applyImpulse.impulse);
                         break;
+                    case PhysicsResource.ApplyAngularImpulseCommand applyAngularImpulse:
+                        _myPhysics.ApplyAngularImpulse(applyAngularImpulse.entityId, applyAngularImpulse.impulse);
+                        break;
                     case PhysicsResource.UpdateStaticTransformCommand updateStaticTransform:
                         _myPhysics.UpdateStaticTransform(updateStaticTransform.entityId, updateStaticTransform.transform);
                         break;
@@ -113,8 +116,14 @@ namespace MyEngine.Physics
                     case PhysicsResource.AddStaticBodyCommand addStaticBody:
                         _myPhysics.AddStaticBody(addStaticBody.entityId, addStaticBody.transform);
                         break;
+                    case PhysicsResource.AddStaticBody2DCommand addStaticBody2D:
+                        _myPhysics.AddStaticBody2D(addStaticBody2D.entityId, addStaticBody2D.transform);
+                        break;
                     case PhysicsResource.AddDynamicBodyCommand addDynamicBody:
                         _myPhysics.AddDynamicBody(addDynamicBody.entityId, addDynamicBody.transform);
+                        break;
+                    case PhysicsResource.AddDynamicBody2DCommand addDynamicBody2D:
+                        _myPhysics.AddDynamicBody2D(addDynamicBody2D.entityId, addDynamicBody2D.transform);
                         break;
                     case PhysicsResource.RemoveStaticBodyCommand removeStaticBody:
                         _myPhysics.RemoveStaticBody(removeStaticBody.entityId);

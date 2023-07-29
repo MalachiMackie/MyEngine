@@ -29,7 +29,7 @@ namespace MyGame.Systems
                 return;
             }
 
-            Move2D(transformComponent.Transform, deltaTime);
+            Move3D(transformComponent.Transform, deltaTime);
         }
 
         private void Move3D(Transform cameraTransform, double deltaTime)
