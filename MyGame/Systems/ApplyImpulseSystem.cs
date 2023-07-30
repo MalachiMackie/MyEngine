@@ -30,7 +30,7 @@ namespace MyGame.Systems
                 var player = _query.FirstOrDefault();
                 if (player is not null)
                 {
-                    _physicsResource.ApplyImpulse(player.EntityId, Vector3.UnitY * 3f);
+                    _physicsResource.ApplyImpulse(player.EntityId, new Vector3(1f, 1f, 0f) * 3f);
                 }
             }
         }

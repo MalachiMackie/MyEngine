@@ -28,6 +28,30 @@ namespace MyGame.Systems
                     rotation = Quaternion.Identity,
                     scale = Vector3.One
                 },
+                new Transform
+                {
+                    position = new Vector3(-4f, 0f, 0f),
+                    rotation = Quaternion.Identity,
+                    scale = new Vector3(0.1f, 4.5f, 1f)
+                },
+                new Transform
+                {
+                    position = new Vector3(4f, 0f, 0f),
+                    rotation = Quaternion.Identity,
+                    scale = new Vector3(0.1f, 4.5f, 1f)
+                },
+                new Transform
+                {
+                    position = new Vector3(0f, 2.25f, 0f),
+                    rotation = Quaternion.Identity,
+                    scale = new Vector3(8f, 0.1f, 1f)
+                },
+                new Transform
+                {
+                    position = new Vector3(0f, -2.25f, 0f),
+                    rotation = Quaternion.Identity,
+                    scale = new Vector3(8f, 0.1f, 1f) 
+                }
             };
 
             foreach (var transform in transforms)
@@ -37,8 +61,8 @@ namespace MyGame.Systems
                 _componentContainerResource.AddComponent(new TransformComponent(entity.Id, transform));
                 _componentContainerResource.AddComponent(new SpriteComponent(entity.Id));
                 _componentContainerResource.AddComponent(new StaticBody2DComponent(entity.Id));
-                _componentContainerResource.AddComponent(new BoxCollider2DComponent(entity.Id, Vector2.One));
-                _componentContainerResource.AddComponent(new TestComponent(entity.Id));
+                _componentContainerResource.AddComponent(new Collider2DComponent(entity.Id, new BoxCollider2D(Vector2.One)));
+                // _componentContainerResource.AddComponent(new TestComponent(entity.Id));
                 _componentContainerResource.AddComponent(new PhysicsMaterial(entity.Id, 0f));
             }
 
@@ -53,8 +77,8 @@ namespace MyGame.Systems
                 scale = new Vector3(0.25f, 0.25f, 1f)
             }));
             _componentContainerResource.AddComponent(new DynamicBody2DComponent(playerEntity.Id));
-            _componentContainerResource.AddComponent(new BoxCollider2DComponent(playerEntity.Id, Vector2.One));
-            _componentContainerResource.AddComponent(new PhysicsMaterial(playerEntity.Id, 0.5f));
+            _componentContainerResource.AddComponent(new Collider2DComponent(playerEntity.Id, new CircleCollider2D(1f)));
+            _componentContainerResource.AddComponent(new PhysicsMaterial(playerEntity.Id, 1f));
         }
     }
 }

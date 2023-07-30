@@ -6,6 +6,7 @@ using BepuUtilities;
 using BepuUtilities.Memory;
 using MyEngine.Core;
 using MyEngine.Core.Ecs;
+using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
@@ -217,7 +218,35 @@ namespace MyEngine.Physics
             _staticHandles[entityId] = (handle, shape);
         }
 
-        public void AddStaticBody2D(EntityId entityId, Transform transform, float bounciness)
+        private (TypedIndex ShapeIndex, BodyInertia ShapeInertia) AddColliderAsShape(ICollider2D collider2D, Transform transform, float mass)
+        {
+            switch (collider2D)
+            {
+                case BoxCollider2D boxCollider:
+                    {
+                        var shape = new Box(boxCollider.Dimensions.X * transform.scale.X, boxCollider.Dimensions.Y * transform.scale.Y, 1000f);
+                        var inertia = shape.ComputeInertia(mass);
+
+                        var shapeIndex = _simulation.Shapes.Add(shape);
+
+                        return (shapeIndex, inertia);
+                    }
+                case CircleCollider2D circleCollider:
+                    {
+                        // todo: how to scale this?
+                        var shape = new Sphere(circleCollider.Radius * transform.scale.X);
+                        var inertia = shape.ComputeInertia(mass);
+
+                        var shapeIndex = _simulation.Shapes.Add(shape);
+
+                        return (shapeIndex, inertia);
+                    }
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        public void AddStaticBody2D(EntityId entityId, Transform transform, ICollider2D collider2D, float bounciness)
         {
 
             if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
@@ -225,7 +254,8 @@ namespace MyEngine.Physics
                 return;
             }
 
-            var shape = _simulation.Shapes.Add(new Box(transform.scale.X, transform.scale.Y, 1000f));
+            // todo: don't require mass
+            var (shape, _) = AddColliderAsShape(collider2D, transform, 10f);
             var handle = _simulation.Statics.Add(new StaticDescription(transform.position, transform.rotation, shape));
 
             var material = new SimpleMaterial
@@ -277,17 +307,14 @@ namespace MyEngine.Physics
             _dynamicHandles.Add(entityId, (handle, shapeIndex));
         }
 
-        public void AddDynamicBody2D(EntityId entityId, Transform transform, float bounciness)
+        public void AddDynamicBody2D(EntityId entityId, Transform transform, ICollider2D collider, float bounciness)
         {
             if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
             {
                 return;
             }
 
-            var shape = new Box(transform.scale.X, transform.scale.Y, transform.scale.Z);
-            var shapeIndex = _simulation.Shapes.Add(shape);
-
-            var inertia = shape.ComputeInertia(10f);
+            var (shapeIndex, inertia) = AddColliderAsShape(collider, transform, 10f);
             var inverseInertiaTensor = inertia.InverseInertiaTensor;
 
             // dont allow rotation along X or Y Axis for 2D

@@ -204,30 +204,30 @@ namespace MyEngine.Runtime
 
             _systemInstantiations.Add(typeof(PhysicsSystem), () =>
             {
-                IEnumerable<(TransformComponent, StaticBody2DComponent, BoxCollider2DComponent, OptionalComponent<PhysicsMaterial>)> GetQuery1Components()
+                IEnumerable<(TransformComponent, StaticBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>)> GetQuery1Components()
                 {
                     foreach (var entityId in _entities)
                     {
                         if (_components.TryGetComponent<TransformComponent>(entityId, out var transformComponent)
                             && _components.TryGetComponent<StaticBody2DComponent>(entityId, out var staticBodyComponent)
-                            && _components.TryGetComponent<BoxCollider2DComponent>(entityId, out var boxCollider2DComponent))
+                            && _components.TryGetComponent<Collider2DComponent>(entityId, out var collider2dComponent))
                         {
                             var physicsMaterial = _components.GetOptionalComponent<PhysicsMaterial>(entityId);
-                            yield return (transformComponent, staticBodyComponent, boxCollider2DComponent, physicsMaterial);
+                            yield return (transformComponent, staticBodyComponent, collider2dComponent, physicsMaterial);
                         }
                     }
                 }
 
-                IEnumerable<(TransformComponent, DynamicBody2DComponent, BoxCollider2DComponent, OptionalComponent<PhysicsMaterial>)> GetQuery2Components()
+                IEnumerable<(TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>)> GetQuery2Components()
                 {
                     foreach (var entityId in _entities)
                     {
                         if (_components.TryGetComponent<TransformComponent>(entityId, out var transformComponent)
                             && _components.TryGetComponent<DynamicBody2DComponent>(entityId, out var dynamicBodyComponent)
-                            && _components.TryGetComponent<BoxCollider2DComponent>(entityId, out var boxCollider2DComponent))
+                            && _components.TryGetComponent<Collider2DComponent>(entityId, out var collider2DComponent))
                         {
                             var physicsMaterial = _components.GetOptionalComponent<PhysicsMaterial>(entityId);
-                            yield return (transformComponent, dynamicBodyComponent, boxCollider2DComponent, physicsMaterial);
+                            yield return (transformComponent, dynamicBodyComponent, collider2DComponent, physicsMaterial);
                         }
                     }
                 }
@@ -240,8 +240,8 @@ namespace MyEngine.Runtime
                         physicsResource,
                         collisionsResource,
                         myPhysics,
-                        new MyQuery<TransformComponent, StaticBody2DComponent, BoxCollider2DComponent, OptionalComponent<PhysicsMaterial>>(GetQuery1Components),
-                        new MyQuery<TransformComponent, DynamicBody2DComponent, BoxCollider2DComponent, OptionalComponent<PhysicsMaterial>>(GetQuery2Components));
+                        new MyQuery<TransformComponent, StaticBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>(GetQuery1Components),
+                        new MyQuery<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>(GetQuery2Components));
                     _uninstantiatedSystems.Remove(typeof(PhysicsSystem));
                 }
             });

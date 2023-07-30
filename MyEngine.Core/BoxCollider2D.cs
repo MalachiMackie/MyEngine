@@ -7,16 +7,12 @@ using System.Threading.Tasks;
 
 namespace MyEngine.Core.Ecs.Components
 {
-    public class BoxCollider2DComponent : IComponent
+    public class BoxCollider2D : ICollider2D
     {
-        public EntityId EntityId { get; }
-
         public Vector2 Dimensions { get; }
 
-        public BoxCollider2DComponent(EntityId entityId,
-            Vector2 dimensions)
+        public BoxCollider2D(Vector2 dimensions)
         {
-            EntityId = entityId;
             Dimensions = dimensions;
         }
     }

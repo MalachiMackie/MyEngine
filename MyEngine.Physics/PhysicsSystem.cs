@@ -12,14 +12,14 @@ namespace MyEngine.Physics
         private readonly PhysicsResource _physicsResource;
         private readonly CollisionsResource _collisionsResource;
         private readonly MyPhysics _myPhysics;
-        private readonly MyQuery<TransformComponent, StaticBody2DComponent, BoxCollider2DComponent, OptionalComponent<PhysicsMaterial>> _staticBodiesQuery;
-        private readonly MyQuery<TransformComponent, DynamicBody2DComponent, BoxCollider2DComponent, OptionalComponent<PhysicsMaterial>> _dynamicBodiesQuery;
+        private readonly MyQuery<TransformComponent, StaticBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>> _staticBodiesQuery;
+        private readonly MyQuery<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>> _dynamicBodiesQuery;
 
         public PhysicsSystem(PhysicsResource physicsResource,
             CollisionsResource collisionsResource,
             MyPhysics myPhysics,
-            MyQuery<TransformComponent, StaticBody2DComponent, BoxCollider2DComponent, OptionalComponent<PhysicsMaterial>> staticBodiesQuery,
-            MyQuery<TransformComponent, DynamicBody2DComponent, BoxCollider2DComponent, OptionalComponent<PhysicsMaterial>> dynamicBodiesQuery)
+            MyQuery<TransformComponent, StaticBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>> staticBodiesQuery,
+            MyQuery<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>> dynamicBodiesQuery)
         {
             _physicsResource = physicsResource;
             _collisionsResource = collisionsResource;
@@ -44,14 +44,12 @@ namespace MyEngine.Physics
                 if (!extraStaticBodies.Remove(staticBody.EntityId))
                 {
                     // this is a new static body
-                    var scale = transform.Transform.scale * new Vector3(collider.Dimensions, 1f);
-
                     _physicsResource.AddStaticBody2D(transform.EntityId, new Transform
                     {
                         position = transform.Transform.position,
                         rotation = transform.Transform.rotation,
-                        scale = scale,
-                    }, material.Component?.Bounciness ?? 0f);
+                        scale = transform.Transform.scale,
+                    }, collider.Collider, material.Component?.Bounciness ?? 0f);
                 }
 
                 staticTransformsToUpdate.Add(transform.EntityId, transform.Transform);
@@ -61,14 +59,12 @@ namespace MyEngine.Physics
                 if (!extraDynamicBodies.Remove(dynamicBody.EntityId))
                 {
                     // this is a new dynamic body
-                    var scale = transform.Transform.scale * new Vector3(collider.Dimensions, 1f);
-
                     _physicsResource.AddDynamicBody2D(transform.EntityId, new Transform
                     {
                         position = transform.Transform.position,
                         rotation = transform.Transform.rotation,
-                        scale = scale,
-                    }, material.Component?.Bounciness ?? 0f);
+                        scale = transform.Transform.scale,
+                    }, collider.Collider, material.Component?.Bounciness ?? 0f);
                 }
 
                 dynamicTransformsToUpdate.Add(transform.EntityId, transform.Transform);
@@ -115,13 +111,13 @@ namespace MyEngine.Physics
                         _myPhysics.AddStaticBody(addStaticBody.entityId, addStaticBody.transform, addStaticBody.bounciness);
                         break;
                     case PhysicsResource.AddStaticBody2DCommand addStaticBody2D:
-                        _myPhysics.AddStaticBody2D(addStaticBody2D.entityId, addStaticBody2D.transform, addStaticBody2D.bounciness);
+                        _myPhysics.AddStaticBody2D(addStaticBody2D.entityId, addStaticBody2D.transform, addStaticBody2D.collider, addStaticBody2D.bounciness);
                         break;
                     case PhysicsResource.AddDynamicBodyCommand addDynamicBody:
                         _myPhysics.AddDynamicBody(addDynamicBody.entityId, addDynamicBody.transform, addDynamicBody.bounciness);
                         break;
                     case PhysicsResource.AddDynamicBody2DCommand addDynamicBody2D:
-                        _myPhysics.AddDynamicBody2D(addDynamicBody2D.entityId, addDynamicBody2D.transform, addDynamicBody2D.bounciness);
+                        _myPhysics.AddDynamicBody2D(addDynamicBody2D.entityId, addDynamicBody2D.transform, addDynamicBody2D.collider, addDynamicBody2D.bounciness);
                         break;
                     case PhysicsResource.RemoveStaticBodyCommand removeStaticBody:
                         _myPhysics.RemoveStaticBody(removeStaticBody.entityId);

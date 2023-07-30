@@ -1,6 +1,4 @@
-﻿using MyEngine.Core;
-using MyEngine.Core.Ecs;
-using System.Numerics;
+﻿using System.Numerics;
 
 namespace MyEngine.Core.Ecs.Resources
 {
@@ -27,9 +25,9 @@ namespace MyEngine.Core.Ecs.Resources
             PhysicsCommands.Enqueue(new AddStaticBodyCommand(entityId, transform, bounciness));
         }
 
-        public void AddStaticBody2D(EntityId entityId, Transform transform, float bounciness)
+        public void AddStaticBody2D(EntityId entityId, Transform transform, ICollider2D collider, float bounciness)
         {
-            PhysicsCommands.Enqueue(new AddStaticBody2DCommand(entityId, transform, bounciness));
+            PhysicsCommands.Enqueue(new AddStaticBody2DCommand(entityId, transform, collider, bounciness));
         }
 
         public void RemoveDynamicBody(EntityId entityId)
@@ -42,9 +40,9 @@ namespace MyEngine.Core.Ecs.Resources
             PhysicsCommands.Enqueue(new AddDynamicBodyCommand(entityId, transform, bounciness));
         }
 
-        public void AddDynamicBody2D(EntityId entityId, Transform transform, float bounciness)
+        public void AddDynamicBody2D(EntityId entityId, Transform transform, ICollider2D collider, float bounciness)
         {
-            PhysicsCommands.Enqueue(new AddDynamicBody2DCommand(entityId, transform, bounciness));
+            PhysicsCommands.Enqueue(new AddDynamicBody2DCommand(entityId, transform, collider, bounciness));
         }
 
         public void UpdateStaticTransform(EntityId entityId, Transform transform)
@@ -73,9 +71,9 @@ namespace MyEngine.Core.Ecs.Resources
 
         internal record UpdateCommand(double dt) : IPhysicsCommand;
         internal record AddDynamicBodyCommand(EntityId entityId, Transform transform, float bounciness) : IPhysicsCommand;
-        internal record AddDynamicBody2DCommand(EntityId entityId, Transform transform, float bounciness) : IPhysicsCommand;
+        internal record AddDynamicBody2DCommand(EntityId entityId, Transform transform, ICollider2D collider, float bounciness) : IPhysicsCommand;
         internal record AddStaticBodyCommand(EntityId entityId, Transform transform, float bounciness) : IPhysicsCommand;
-        internal record AddStaticBody2DCommand(EntityId entityId, Transform transform, float bounciness) : IPhysicsCommand;
+        internal record AddStaticBody2DCommand(EntityId entityId, Transform transform, ICollider2D collider, float bounciness) : IPhysicsCommand;
         internal record RemoveDynamicBodyCommand(EntityId entityId) : IPhysicsCommand;
         internal record RemoveStaticBodyCommand(EntityId entityId) : IPhysicsCommand;
         internal record UpdateStaticTransformCommand(EntityId entityId, Transform transform) : IPhysicsCommand;
