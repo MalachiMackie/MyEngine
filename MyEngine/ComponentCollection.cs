@@ -72,5 +72,16 @@ namespace MyEngine.Runtime
             component = null;
             return false;
         }
+
+        public OptionalComponent<TComponent> GetOptionalComponent<TComponent>(EntityId entityId)
+            where TComponent : class, IComponent
+        {
+            if (TryGetComponent<TComponent>(entityId, out var foundComponent))
+            {
+                return new OptionalComponent<TComponent>(entityId, foundComponent);
+            }
+
+            return new OptionalComponent<TComponent>(entityId, null);
+        }
     }
 }

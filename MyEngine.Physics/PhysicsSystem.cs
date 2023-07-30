@@ -12,14 +12,14 @@ namespace MyEngine.Physics
         private readonly PhysicsResource _physicsResource;
         private readonly CollisionsResource _collisionsResource;
         private readonly MyPhysics _myPhysics;
-        private readonly MyQuery<TransformComponent, StaticBody2DComponent, BoxCollider2DComponent, PhysicsMaterial> _staticBodiesQuery;
-        private readonly MyQuery<TransformComponent, DynamicBody2DComponent, BoxCollider2DComponent, PhysicsMaterial> _dynamicBodiesQuery;
+        private readonly MyQuery<TransformComponent, StaticBody2DComponent, BoxCollider2DComponent, OptionalComponent<PhysicsMaterial>> _staticBodiesQuery;
+        private readonly MyQuery<TransformComponent, DynamicBody2DComponent, BoxCollider2DComponent, OptionalComponent<PhysicsMaterial>> _dynamicBodiesQuery;
 
         public PhysicsSystem(PhysicsResource physicsResource,
             CollisionsResource collisionsResource,
             MyPhysics myPhysics,
-            MyQuery<TransformComponent, StaticBody2DComponent, BoxCollider2DComponent, PhysicsMaterial> staticBodiesQuery,
-            MyQuery<TransformComponent, DynamicBody2DComponent, BoxCollider2DComponent, PhysicsMaterial> dynamicBodiesQuery)
+            MyQuery<TransformComponent, StaticBody2DComponent, BoxCollider2DComponent, OptionalComponent<PhysicsMaterial>> staticBodiesQuery,
+            MyQuery<TransformComponent, DynamicBody2DComponent, BoxCollider2DComponent, OptionalComponent<PhysicsMaterial>> dynamicBodiesQuery)
         {
             _physicsResource = physicsResource;
             _collisionsResource = collisionsResource;
@@ -51,7 +51,7 @@ namespace MyEngine.Physics
                         position = transform.Transform.position,
                         rotation = transform.Transform.rotation,
                         scale = scale,
-                    }, material.Bounciness);
+                    }, material.Component?.Bounciness ?? 0f);
                 }
 
                 staticTransformsToUpdate.Add(transform.EntityId, transform.Transform);
@@ -68,7 +68,7 @@ namespace MyEngine.Physics
                         position = transform.Transform.position,
                         rotation = transform.Transform.rotation,
                         scale = scale,
-                    }, material.Bounciness);
+                    }, material.Component?.Bounciness ?? 0f);
                 }
 
                 dynamicTransformsToUpdate.Add(transform.EntityId, transform.Transform);
