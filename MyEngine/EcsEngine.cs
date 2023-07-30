@@ -40,6 +40,7 @@ namespace MyEngine.Runtime
         private ApplyImpulseSystem? _applyImpulseSystem;
         private RotatePlayerSystem? _rotatePlayerSystem;
         private ToggleSpriteSystem? _toggleSpriteSystem;
+        private OnCollisionSystem? _onCollisionSystem;
 
         // render systems
         private RenderSystem? _renderSystem;
@@ -55,6 +56,7 @@ namespace MyEngine.Runtime
             RegisterResource(new ComponentContainerResource());
             RegisterResource(new PhysicsResource());
             RegisterResource(new MyPhysics());
+            RegisterResource(new CollisionsResource());
 
             {
                 if (_resourceContainer.TryGetResource<EntityContainerResource>(out var entityContainer)
@@ -86,6 +88,7 @@ namespace MyEngine.Runtime
             _applyImpulseSystem?.Run(dt);
             _rotatePlayerSystem?.Run(dt);
             _toggleSpriteSystem?.Run(dt);
+            _onCollisionSystem?.Run(dt);
 
             // todo: do users expect components/entities to be removed from the scene immediately?
             RemoveComponents();
@@ -202,10 +205,12 @@ namespace MyEngine.Runtime
             _systemInstantiations.Add(typeof(PhysicsSystem), () =>
             {
                 if (_resourceContainer.TryGetResource<PhysicsResource>(out var physicsResource)
-                    && _resourceContainer.TryGetResource<MyPhysics>(out var myPhysics))
+                    && _resourceContainer.TryGetResource<MyPhysics>(out var myPhysics)
+                    && _resourceContainer.TryGetResource<CollisionsResource>(out var collisionsResource))
                 {
                     _physicsSystem = new PhysicsSystem(
                         physicsResource,
+                        collisionsResource,
                         myPhysics,
                         CreateQuery<TransformComponent, StaticBody2DComponent, BoxCollider2DComponent>(),
                         CreateQuery<TransformComponent, DynamicBody2DComponent, BoxCollider2DComponent>());
@@ -252,6 +257,18 @@ namespace MyEngine.Runtime
                     _uninstantiatedSystems.Remove(typeof(ToggleSpriteSystem));
                 }
             });
+
+            _systemInstantiations.Add(typeof(OnCollisionSystem), () =>
+            {
+                if (_resourceContainer.TryGetResource<CollisionsResource>(out var collisionsResource)
+                    && _resourceContainer.TryGetResource<EntityContainerResource>(out var entityContainerResource))
+                {
+                    _onCollisionSystem = new OnCollisionSystem(
+                        collisionsResource,
+                        CreateQuery<TestComponent>(),
+                        entityContainerResource);
+                }
+            });
         }
 
         /// <summary>
@@ -264,10 +281,11 @@ namespace MyEngine.Runtime
             { typeof(RenderSystem), new[] { typeof(Renderer) } },
             { typeof(QuitOnEscapeSystem), new[] { typeof(InputResource), typeof(MyWindow) } },
             { typeof(AddSpritesSystem), new[] { typeof(InputResource), typeof(EntityContainerResource), typeof(ComponentContainerResource) } },
-            { typeof(PhysicsSystem), new[] { typeof(PhysicsResource), typeof(MyPhysics) } },
+            { typeof(PhysicsSystem), new[] { typeof(PhysicsResource), typeof(CollisionsResource), typeof(MyPhysics) } },
             { typeof(ApplyImpulseSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } },
             { typeof(RotatePlayerSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } },
-            { typeof(ToggleSpriteSystem), new[] { typeof(InputResource), typeof(ComponentContainerResource) } }
+            { typeof(ToggleSpriteSystem), new[] { typeof(InputResource), typeof(ComponentContainerResource) } },
+            { typeof(OnCollisionSystem), new [] { typeof(CollisionsResource) } }
         };
 
         public partial void RegisterResource<T>(T resource) where T : IResource

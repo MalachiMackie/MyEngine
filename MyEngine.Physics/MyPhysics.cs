@@ -6,6 +6,7 @@ using BepuUtilities.Memory;
 using MyEngine.Core;
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Resources;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
 namespace MyEngine.Physics
@@ -32,8 +33,23 @@ namespace MyEngine.Physics
         }
     }
 
+    public struct Impact
+    {
+        public BodyHandle? bodyHandleA;
+        public StaticHandle? staticHandleA;
+        public BodyHandle? bodyHandleB;
+        public StaticHandle? staticHandleB;
+    }
+
     internal struct MyNarrowPhaseCallback : INarrowPhaseCallbacks
     {
+        public MyNarrowPhaseCallback()
+        {
+            Impacts = new(); 
+        }
+
+        public List<Impact> Impacts;
+
         public bool AllowContactGeneration(int workerIndex, CollidableReference a, CollidableReference b, ref float speculativeMargin)
         {
             return a.Mobility == CollidableMobility.Dynamic || b.Mobility == CollidableMobility.Dynamic;
@@ -49,6 +65,20 @@ namespace MyEngine.Physics
             pairMaterial.FrictionCoefficient = 1f;
             pairMaterial.MaximumRecoveryVelocity = 2f;
             pairMaterial.SpringSettings = new BepuPhysics.Constraints.SpringSettings(30, 1);
+
+            if (pair.A.Mobility != CollidableMobility.Dynamic && pair.B.Mobility != CollidableMobility.Dynamic)
+            {
+                // pair of statics, how did this happen?
+                return false;
+            }
+
+            Impacts.Add(new Impact
+            {
+                bodyHandleA = pair.A.Mobility != CollidableMobility.Static ? pair.A.BodyHandle : null,
+                staticHandleA = pair.A.Mobility == CollidableMobility.Static ? pair.A.StaticHandle : null,
+                bodyHandleB = pair.B.Mobility != CollidableMobility.Static ? pair.B.BodyHandle : null,
+                staticHandleB = pair.B.Mobility == CollidableMobility.Static ? pair.B.StaticHandle : null,
+            });
 
             return true;
         }
@@ -72,8 +102,8 @@ namespace MyEngine.Physics
         private readonly Simulation _simulation;
         private readonly BufferPool _bufferPool;
 
-        private Dictionary<EntityId, (StaticHandle, TypedIndex)> _staticHandles = new();
-        private Dictionary<EntityId, (BodyHandle, TypedIndex)> _dynamicHandles = new();
+        private Dictionary<EntityId, (StaticHandle Handle, TypedIndex ShapeIndex)> _staticHandles = new();
+        private Dictionary<EntityId, (BodyHandle Handle, TypedIndex ShapeIndex)> _dynamicHandles = new();
 
         public MyPhysics()
         {
@@ -84,14 +114,68 @@ namespace MyEngine.Physics
                 new SolveDescription(6, 1));
         }
 
-        public void Update(double dt)
+        public void Update(double dt, out IEnumerable<Collision> newCollisions)
         {
+            List<Impact> impacts = new(); 
+            if (_simulation.NarrowPhase is NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
+            {
+                impacts = narrowPhase.Callbacks.Impacts;
+            }
+
+            impacts.Clear();
             _simulation.Timestep((float)dt);
+
+            newCollisions = impacts.Select(x =>
+            {
+                EntityId entityIdA;
+                EntityId entityIdB;
+                if (x.bodyHandleA.HasValue)
+                {
+                    (entityIdA, var _) = _dynamicHandles.FirstOrDefault(y => y.Value.Handle == x.bodyHandleA.Value);
+                } else if (x.staticHandleA.HasValue)
+                {
+                    (entityIdA, var _) = _staticHandles.FirstOrDefault(y => y.Value.Handle == x.staticHandleA.Value);
+                } else
+                {
+                    return null;
+                }
+
+                if (x.bodyHandleB.HasValue)
+                {
+                    (entityIdB, var _) = _dynamicHandles.FirstOrDefault(y => y.Value.Handle == x.bodyHandleB.Value);
+                } else if (x.staticHandleB.HasValue)
+                {
+                    (entityIdB, var _) = _staticHandles.FirstOrDefault(y => y.Value.Handle == x.staticHandleB.Value);
+                } else
+                {
+                    return null;
+                }
+
+                return new Collision
+                {
+                    EntityA = entityIdA,
+                    EntityB = entityIdB
+                };
+            }).Where(x => x is not null).Cast<Collision>();
+        }
+
+        public IEnumerable<EntityId> GetStaticBodies()
+        {
+            return _staticHandles.Keys;
+        }
+
+        public IEnumerable<EntityId> GetDynamicBodies()
+        {
+            return _dynamicHandles.Keys;
         }
 
         public void RemoveStaticBody(EntityId entityId)
         {
-            var (handle, shape) = _staticHandles[entityId];
+            if (!_staticHandles.TryGetValue(entityId, out var handles))
+            {
+                return;
+            }
+            var (handle, shape) = handles;
             _staticHandles.Remove(entityId);
             _simulation.Statics.Remove(handle);
             _simulation.Shapes.Remove(shape);

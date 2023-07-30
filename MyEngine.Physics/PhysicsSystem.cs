@@ -10,19 +10,19 @@ namespace MyEngine.Physics
     public class PhysicsSystem : ISystem
     {
         private readonly PhysicsResource _physicsResource;
+        private readonly CollisionsResource _collisionsResource;
         private readonly MyPhysics _myPhysics;
         private readonly MyQuery<TransformComponent, StaticBody2DComponent, BoxCollider2DComponent> _staticBodiesQuery;
         private readonly MyQuery<TransformComponent, DynamicBody2DComponent, BoxCollider2DComponent> _dynamicBodiesQuery;
 
-        private readonly HashSet<EntityId> _staticBodies = new();
-        private readonly HashSet<EntityId> _dynamicBodies = new();
-
         public PhysicsSystem(PhysicsResource physicsResource,
+            CollisionsResource collisionsResource,
             MyPhysics myPhysics,
             MyQuery<TransformComponent, StaticBody2DComponent, BoxCollider2DComponent> staticBodiesQuery,
             MyQuery<TransformComponent, DynamicBody2DComponent, BoxCollider2DComponent> dynamicBodiesQuery)
         {
             _physicsResource = physicsResource;
+            _collisionsResource = collisionsResource;
             _myPhysics = myPhysics;
             _staticBodiesQuery = staticBodiesQuery;
             _dynamicBodiesQuery = dynamicBodiesQuery;
@@ -30,9 +30,12 @@ namespace MyEngine.Physics
 
         public void Run(double deltaTime)
         {
+            // todo: get static bodies and dynamic bodies from the physics engine, rather than trying to remember them
+            var staticBodies = _myPhysics.GetStaticBodies();
+            var dynamicBodies = _myPhysics.GetDynamicBodies();
 
-            var extraStaticBodies = new HashSet<EntityId>(_staticBodies);
-            var extraDynamicBodies = new HashSet<EntityId>(_dynamicBodies);
+            var extraStaticBodies = new HashSet<EntityId>(staticBodies);
+            var extraDynamicBodies = new HashSet<EntityId>(dynamicBodies);
             var staticTransformsToUpdate = new Dictionary<EntityId, Transform>();
             var dynamicTransformsToUpdate = new Dictionary<EntityId, Transform>();
 
@@ -49,8 +52,6 @@ namespace MyEngine.Physics
                         rotation = transform.Transform.rotation,
                         scale = scale,
                     });
-
-                    _staticBodies.Add(transform.EntityId);
                 }
 
                 staticTransformsToUpdate.Add(transform.EntityId, transform.Transform);
@@ -68,7 +69,6 @@ namespace MyEngine.Physics
                         rotation = transform.Transform.rotation,
                         scale = scale,
                     });
-                    _dynamicBodies.Add(transform.EntityId);
                 }
 
                 dynamicTransformsToUpdate.Add(transform.EntityId, transform.Transform);
@@ -77,14 +77,12 @@ namespace MyEngine.Physics
             foreach (var extraStaticBody in extraStaticBodies)
             {
                 _physicsResource.RemoveStaticBody(extraStaticBody);
-                _dynamicBodies.Remove(extraStaticBody);
                 staticTransformsToUpdate.Remove(extraStaticBody);
             }
 
             foreach (var extraDynamicBody in extraDynamicBodies)
             {
                 _physicsResource.RemoveStaticBody(extraDynamicBody);
-                _dynamicBodies.Remove(extraDynamicBody);
                 dynamicTransformsToUpdate.Remove(extraDynamicBody);
             }
             
@@ -132,8 +130,12 @@ namespace MyEngine.Physics
                         _myPhysics.RemoveDynamicBody(removeDynamicBody.entityId);
                         break;
                     case PhysicsResource.UpdateCommand update:
-                        _myPhysics.Update(update.dt);
-                        break;
+                        {
+                            _collisionsResource._newCollisions.Clear();
+                            _myPhysics.Update(update.dt, out var newCollisions);
+                            _collisionsResource._newCollisions.AddRange(newCollisions);
+                            break;
+                        }
                 }
             }
         }

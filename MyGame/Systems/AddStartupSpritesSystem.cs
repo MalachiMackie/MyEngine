@@ -38,6 +38,7 @@ namespace MyGame.Systems
                 _componentContainerResource.AddComponent(new SpriteComponent(entity.Id));
                 _componentContainerResource.AddComponent(new StaticBody2DComponent(entity.Id));
                 _componentContainerResource.AddComponent(new BoxCollider2DComponent(entity.Id, Vector2.One));
+                _componentContainerResource.AddComponent(new TestComponent(entity.Id));
             }
 
             var playerEntity = new Entity();
