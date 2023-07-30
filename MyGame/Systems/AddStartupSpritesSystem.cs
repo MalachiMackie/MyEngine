@@ -39,6 +39,7 @@ namespace MyGame.Systems
                 _componentContainerResource.AddComponent(new StaticBody2DComponent(entity.Id));
                 _componentContainerResource.AddComponent(new BoxCollider2DComponent(entity.Id, Vector2.One));
                 _componentContainerResource.AddComponent(new TestComponent(entity.Id));
+                _componentContainerResource.AddComponent(new PhysicsMaterial(entity.Id, 0f));
             }
 
             var playerEntity = new Entity();
@@ -53,6 +54,7 @@ namespace MyGame.Systems
             }));
             _componentContainerResource.AddComponent(new DynamicBody2DComponent(playerEntity.Id));
             _componentContainerResource.AddComponent(new BoxCollider2DComponent(playerEntity.Id, Vector2.One));
+            _componentContainerResource.AddComponent(new PhysicsMaterial(playerEntity.Id, 0.5f));
         }
     }
 }

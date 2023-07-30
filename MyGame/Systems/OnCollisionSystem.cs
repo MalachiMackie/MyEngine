@@ -12,7 +12,6 @@ namespace MyGame.Systems
 {
     public class OnCollisionSystem : ISystem
     {
-        // todo: how to do OnCollision?
         private readonly CollisionsResource _collisionsResource;
         private readonly EntityContainerResource _entityContainerResource;
         private readonly MyQuery<TestComponent> _testComponentQuery;
@@ -55,6 +54,10 @@ namespace MyGame.Systems
 
         private IEnumerator RemoveEntityNextFrame(EntityId entityId)
         {
+            // wait a few frames before removing the entity
+            yield return null;
+            yield return null;
+            yield return null;
             yield return null;
 
             _entityContainerResource.RemoveEntity(entityId);

@@ -212,8 +212,8 @@ namespace MyEngine.Runtime
                         physicsResource,
                         collisionsResource,
                         myPhysics,
-                        CreateQuery<TransformComponent, StaticBody2DComponent, BoxCollider2DComponent>(),
-                        CreateQuery<TransformComponent, DynamicBody2DComponent, BoxCollider2DComponent>());
+                        CreateQuery<TransformComponent, StaticBody2DComponent, BoxCollider2DComponent, PhysicsMaterial>(),
+                        CreateQuery<TransformComponent, DynamicBody2DComponent, BoxCollider2DComponent, PhysicsMaterial>());
                     _uninstantiatedSystems.Remove(typeof(PhysicsSystem));
                 }
             });
@@ -300,19 +300,6 @@ namespace MyEngine.Runtime
             }
         }
 
-
-        private IEnumerable<T> GetComponents<T>()
-            where T : class, IComponent
-        {
-            foreach (var entityId in _entities)
-            {
-                if (_components.TryGetComponent<T>(entityId, out var component))
-                {
-                    yield return component;
-                }
-            }
-        }
-
         private MyQuery<T> CreateQuery<T>()
             where T : class, IComponent
         {
@@ -332,6 +319,27 @@ namespace MyEngine.Runtime
             where T3 : class, IComponent
         {
             return new MyQuery<T1, T2, T3>(GetComponents<T1, T2, T3>);
+        }
+
+        private MyQuery<T1, T2, T3, T4> CreateQuery<T1, T2, T3, T4>()
+            where T1 : class, IComponent
+            where T2 : class, IComponent
+            where T3 : class, IComponent
+            where T4 : class, IComponent
+        {
+            return new MyQuery<T1, T2, T3, T4>(GetComponents<T1, T2, T3, T4>);
+        }
+
+        private IEnumerable<T> GetComponents<T>()
+            where T : class, IComponent
+        {
+            foreach (var entityId in _entities)
+            {
+                if (_components.TryGetComponent<T>(entityId, out var component))
+                {
+                    yield return component;
+                }
+            }
         }
 
         private IEnumerable<(T1, T2)> GetComponents<T1, T2>()
@@ -360,6 +368,24 @@ namespace MyEngine.Runtime
                     && _components.TryGetComponent<T3>(entityId, out var component3))
                 {
                     yield return (component1, component2, component3);
+                }
+            }
+        }
+
+        private IEnumerable<(T1, T2, T3, T4)> GetComponents<T1, T2, T3, T4>()
+            where T1 : class, IComponent
+            where T2 : class, IComponent
+            where T3 : class, IComponent
+            where T4 : class, IComponent
+        {
+            foreach (var entityId in _entities)
+            {
+                if (_components.TryGetComponent<T1>(entityId, out var component1)
+                    && _components.TryGetComponent<T2>(entityId, out var component2)
+                    && _components.TryGetComponent<T3>(entityId, out var component3)
+                    && _components.TryGetComponent<T4>(entityId, out var component4))
+                {
+                    yield return (component1, component2, component3, component4);
                 }
             }
         }

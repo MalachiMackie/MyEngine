@@ -1,6 +1,7 @@
 ﻿using BepuPhysics;
 using BepuPhysics.Collidables;
 using BepuPhysics.CollisionDetection;
+using BepuPhysics.Constraints;
 using BepuUtilities;
 using BepuUtilities.Memory;
 using MyEngine.Core;
@@ -41,11 +42,21 @@ namespace MyEngine.Physics
         public StaticHandle? staticHandleB;
     }
 
+    internal struct SimpleMaterial
+    {
+        public SpringSettings SpringSettings;
+        public float FrictionCoefficient;
+        public float MaximumRecoveryVelocity;
+    }
+
     internal struct MyNarrowPhaseCallback : INarrowPhaseCallbacks
     {
+        public CollidableProperty<SimpleMaterial> CollidableMaterials;
+
         public MyNarrowPhaseCallback()
         {
-            Impacts = new(); 
+            Impacts = new();
+            CollidableMaterials = new();
         }
 
         public List<Impact> Impacts;
@@ -62,9 +73,11 @@ namespace MyEngine.Physics
 
         public bool ConfigureContactManifold<TManifold>(int workerIndex, CollidablePair pair, ref TManifold manifold, out PairMaterialProperties pairMaterial) where TManifold : unmanaged, IContactManifold<TManifold>
         {
-            pairMaterial.FrictionCoefficient = 1f;
-            pairMaterial.MaximumRecoveryVelocity = 2f;
-            pairMaterial.SpringSettings = new BepuPhysics.Constraints.SpringSettings(30, 1);
+            var a = CollidableMaterials[pair.A];
+            var b = CollidableMaterials[pair.B];
+            pairMaterial.FrictionCoefficient = a.FrictionCoefficient * b.FrictionCoefficient;
+            pairMaterial.MaximumRecoveryVelocity = MathF.Max(a.MaximumRecoveryVelocity, b.MaximumRecoveryVelocity);
+            pairMaterial.SpringSettings = pairMaterial.MaximumRecoveryVelocity == a.MaximumRecoveryVelocity ? a.SpringSettings : b.SpringSettings;
 
             if (pair.A.Mobility != CollidableMobility.Dynamic && pair.B.Mobility != CollidableMobility.Dynamic)
             {
@@ -94,6 +107,7 @@ namespace MyEngine.Physics
 
         public void Initialize(Simulation simulation)
         {
+            CollidableMaterials.Initialize(simulation);
         }
     }
 
@@ -181,17 +195,49 @@ namespace MyEngine.Physics
             _simulation.Shapes.Remove(shape);
         }
 
-        public void AddStaticBody(EntityId entityId, Transform transform)
+        public void AddStaticBody(EntityId entityId, Transform transform, float bounciness)
         {
+            if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
+            {
+                return;
+            }
+
             var shape = _simulation.Shapes.Add(new Box(transform.scale.X, transform.scale.Y, transform.scale.Z));
             var handle = _simulation.Statics.Add(new StaticDescription(transform.position, transform.rotation, shape));
+
+            var material = new SimpleMaterial
+            {
+                FrictionCoefficient = 1f,
+                MaximumRecoveryVelocity = 2f,
+                SpringSettings = new SpringSettings(5f + 25f * (1f - bounciness), 1f - bounciness)
+            };
+
+            narrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
+
             _staticHandles[entityId] = (handle, shape);
         }
 
-        public void AddStaticBody2D(EntityId entityId, Transform transform)
+        public void AddStaticBody2D(EntityId entityId, Transform transform, float bounciness)
         {
+
+            if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
+            {
+                return;
+            }
+
             var shape = _simulation.Shapes.Add(new Box(transform.scale.X, transform.scale.Y, 1000f));
             var handle = _simulation.Statics.Add(new StaticDescription(transform.position, transform.rotation, shape));
+
+            var material = new SimpleMaterial
+            {
+                FrictionCoefficient = 1f,
+                MaximumRecoveryVelocity = 2f,
+                SpringSettings = new SpringSettings(5f + 25f * (1f - bounciness), 1f - bounciness)
+            };
+
+            narrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
+
+
             _staticHandles[entityId] = (handle, shape);
         }
 
@@ -203,8 +249,13 @@ namespace MyEngine.Physics
             _simulation.Shapes.Remove(shape);
         }
 
-        public void AddDynamicBody(EntityId entityId, Transform transform)
+        public void AddDynamicBody(EntityId entityId, Transform transform, float bounciness)
         {
+            if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
+            {
+                return;
+            }
+
             var shape = new Box(transform.scale.X, transform.scale.Y, transform.scale.Z);
             var shapeIndex = _simulation.Shapes.Add(shape);
             var handle = _simulation.Bodies.Add(BodyDescription.CreateDynamic(
@@ -214,11 +265,25 @@ namespace MyEngine.Physics
                 new CollidableDescription(shapeIndex),
                 new BodyActivityDescription(0.01f)));
 
+            var material = new SimpleMaterial
+            {
+                FrictionCoefficient = 1f,
+                MaximumRecoveryVelocity = float.MaxValue,
+                SpringSettings = new SpringSettings(5f + 25f * (1f - bounciness), 1f - bounciness)
+            };
+
+            narrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
+
             _dynamicHandles.Add(entityId, (handle, shapeIndex));
         }
 
-        public void AddDynamicBody2D(EntityId entityId, Transform transform)
+        public void AddDynamicBody2D(EntityId entityId, Transform transform, float bounciness)
         {
+            if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
+            {
+                return;
+            }
+
             var shape = new Box(transform.scale.X, transform.scale.Y, transform.scale.Z);
             var shapeIndex = _simulation.Shapes.Add(shape);
 
@@ -239,6 +304,19 @@ namespace MyEngine.Physics
                 new BodyActivityDescription(0.01f));
 
             var handle = _simulation.Bodies.Add(body);
+
+            var material = new SimpleMaterial
+            {
+                FrictionCoefficient = 1f,
+                MaximumRecoveryVelocity = float.MaxValue,
+                // full bounce target: 5f, 1f
+                // zero bounce target: 30f, 0f
+                // todo: full and zero bounce work well, half bounciness doesnt do half bounce
+                SpringSettings = new SpringSettings(5f + 25f * (1f - bounciness), 1f - bounciness)
+            };
+
+            narrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
+
 
             _dynamicHandles.Add(entityId, (handle, shapeIndex));
         }

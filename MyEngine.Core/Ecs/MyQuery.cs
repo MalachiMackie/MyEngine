@@ -73,4 +73,28 @@ namespace MyEngine.Core.Ecs
             return GetEnumerator();
         }
     }
+
+    public class MyQuery<T1, T2, T3, T4> : IEnumerable<(T1, T2, T3, T4)>
+        where T1 : IComponent
+        where T2 : IComponent
+        where T3 : IComponent
+        where T4 : IComponent
+    {
+        internal MyQuery(Func<IEnumerable<(T1, T2, T3, T4)>> components)
+        {
+            ComponentsFunc = components;
+        }
+
+        internal Func<IEnumerable<(T1, T2, T3, T4)>> ComponentsFunc { get; set; }
+
+        public IEnumerator<(T1, T2, T3, T4)> GetEnumerator()
+        {
+            return ComponentsFunc().GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+    }
 }
