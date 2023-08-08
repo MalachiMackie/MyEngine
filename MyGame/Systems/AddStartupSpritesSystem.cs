@@ -56,29 +56,29 @@ namespace MyGame.Systems
 
             foreach (var transform in transforms)
             {
-                var entity = new Entity();
+                var entity = EntityId.Generate();
                 _entityContainerResource.AddEntity(entity);
-                _componentContainerResource.AddComponent(new TransformComponent(entity.Id, transform));
-                _componentContainerResource.AddComponent(new SpriteComponent(entity.Id));
-                _componentContainerResource.AddComponent(new StaticBody2DComponent(entity.Id));
-                _componentContainerResource.AddComponent(new Collider2DComponent(entity.Id, new BoxCollider2D(Vector2.One)));
+                _componentContainerResource.AddComponent(new TransformComponent(entity, transform));
+                _componentContainerResource.AddComponent(new SpriteComponent(entity));
+                _componentContainerResource.AddComponent(new StaticBody2DComponent(entity));
+                _componentContainerResource.AddComponent(new Collider2DComponent(entity, new BoxCollider2D(Vector2.One)));
                 // _componentContainerResource.AddComponent(new TestComponent(entity.Id));
-                _componentContainerResource.AddComponent(new PhysicsMaterial(entity.Id, 0f));
+                _componentContainerResource.AddComponent(new PhysicsMaterial(entity, 0f));
             }
 
-            var playerEntity = new Entity();
+            var playerEntity = EntityId.Generate();
             _entityContainerResource.AddEntity(playerEntity);
-            _componentContainerResource.AddComponent(new PlayerComponent(playerEntity.Id));
-            _componentContainerResource.AddComponent(new SpriteComponent(playerEntity.Id));
-            _componentContainerResource.AddComponent(new TransformComponent(playerEntity.Id, new Transform
+            _componentContainerResource.AddComponent(new PlayerComponent(playerEntity));
+            _componentContainerResource.AddComponent(new SpriteComponent(playerEntity));
+            _componentContainerResource.AddComponent(new TransformComponent(playerEntity, new Transform
             {
                 position = new Vector3(0f, -1f, 0f),
                 rotation = Quaternion.Identity,
                 scale = new Vector3(0.25f, 0.25f, 1f)
             }));
-            _componentContainerResource.AddComponent(new DynamicBody2DComponent(playerEntity.Id));
-            _componentContainerResource.AddComponent(new Collider2DComponent(playerEntity.Id, new CircleCollider2D(1f)));
-            _componentContainerResource.AddComponent(new PhysicsMaterial(playerEntity.Id, 1f));
+            _componentContainerResource.AddComponent(new DynamicBody2DComponent(playerEntity));
+            _componentContainerResource.AddComponent(new Collider2DComponent(playerEntity, new CircleCollider2D(1f)));
+            _componentContainerResource.AddComponent(new PhysicsMaterial(playerEntity, 1f));
         }
     }
 }

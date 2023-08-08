@@ -2,10 +2,10 @@
 {
     public class EntityContainerResource : IResource
     {
-        internal Queue<Entity> NewEntities { get; } = new();
+        internal Queue<EntityId> NewEntities { get; } = new();
         internal Queue<EntityId> DeleteEntities { get; } = new();
 
-        public void AddEntity(Entity entity)
+        public void AddEntity(EntityId entity)
         {
             NewEntities.Enqueue(entity);
         }

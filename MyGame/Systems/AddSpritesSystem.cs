@@ -44,8 +44,8 @@ namespace MyGame.Systems
                 return;
             }
 
-            var newEntity = new Entity();
-            var newTransformComponent = new TransformComponent(newEntity.Id, new MyEngine.Core.Transform
+            var newEntity = EntityId.Generate();
+            var newTransformComponent = new TransformComponent(newEntity, new MyEngine.Core.Transform
             {
                 position = minTransform.position,
                 rotation = minTransform.rotation,
@@ -57,7 +57,7 @@ namespace MyGame.Systems
 
             _entityContainerResource.AddEntity(newEntity);
             _componentContainerResource.AddComponent(newTransformComponent);
-            _componentContainerResource.AddComponent(new SpriteComponent(newEntity.Id));
+            _componentContainerResource.AddComponent(new SpriteComponent(newEntity));
         }
     }
 }

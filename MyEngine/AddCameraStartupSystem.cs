@@ -21,10 +21,10 @@ namespace MyEngine.Runtime
 
         public void Run()
         {
-            var entity = new Entity();
+            var entity = EntityId.Generate();
             _entityContainer.AddEntity(entity);
-            _componentContainer.AddComponent(new Camera2DComponent(entity.Id, new Vector2(8f, 4.5f)));
-            _componentContainer.AddComponent(new TransformComponent(entity.Id));
+            _componentContainer.AddComponent(new Camera2DComponent(entity, new Vector2(8f, 4.5f)));
+            _componentContainer.AddComponent(new TransformComponent(entity));
         }
     }
 }

@@ -103,7 +103,7 @@ namespace MyEngine.Runtime
             Debug.Assert(_resourceContainer.TryGetResource<EntityContainerResource>(out var entityContainer));
             while (entityContainer.NewEntities.TryDequeue(out var entity))
             {
-                if (!_entities.Add(entity.Id))
+                if (!_entities.Add(entity))
                 {
                     throw new InvalidOperationException("Cannot add the same entity multiple times");
                 }
