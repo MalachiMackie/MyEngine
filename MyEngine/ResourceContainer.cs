@@ -1,5 +1,4 @@
-﻿using MyEngine.Core.Ecs.Components;
-using MyEngine.Core.Ecs.Resources;
+﻿using MyEngine.Core.Ecs.Resources;
 using System.Diagnostics.CodeAnalysis;
 
 namespace MyEngine.Runtime

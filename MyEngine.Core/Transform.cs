@@ -1,6 +1,4 @@
-﻿using System.Numerics;
-
-namespace MyEngine.Core
+﻿namespace MyEngine.Core
 {
     public class Transform
     {

@@ -1,6 +1,4 @@
-﻿using System.Numerics;
-
-namespace MyEngine.Core.Input
+﻿namespace MyEngine.Core.Input
 {
     public class MyMouse
     {

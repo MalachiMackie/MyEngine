@@ -1,5 +1,4 @@
 ﻿using MyEngine.Core.Ecs.Components;
-using System.Collections;
 
 namespace MyEngine.Core.Ecs
 {

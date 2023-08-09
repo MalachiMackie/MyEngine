@@ -1,6 +1,4 @@
-﻿using System.Numerics;
-
-namespace MyEngine.Core.Ecs.Resources
+﻿namespace MyEngine.Core.Ecs.Resources
 {
     public class PhysicsResource : IResource
     {

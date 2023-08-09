@@ -1,6 +1,4 @@
-﻿using MyEngine.Core.Ecs.Components;
-
-namespace MyEngine.Core.Ecs.Systems
+﻿namespace MyEngine.Core.Ecs.Systems
 {
     public interface ISystem
     {

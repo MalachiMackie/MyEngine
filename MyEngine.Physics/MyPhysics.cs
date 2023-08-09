@@ -8,7 +8,6 @@ using MyEngine.Core;
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
 namespace MyEngine.Physics
