@@ -7,8 +7,9 @@
   </PropertyGroup>
 
 	<ItemGroup>
-		<InternalsVisibleTo Include="MyEngine.Runtime"/>
-		<InternalsVisibleTo Include="MyEngine.Physics"/>
+		<InternalsVisibleTo Include="MyEngine.Runtime" />
+		<InternalsVisibleTo Include="MyEngine.Physics" />
+		<InternalsVisibleTo Include="MyEngine.Core.Tests" />
 	</ItemGroup>
 
 </Project>

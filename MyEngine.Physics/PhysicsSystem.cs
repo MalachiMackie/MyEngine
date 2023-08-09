@@ -3,7 +3,6 @@ using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
-using System.Numerics;
 
 namespace MyEngine.Physics
 {
@@ -36,7 +35,6 @@ namespace MyEngine.Physics
 
             var extraStaticBodies = new HashSet<EntityId>(staticBodies);
             var extraDynamicBodies = new HashSet<EntityId>(dynamicBodies);
-            var staticTransformsToUpdate = new Dictionary<EntityId, Transform>();
             var dynamicTransformsToUpdate = new Dictionary<EntityId, Transform>();
 
             foreach (var (transform, staticBody, collider, material) in _staticBodiesQuery)
@@ -51,8 +49,6 @@ namespace MyEngine.Physics
                         scale = transform.Transform.scale,
                     }, collider.Collider, material.Component?.Bounciness ?? 0f);
                 }
-
-                staticTransformsToUpdate.Add(transform.EntityId, transform.Transform);
             }
             foreach (var (transform, dynamicBody, collider, material) in _dynamicBodiesQuery)
             {
@@ -73,7 +69,6 @@ namespace MyEngine.Physics
             foreach (var extraStaticBody in extraStaticBodies)
             {
                 _physicsResource.RemoveStaticBody(extraStaticBody);
-                staticTransformsToUpdate.Remove(extraStaticBody);
             }
 
             foreach (var extraDynamicBody in extraDynamicBodies)
@@ -84,7 +79,7 @@ namespace MyEngine.Physics
             
             _physicsResource.Update(deltaTime);
 
-            UpdateTransforms(staticTransformsToUpdate.Select(x => (x.Key, x.Value)), dynamicTransformsToUpdate.Select(x => (x.Key, x.Value)));
+            UpdateTransforms(dynamicTransformsToUpdate.Select(x => (x.Key, x.Value)));
 
             ProcessCommands();
         }
@@ -100,9 +95,6 @@ namespace MyEngine.Physics
                         break;
                     case PhysicsResource.ApplyAngularImpulseCommand applyAngularImpulse:
                         _myPhysics.ApplyAngularImpulse(applyAngularImpulse.entityId, applyAngularImpulse.impulse);
-                        break;
-                    case PhysicsResource.UpdateStaticTransformCommand updateStaticTransform:
-                        _myPhysics.UpdateStaticTransform(updateStaticTransform.entityId, updateStaticTransform.transform);
                         break;
                     case PhysicsResource.UpdateDynamicTransformCommand updateDynamicTransform:
                         _myPhysics.UpdateDynamicTransform(updateDynamicTransform.entityId, updateDynamicTransform.transform);
@@ -136,12 +128,8 @@ namespace MyEngine.Physics
             }
         }
 
-        private void UpdateTransforms(IEnumerable<(EntityId, Transform)> staticTransforms, IEnumerable<(EntityId, Transform)> dynamicTransforms)
+        private void UpdateTransforms(IEnumerable<(EntityId, Transform)> dynamicTransforms)
         {
-            foreach (var (entityId, transform) in staticTransforms)
-            {
-                _physicsResource.UpdateStaticTransform(entityId, transform);
-            }
             foreach (var (entityId, transform) in dynamicTransforms)
             {
                 _physicsResource.UpdateDynamicTransform(entityId, transform);

@@ -45,12 +45,7 @@ namespace MyEngine.Core.Ecs.Resources
             PhysicsCommands.Enqueue(new AddDynamicBody2DCommand(entityId, transform, collider, bounciness));
         }
 
-        public void UpdateStaticTransform(EntityId entityId, Transform transform)
-        {
-            PhysicsCommands.Enqueue(new UpdateStaticTransformCommand(entityId, transform));
-        }
-
-        public void UpdateDynamicTransform(EntityId entityId, Transform transform)
+        internal void UpdateDynamicTransform(EntityId entityId, Transform transform)
         {
             PhysicsCommands.Enqueue(new UpdateDynamicTransformCommand(entityId, transform));
         }
@@ -76,7 +71,6 @@ namespace MyEngine.Core.Ecs.Resources
         internal record AddStaticBody2DCommand(EntityId entityId, Transform transform, ICollider2D collider, float bounciness) : IPhysicsCommand;
         internal record RemoveDynamicBodyCommand(EntityId entityId) : IPhysicsCommand;
         internal record RemoveStaticBodyCommand(EntityId entityId) : IPhysicsCommand;
-        internal record UpdateStaticTransformCommand(EntityId entityId, Transform transform) : IPhysicsCommand;
         internal record UpdateDynamicTransformCommand(EntityId entityId, Transform transform) : IPhysicsCommand;
         internal record ApplyImpulseCommand(EntityId entityId, Vector3 impulse) : IPhysicsCommand;
         internal record ApplyAngularImpulseCommand(EntityId entityId, Vector3 impulse) : IPhysicsCommand;

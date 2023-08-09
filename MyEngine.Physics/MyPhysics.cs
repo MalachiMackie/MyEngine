@@ -364,15 +364,6 @@ namespace MyEngine.Physics
             bodyReference.ApplyAngularImpulse(impulse);
         }
 
-        public void UpdateStaticTransform(EntityId entityId, Transform transform)
-        {
-            var (handle, _) = _staticHandles[entityId];
-            var pose = _simulation.Statics[handle].Pose;
-
-            transform.position = pose.Position;
-            transform.rotation = pose.Orientation;
-        }
-
         public void UpdateDynamicTransform(EntityId entityId, Transform transform)
         {
             var (handle, _) = _dynamicHandles[entityId];

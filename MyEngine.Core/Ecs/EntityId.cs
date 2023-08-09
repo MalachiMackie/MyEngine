@@ -2,8 +2,13 @@
 {
     public class EntityId
     {
+        private EntityId()
+        {
+
+        }
+
         // todo: determine if there's a better id value
-        public Guid Value { get; init; }
+        public required Guid Value { get; init; }
 
         public static EntityId Generate()
         {

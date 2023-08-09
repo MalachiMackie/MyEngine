@@ -11,9 +11,9 @@ namespace MyEngine.Core.Ecs.Resources
             Mouse = mouse;
         }
 
-        public MyMouse Mouse { get; internal set; }
+        public MyMouse Mouse { get; }
 
-        public MyKeyboard Keyboard { get; internal set; }
+        public MyKeyboard Keyboard { get; }
 
         public Vector2 MouseDelta { get; internal set; }
     }
