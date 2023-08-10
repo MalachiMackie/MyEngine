@@ -125,7 +125,7 @@ namespace MyEngine.Runtime
             Debug.Assert(_resourceContainer.TryGetResource<ComponentContainerResource>(out var components));
             while (components.NewComponents.TryDequeue(out var component))
             {
-                _components.AddComponent(component);
+                _components.AddComponent(component.EntityId, component.Component);
             }
         }
 
@@ -148,8 +148,8 @@ namespace MyEngine.Runtime
                 {
                     _cameraMovementSystem = new CameraMovementSystem(
                         inputResource,
-                        CreateQuery<Camera3DComponent, TransformComponent>(),
-                        CreateQuery<Camera2DComponent, TransformComponent>());
+                        GetComponents<Camera3DComponent, TransformComponent>(),
+                        GetComponents<Camera2DComponent, TransformComponent>());
                     _uninstantiatedSystems.Remove(typeof(CameraMovementSystem));
                 }
             });
@@ -170,9 +170,9 @@ namespace MyEngine.Runtime
                 {
                     _renderSystem = new RenderSystem(
                         renderer,
-                        CreateQuery<Camera3DComponent, TransformComponent>(),
-                        CreateQuery<Camera2DComponent, TransformComponent>(),
-                        CreateQuery<SpriteComponent, TransformComponent>());
+                        GetComponents<Camera3DComponent, TransformComponent>(),
+                        GetComponents<Camera2DComponent, TransformComponent>(),
+                        GetComponents<SpriteComponent, TransformComponent>());
                     _uninstantiatedSystems.Remove(typeof(RenderSystem));
                 }
             });
@@ -197,14 +197,14 @@ namespace MyEngine.Runtime
                         inputResource,
                         entityContainer,
                         componentContainer,
-                        CreateQuery<SpriteComponent, TransformComponent>());
+                        GetComponents<SpriteComponent, TransformComponent>());
                     _uninstantiatedSystems.Remove(typeof(AddSpritesSystem));
                 }
             });
 
             _systemInstantiations.Add(typeof(PhysicsSystem), () =>
             {
-                IEnumerable<(TransformComponent, StaticBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>)> GetQuery1Components()
+                IEnumerable<EntityComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>> GetQuery1Components()
                 {
                     foreach (var entityId in _entities)
                     {
@@ -213,12 +213,18 @@ namespace MyEngine.Runtime
                             && _components.TryGetComponent<Collider2DComponent>(entityId, out var collider2dComponent))
                         {
                             var physicsMaterial = _components.GetOptionalComponent<PhysicsMaterial>(entityId);
-                            yield return (transformComponent, staticBodyComponent, collider2dComponent, physicsMaterial);
+                            yield return new EntityComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>(entityId)
+                            {
+                                Component1 = transformComponent,
+                                Component2 = staticBodyComponent,
+                                Component3 = collider2dComponent,
+                                Component4 = physicsMaterial
+                            };
                         }
                     }
                 }
 
-                IEnumerable<(TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>)> GetQuery2Components()
+                IEnumerable<EntityComponents<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>> GetQuery2Components()
                 {
                     foreach (var entityId in _entities)
                     {
@@ -227,7 +233,13 @@ namespace MyEngine.Runtime
                             && _components.TryGetComponent<Collider2DComponent>(entityId, out var collider2DComponent))
                         {
                             var physicsMaterial = _components.GetOptionalComponent<PhysicsMaterial>(entityId);
-                            yield return (transformComponent, dynamicBodyComponent, collider2DComponent, physicsMaterial);
+                            yield return new EntityComponents<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>(entityId)
+                            {
+                                Component1 = transformComponent,
+                                Component2 = dynamicBodyComponent,
+                                Component3 = collider2DComponent,
+                                Component4 = physicsMaterial
+                            };
                         }
                     }
                 }
@@ -240,8 +252,8 @@ namespace MyEngine.Runtime
                         physicsResource,
                         collisionsResource,
                         myPhysics,
-                        new MyQuery<TransformComponent, StaticBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>(GetQuery1Components),
-                        new MyQuery<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>(GetQuery2Components));
+                        GetQuery1Components(),
+                        GetQuery2Components());
                     _uninstantiatedSystems.Remove(typeof(PhysicsSystem));
                 }
             });
@@ -254,7 +266,7 @@ namespace MyEngine.Runtime
                     _applyImpulseSystem = new ApplyImpulseSystem(
                         physicsResource,
                         inputResource,
-                        CreateQuery<PlayerComponent>());
+                        GetComponents<PlayerComponent>());
                     _uninstantiatedSystems.Remove(typeof(ApplyImpulseSystem));
                 }
             });
@@ -265,7 +277,7 @@ namespace MyEngine.Runtime
                     && _resourceContainer.TryGetResource<PhysicsResource>(out var physicsResource))
                 {
                     _rotatePlayerSystem = new RotatePlayerSystem(
-                        CreateQuery<PlayerComponent>(),
+                        GetComponents<PlayerComponent>(),
                         physicsResource,
                         inputResource);
                     _uninstantiatedSystems.Remove(typeof(RotatePlayerSystem));
@@ -278,8 +290,8 @@ namespace MyEngine.Runtime
                     && _resourceContainer.TryGetResource<ComponentContainerResource>(out var componentContainer))
                 {
                     _toggleSpriteSystem = new ToggleSpriteSystem(
-                        CreateQuery<PlayerComponent>(),
-                        CreateQuery<PlayerComponent, SpriteComponent>(),
+                        GetComponents<PlayerComponent>(),
+                        GetComponents<PlayerComponent, SpriteComponent>(),
                         componentContainer,
                         inputResource);
                     _uninstantiatedSystems.Remove(typeof(ToggleSpriteSystem));
@@ -293,7 +305,7 @@ namespace MyEngine.Runtime
                 {
                     _onCollisionSystem = new OnCollisionSystem(
                         collisionsResource,
-                        CreateQuery<TestComponent>(),
+                        GetComponents<TestComponent>(),
                         entityContainerResource);
                 }
             });
@@ -328,49 +340,23 @@ namespace MyEngine.Runtime
             }
         }
 
-        private MyQuery<T> CreateQuery<T>()
-            where T : class, IComponent
-        {
-            return new MyQuery<T>(GetComponents<T>);
-        }
 
-        private MyQuery<T1, T2> CreateQuery<T1, T2>()
-            where T1 : class, IComponent
-            where T2 : class, IComponent
-        {
-            return new MyQuery<T1, T2>(GetComponents<T1, T2>);
-        }
-
-        private MyQuery<T1, T2, T3> CreateQuery<T1, T2, T3>()
-            where T1 : class, IComponent
-            where T2 : class, IComponent
-            where T3 : class, IComponent
-        {
-            return new MyQuery<T1, T2, T3>(GetComponents<T1, T2, T3>);
-        }
-
-        private MyQuery<T1, T2, T3, T4> CreateQuery<T1, T2, T3, T4>()
-            where T1 : class, IComponent
-            where T2 : class, IComponent
-            where T3 : class, IComponent
-            where T4 : class, IComponent
-        {
-            return new MyQuery<T1, T2, T3, T4>(GetComponents<T1, T2, T3, T4>);
-        }
-
-        private IEnumerable<T> GetComponents<T>()
+        private IEnumerable<EntityComponents<T>> GetComponents<T>()
             where T : class, IComponent
         {
             foreach (var entityId in _entities)
             {
                 if (_components.TryGetComponent<T>(entityId, out var component))
                 {
-                    yield return component;
+                    yield return new EntityComponents<T>(entityId)
+                    {
+                        Component = component
+                    };
                 }
             }
         }
 
-        private IEnumerable<(T1, T2)> GetComponents<T1, T2>()
+        private IEnumerable<EntityComponents<T1, T2>> GetComponents<T1, T2>()
             where T1 : class, IComponent
             where T2 : class, IComponent
         {
@@ -379,12 +365,16 @@ namespace MyEngine.Runtime
                 if (_components.TryGetComponent<T1>(entityId, out var component1)
                     && _components.TryGetComponent<T2>(entityId, out var component2))
                 {
-                    yield return (component1, component2);
+                    yield return new EntityComponents<T1, T2>(entityId)
+                    {
+                        Component1 = component1,
+                        Component2 = component2
+                    };
                 }
             }
         }
 
-        private IEnumerable<(T1, T2, T3)> GetComponents<T1, T2, T3>()
+        private IEnumerable<EntityComponents<T1, T2, T3>> GetComponents<T1, T2, T3>()
             where T1 : class, IComponent
             where T2 : class, IComponent
             where T3 : class, IComponent
@@ -395,12 +385,17 @@ namespace MyEngine.Runtime
                     && _components.TryGetComponent<T2>(entityId, out var component2)
                     && _components.TryGetComponent<T3>(entityId, out var component3))
                 {
-                    yield return (component1, component2, component3);
+                    yield return new EntityComponents<T1, T2, T3>(entityId)
+                    {
+                        Component1 = component1,
+                        Component2 = component2,
+                        Component3 = component3
+                    };
                 }
             }
         }
 
-        private IEnumerable<(T1, T2, T3, T4)> GetComponents<T1, T2, T3, T4>()
+        private IEnumerable<EntityComponents<T1, T2, T3, T4>> GetComponents<T1, T2, T3, T4>()
             where T1 : class, IComponent
             where T2 : class, IComponent
             where T3 : class, IComponent
@@ -413,7 +408,13 @@ namespace MyEngine.Runtime
                     && _components.TryGetComponent<T3>(entityId, out var component3)
                     && _components.TryGetComponent<T4>(entityId, out var component4))
                 {
-                    yield return (component1, component2, component3, component4);
+                    yield return new EntityComponents<T1, T2, T3, T4>(entityId)
+                    {
+                        Component1 = component1,
+                        Component2 = component2,
+                        Component3 = component3,
+                        Component4 = component4
+                    };
                 }
             }
         }

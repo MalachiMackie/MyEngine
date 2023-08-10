@@ -3,13 +3,10 @@
     public class OptionalComponent<T> : IComponent
         where T : IComponent
     {
-        public EntityId EntityId { get; }
-
         public T? Component { get; }
 
-        public OptionalComponent(EntityId entityId, T? component) 
+        public OptionalComponent(T? component) 
         {
-            EntityId = entityId;
             Component = component;
         }
     }

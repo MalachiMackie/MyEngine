@@ -7,18 +7,14 @@
 
         public ICollider2D Collider { get; }
 
-        public EntityId EntityId { get; }
-
-        public Collider2DComponent(EntityId entityId, BoxCollider2D boxCollider)
+        public Collider2DComponent(BoxCollider2D boxCollider)
         {
-            EntityId = entityId;
             BoxCollider = boxCollider;
             Collider = BoxCollider;
         }
 
-        public Collider2DComponent(EntityId entityId, CircleCollider2D circleCollider)
+        public Collider2DComponent(CircleCollider2D circleCollider)
         {
-            EntityId = entityId;
             CircleCollider = circleCollider;
             Collider = CircleCollider;
         }

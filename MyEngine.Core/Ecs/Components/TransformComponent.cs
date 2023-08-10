@@ -2,9 +2,8 @@
 {
     public class TransformComponent : IComponent
     {
-        public TransformComponent(EntityId entityId)
+        public TransformComponent()
         {
-            EntityId = entityId;
             Transform = new Transform()
             {
                 scale = Vector3.One,
@@ -13,13 +12,10 @@
             };
         }
 
-        public TransformComponent(EntityId entityId, Transform transform)
+        public TransformComponent(Transform transform)
         {
-            EntityId = entityId;
             Transform = transform;
         }
-
-        public EntityId EntityId { get; }
 
         public Transform Transform { get; }
 

@@ -11,14 +11,14 @@ namespace MyEngine.Physics
         private readonly PhysicsResource _physicsResource;
         private readonly CollisionsResource _collisionsResource;
         private readonly MyPhysics _myPhysics;
-        private readonly MyQuery<TransformComponent, StaticBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>> _staticBodiesQuery;
-        private readonly MyQuery<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>> _dynamicBodiesQuery;
+        private readonly IEnumerable<EntityComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>> _staticBodiesQuery;
+        private readonly IEnumerable<EntityComponents<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>> _dynamicBodiesQuery;
 
         public PhysicsSystem(PhysicsResource physicsResource,
             CollisionsResource collisionsResource,
             MyPhysics myPhysics,
-            MyQuery<TransformComponent, StaticBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>> staticBodiesQuery,
-            MyQuery<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>> dynamicBodiesQuery)
+            IEnumerable<EntityComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>> staticBodiesQuery,
+            IEnumerable<EntityComponents<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>> dynamicBodiesQuery)
         {
             _physicsResource = physicsResource;
             _collisionsResource = collisionsResource;
@@ -37,12 +37,13 @@ namespace MyEngine.Physics
             var extraDynamicBodies = new HashSet<EntityId>(dynamicBodies);
             var dynamicTransformsToUpdate = new Dictionary<EntityId, Transform>();
 
-            foreach (var (transform, staticBody, collider, material) in _staticBodiesQuery)
+            foreach (var components in _staticBodiesQuery)
             {
-                if (!extraStaticBodies.Remove(staticBody.EntityId))
+                var (transform, staticBody, collider, material) = components;
+                if (!extraStaticBodies.Remove(components.EntityId))
                 {
                     // this is a new static body
-                    _physicsResource.AddStaticBody2D(transform.EntityId, new Transform
+                    _physicsResource.AddStaticBody2D(components.EntityId, new Transform
                     {
                         position = transform.Transform.position,
                         rotation = transform.Transform.rotation,
@@ -50,12 +51,13 @@ namespace MyEngine.Physics
                     }, collider.Collider, material.Component?.Bounciness ?? 0f);
                 }
             }
-            foreach (var (transform, dynamicBody, collider, material) in _dynamicBodiesQuery)
+            foreach (var components in _dynamicBodiesQuery)
             {
-                if (!extraDynamicBodies.Remove(dynamicBody.EntityId))
+                var (transform, dynamicBody, collider, material) = components;
+                if (!extraDynamicBodies.Remove(components.EntityId))
                 {
                     // this is a new dynamic body
-                    _physicsResource.AddDynamicBody2D(transform.EntityId, new Transform
+                    _physicsResource.AddDynamicBody2D(components.EntityId, new Transform
                     {
                         position = transform.Transform.position,
                         rotation = transform.Transform.rotation,
@@ -63,7 +65,7 @@ namespace MyEngine.Physics
                     }, collider.Collider, material.Component?.Bounciness ?? 0f);
                 }
 
-                dynamicTransformsToUpdate.Add(transform.EntityId, transform.Transform);
+                dynamicTransformsToUpdate.Add(components.EntityId, transform.Transform);
             }
 
             foreach (var extraStaticBody in extraStaticBodies)

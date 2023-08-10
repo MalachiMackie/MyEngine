@@ -16,7 +16,7 @@ namespace MyEngine.Runtime
                 && components.ContainsKey(entityId);
         }
 
-        public void AddComponent(IComponent component)
+        public void AddComponent(EntityId entityId, IComponent component)
         {
             var type = component.GetType();
             if (!_components.TryGetValue(type, out var components))
@@ -25,12 +25,12 @@ namespace MyEngine.Runtime
                 _components[type] = components;
             }
 
-            if (components.ContainsKey(component.EntityId))
+            if (components.ContainsKey(entityId))
             {
                 throw new InvalidOperationException($"Component has already been added");
             }
 
-            components.Add(component.EntityId, component);
+            components.Add(entityId, component);
         }
 
         public void DeleteComponentsForEntity(EntityId entityId)
@@ -78,10 +78,10 @@ namespace MyEngine.Runtime
         {
             if (TryGetComponent<TComponent>(entityId, out var foundComponent))
             {
-                return new OptionalComponent<TComponent>(entityId, foundComponent);
+                return new OptionalComponent<TComponent>(foundComponent);
             }
 
-            return new OptionalComponent<TComponent>(entityId, null);
+            return new OptionalComponent<TComponent>(null);
         }
     }
 }

@@ -58,27 +58,27 @@ namespace MyGame.Systems
             {
                 var entity = EntityId.Generate();
                 _entityContainerResource.AddEntity(entity);
-                _componentContainerResource.AddComponent(new TransformComponent(entity, transform));
-                _componentContainerResource.AddComponent(new SpriteComponent(entity));
-                _componentContainerResource.AddComponent(new StaticBody2DComponent(entity));
-                _componentContainerResource.AddComponent(new Collider2DComponent(entity, new BoxCollider2D(Vector2.One)));
+                _componentContainerResource.AddComponent(entity, new TransformComponent(transform));
+                _componentContainerResource.AddComponent(entity, new SpriteComponent());
+                _componentContainerResource.AddComponent(entity, new StaticBody2DComponent());
+                _componentContainerResource.AddComponent(entity, new Collider2DComponent(new BoxCollider2D(Vector2.One)));
                 // _componentContainerResource.AddComponent(new TestComponent(entity.Id));
-                _componentContainerResource.AddComponent(new PhysicsMaterial(entity, 0f));
+                _componentContainerResource.AddComponent(entity, new PhysicsMaterial(0f));
             }
 
             var playerEntity = EntityId.Generate();
             _entityContainerResource.AddEntity(playerEntity);
-            _componentContainerResource.AddComponent(new PlayerComponent(playerEntity));
-            _componentContainerResource.AddComponent(new SpriteComponent(playerEntity));
-            _componentContainerResource.AddComponent(new TransformComponent(playerEntity, new Transform
+            _componentContainerResource.AddComponent(playerEntity, new PlayerComponent());
+            _componentContainerResource.AddComponent(playerEntity, new SpriteComponent());
+            _componentContainerResource.AddComponent(playerEntity, new TransformComponent(new Transform
             {
                 position = new Vector3(0f, -1f, 0f),
                 rotation = Quaternion.Identity,
                 scale = new Vector3(0.25f, 0.25f, 1f)
             }));
-            _componentContainerResource.AddComponent(new DynamicBody2DComponent(playerEntity));
-            _componentContainerResource.AddComponent(new Collider2DComponent(playerEntity, new CircleCollider2D(1f)));
-            _componentContainerResource.AddComponent(new PhysicsMaterial(playerEntity, 1f));
+            _componentContainerResource.AddComponent(playerEntity, new DynamicBody2DComponent());
+            _componentContainerResource.AddComponent(playerEntity, new Collider2DComponent(new CircleCollider2D(1f)));
+            _componentContainerResource.AddComponent(playerEntity, new PhysicsMaterial(1f));
         }
     }
 }

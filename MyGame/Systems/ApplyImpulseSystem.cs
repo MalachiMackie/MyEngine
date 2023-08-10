@@ -1,4 +1,4 @@
-﻿using MyEngine.Core.Ecs;
+﻿using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 using System.Numerics;
@@ -9,9 +9,9 @@ namespace MyGame.Systems
     {
         private readonly PhysicsResource _physicsResource;
         private readonly InputResource _inputResource;
-        private readonly MyQuery<PlayerComponent> _query;
+        private readonly IEnumerable<EntityComponents<PlayerComponent>> _query;
 
-        public ApplyImpulseSystem(PhysicsResource physicsResource, InputResource inputResource, MyQuery<PlayerComponent> query)
+        public ApplyImpulseSystem(PhysicsResource physicsResource, InputResource inputResource, IEnumerable<EntityComponents<PlayerComponent>> query)
         {
             _physicsResource = physicsResource;
             _inputResource = inputResource;

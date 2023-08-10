@@ -1,4 +1,5 @@
 ﻿using MyEngine.Core.Ecs;
+using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 using System.Collections;
@@ -9,10 +10,10 @@ namespace MyGame.Systems
     {
         private readonly CollisionsResource _collisionsResource;
         private readonly EntityContainerResource _entityContainerResource;
-        private readonly MyQuery<TestComponent> _testComponentQuery;
+        private readonly IEnumerable<EntityComponents<TestComponent>> _testComponentQuery;
 
         public OnCollisionSystem(CollisionsResource collisionsResource,
-            MyQuery<TestComponent> testComponentQuery,
+            IEnumerable<EntityComponents<TestComponent>> testComponentQuery,
             EntityContainerResource entityContainerResource)
         {
             _collisionsResource = collisionsResource;

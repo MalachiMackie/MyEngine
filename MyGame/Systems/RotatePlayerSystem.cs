@@ -1,4 +1,5 @@
 ﻿using MyEngine.Core.Ecs;
+using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 using System.Numerics;
@@ -7,11 +8,11 @@ namespace MyGame.Systems
 {
     public class RotatePlayerSystem : ISystem
     {
-        private readonly MyQuery<PlayerComponent> _playerQuery;
+        private readonly IEnumerable<EntityComponents<PlayerComponent>> _playerQuery;
         private readonly PhysicsResource _physicsResource;
         private readonly InputResource _inputResource;
 
-        public RotatePlayerSystem(MyQuery<PlayerComponent> playerQuery, PhysicsResource physicsResource, InputResource inputResource)
+        public RotatePlayerSystem(IEnumerable<EntityComponents<PlayerComponent>> playerQuery, PhysicsResource physicsResource, InputResource inputResource)
         {
             _physicsResource = physicsResource;
             _playerQuery = playerQuery;

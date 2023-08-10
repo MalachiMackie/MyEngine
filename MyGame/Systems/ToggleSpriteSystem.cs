@@ -7,15 +7,15 @@ namespace MyGame.Systems
 {
     public class ToggleSpriteSystem : ISystem
     {
-        private MyQuery<PlayerComponent> _playerQuery;
+        private IEnumerable<EntityComponents<PlayerComponent>> _playerQuery;
         // todo: optional component queries
-        private MyQuery<PlayerComponent, SpriteComponent> _playerWithSpriteComponentQuery;
+        private IEnumerable<EntityComponents<PlayerComponent, SpriteComponent>> _playerWithSpriteComponentQuery;
         private ComponentContainerResource _componentsResource;
         private InputResource _inputResource;
 
         public ToggleSpriteSystem(
-            MyQuery<PlayerComponent> playerQuery,
-            MyQuery<PlayerComponent, SpriteComponent> playerWithSpriteComponentQuery,
+            IEnumerable<EntityComponents<PlayerComponent>> playerQuery,
+            IEnumerable<EntityComponents<PlayerComponent, SpriteComponent>> playerWithSpriteComponentQuery,
             ComponentContainerResource componentsResource,
             InputResource inputResource)
         {
@@ -43,7 +43,7 @@ namespace MyGame.Systems
                 }
                 else
                 {
-                    _componentsResource.AddComponent(new SpriteComponent(player.EntityId));
+                    _componentsResource.AddComponent(player.EntityId, new SpriteComponent());
                 }
             }
         }

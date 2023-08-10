@@ -12,12 +12,12 @@ namespace MyGame.Systems
         private readonly EntityContainerResource _entityContainerResource;
         private readonly ComponentContainerResource _componentContainerResource;
 
-        private readonly MyQuery<SpriteComponent, TransformComponent> _query;
+        private readonly IEnumerable<EntityComponents<SpriteComponent, TransformComponent>> _query;
 
         public AddSpritesSystem(InputResource inputResource,
             EntityContainerResource entityContainerResource,
             ComponentContainerResource componentContainerResource,
-            MyQuery<SpriteComponent, TransformComponent> query)
+            IEnumerable<EntityComponents<SpriteComponent, TransformComponent>> query)
         {
             _inputResource = inputResource;
             _entityContainerResource = entityContainerResource;
@@ -35,7 +35,7 @@ namespace MyGame.Systems
             }
 
             // get far left sprite
-            var minTransform = _query.Select(x => x.Item2.Transform)
+            var minTransform = _query.Select(x => x.Component2.Transform)
                 .MinBy(x => x.position.X);
 
             if (minTransform is null)
@@ -45,7 +45,7 @@ namespace MyGame.Systems
             }
 
             var newEntity = EntityId.Generate();
-            var newTransformComponent = new TransformComponent(newEntity, new MyEngine.Core.Transform
+            var newTransformComponent = new TransformComponent(new MyEngine.Core.Transform
             {
                 position = minTransform.position,
                 rotation = minTransform.rotation,
@@ -56,8 +56,8 @@ namespace MyGame.Systems
             position.X -= 1;
 
             _entityContainerResource.AddEntity(newEntity);
-            _componentContainerResource.AddComponent(newTransformComponent);
-            _componentContainerResource.AddComponent(new SpriteComponent(newEntity));
+            _componentContainerResource.AddComponent(newEntity, newTransformComponent);
+            _componentContainerResource.AddComponent(newEntity, new SpriteComponent());
         }
     }
 }

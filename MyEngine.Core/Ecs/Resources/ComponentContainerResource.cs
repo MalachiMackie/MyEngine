@@ -4,12 +4,12 @@ namespace MyEngine.Core.Ecs.Resources
 {
     public class ComponentContainerResource : IResource
     {
-        internal Queue<IComponent> NewComponents { get; } = new();
+        internal Queue<(EntityId EntityId, IComponent Component)> NewComponents { get; } = new();
         internal Queue<(EntityId EntityId, Type ComponentType)> RemoveComponents { get; } = new();
 
-        public void AddComponent(IComponent component)
+        public void AddComponent(EntityId entityId, IComponent component)
         {
-            NewComponents.Enqueue(component);
+            NewComponents.Enqueue((entityId, component));
         }
 
         public void RemoveComponent<T>(EntityId entityId) where T : IComponent

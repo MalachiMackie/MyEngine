@@ -23,8 +23,8 @@ namespace MyEngine.Runtime
         {
             var entity = EntityId.Generate();
             _entityContainer.AddEntity(entity);
-            _componentContainer.AddComponent(new Camera2DComponent(entity, new Vector2(8f, 4.5f)));
-            _componentContainer.AddComponent(new TransformComponent(entity));
+            _componentContainer.AddComponent(entity, new Camera2DComponent(new Vector2(8f, 4.5f)));
+            _componentContainer.AddComponent(entity, new TransformComponent());
         }
     }
 }

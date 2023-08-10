@@ -10,16 +10,17 @@ public class ComponentContainerResourceTests
     [Fact]
     public void AddComponent_Should_AddComponentsInCorrectOrder()
     {
+        var entityId = EntityId.Generate();
         var component1 = new MyComponent1();
         var component2 = new MyComponent2();
 
-        _componentContainerResource.AddComponent(component1);
-        _componentContainerResource.AddComponent(component2);
+        _componentContainerResource.AddComponent(entityId, component1);
+        _componentContainerResource.AddComponent(entityId, component2);
 
         _componentContainerResource.NewComponents.Should()
-            .BeEquivalentTo(new IComponent[] {
-                component1,
-                component2
+            .BeEquivalentTo(new (EntityId, IComponent)[] {
+                (entityId, component1),
+                (entityId, component2)
             });
     }
 
@@ -42,10 +43,8 @@ public class ComponentContainerResourceTests
 
 file class MyComponent1 : IComponent
 {
-    public EntityId EntityId { get; set; } = null!;
 }
 
 file class MyComponent2 : IComponent
 {
-    public EntityId EntityId { get; set; } = null!;
 }

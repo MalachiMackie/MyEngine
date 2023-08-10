@@ -5,11 +5,5 @@ namespace MyGame
 {
     public class PlayerComponent : IComponent
     {
-        public EntityId EntityId { get; }
-
-        public PlayerComponent(EntityId entityId)
-        {
-            EntityId = entityId;
-        }
     }
 }
