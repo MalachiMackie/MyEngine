@@ -8,6 +8,7 @@ using MyEngine.Core;
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
 namespace MyEngine.Physics;
@@ -40,6 +41,30 @@ public struct Impact
     public StaticHandle? staticHandleA;
     public BodyHandle? bodyHandleB;
     public StaticHandle? staticHandleB;
+
+    public override bool Equals(object? obj)
+    {
+        return obj is Impact impact &&
+               EqualityComparer<BodyHandle?>.Default.Equals(bodyHandleA, impact.bodyHandleA) &&
+               EqualityComparer<StaticHandle?>.Default.Equals(staticHandleA, impact.staticHandleA) &&
+               EqualityComparer<BodyHandle?>.Default.Equals(bodyHandleB, impact.bodyHandleB) &&
+               EqualityComparer<StaticHandle?>.Default.Equals(staticHandleB, impact.staticHandleB);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(bodyHandleA, staticHandleA, bodyHandleB, staticHandleB);
+    }
+
+    public static bool operator ==(Impact left, Impact right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(Impact left, Impact right)
+    {
+        return !(left == right);
+    }
 }
 
 internal struct SimpleMaterial
@@ -128,7 +153,7 @@ public class MyPhysics : IResource
             new SolveDescription(6, 1));
     }
 
-    public void Update(double dt, out IEnumerable<Collision> newCollisions)
+    public void Update(double dt, out IEnumerable<Collision> newCollisions, out IEnumerable<Collision> continuingCollisions, out IEnumerable<Collision> oldCollisions)
     {
         List<Impact> impacts = new(); 
         if (_simulation.NarrowPhase is NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
@@ -136,41 +161,51 @@ public class MyPhysics : IResource
             impacts = narrowPhase.Callbacks.Impacts;
         }
 
+        var existingImpacts = impacts.ToArray();
+
         impacts.Clear();
         _simulation.Timestep((float)dt);
 
-        newCollisions = impacts.Select(x =>
+        var newImpacts = impacts.Except(existingImpacts);
+        var oldImpacts = existingImpacts.Except(impacts);
+        var continuingImpacts = existingImpacts.Except(oldImpacts);
+
+        newCollisions = newImpacts.Select(ImpactToCollision).Where(x => x is not null).Cast<Collision>();
+        continuingCollisions = continuingImpacts.Select(ImpactToCollision).Where(x => x is not null).Cast<Collision>();
+        oldCollisions = oldImpacts.Select(ImpactToCollision).Where(x => x is not null).Cast<Collision>();
+    }
+
+    private Collision? ImpactToCollision(Impact impact)
+    {
+        EntityId entityIdA;
+        EntityId entityIdB;
+        if (impact.bodyHandleA.HasValue)
         {
-            EntityId entityIdA;
-            EntityId entityIdB;
-            if (x.bodyHandleA.HasValue)
-            {
-                (entityIdA, var _) = _dynamicHandles.FirstOrDefault(y => y.Value.Handle == x.bodyHandleA.Value);
-            } else if (x.staticHandleA.HasValue)
-            {
-                (entityIdA, var _) = _staticHandles.FirstOrDefault(y => y.Value.Handle == x.staticHandleA.Value);
-            } else
-            {
-                return null;
-            }
+            (entityIdA, var _) = _dynamicHandles.FirstOrDefault(y => y.Value.Handle == impact.bodyHandleA.Value);
+        } else if (impact.staticHandleA.HasValue)
+        {
+            (entityIdA, var _) = _staticHandles.FirstOrDefault(y => y.Value.Handle == impact.staticHandleA.Value);
+        } else
+        {
+            return null;
+        }
 
-            if (x.bodyHandleB.HasValue)
-            {
-                (entityIdB, var _) = _dynamicHandles.FirstOrDefault(y => y.Value.Handle == x.bodyHandleB.Value);
-            } else if (x.staticHandleB.HasValue)
-            {
-                (entityIdB, var _) = _staticHandles.FirstOrDefault(y => y.Value.Handle == x.staticHandleB.Value);
-            } else
-            {
-                return null;
-            }
+        if (impact.bodyHandleB.HasValue)
+        {
+            (entityIdB, var _) = _dynamicHandles.FirstOrDefault(y => y.Value.Handle == impact.bodyHandleB.Value);
+        } else if (impact.staticHandleB.HasValue)
+        {
+            (entityIdB, var _) = _staticHandles.FirstOrDefault(y => y.Value.Handle == impact.staticHandleB.Value);
+        } else
+        {
+            return null;
+        }
 
-            return new Collision
-            {
-                EntityA = entityIdA,
-                EntityB = entityIdB
-            };
-        }).Where(x => x is not null).Cast<Collision>();
+        return new Collision
+        {
+            EntityA = entityIdA,
+            EntityB = entityIdB
+        };   
     }
 
     public IEnumerable<EntityId> GetStaticBodies()
