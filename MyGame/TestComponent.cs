@@ -1,9 +1,8 @@
 ﻿using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 
-namespace MyGame
+namespace MyGame;
+
+public class TestComponent : IComponent
 {
-    public class TestComponent : IComponent
-    {
-    }
 }

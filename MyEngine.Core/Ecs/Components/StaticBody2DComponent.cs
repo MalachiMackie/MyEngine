@@ -1,6 +1,5 @@
-﻿namespace MyEngine.Core.Ecs.Components
+﻿namespace MyEngine.Core.Ecs.Components;
+
+public class StaticBody2DComponent : IComponent
 {
-    public class StaticBody2DComponent : IComponent
-    {
-    }
 }

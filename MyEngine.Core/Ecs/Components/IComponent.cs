@@ -1,6 +1,5 @@
-﻿namespace MyEngine.Core.Ecs.Components
+﻿namespace MyEngine.Core.Ecs.Components;
+
+public interface IComponent
 {
-    public interface IComponent
-    {
-    }
 }

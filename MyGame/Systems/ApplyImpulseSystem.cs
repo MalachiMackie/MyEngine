@@ -3,30 +3,29 @@ using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 using System.Numerics;
 
-namespace MyGame.Systems
+namespace MyGame.Systems;
+
+public class ApplyImpulseSystem : ISystem
 {
-    public class ApplyImpulseSystem : ISystem
+    private readonly PhysicsResource _physicsResource;
+    private readonly InputResource _inputResource;
+    private readonly IEnumerable<EntityComponents<PlayerComponent>> _query;
+
+    public ApplyImpulseSystem(PhysicsResource physicsResource, InputResource inputResource, IEnumerable<EntityComponents<PlayerComponent>> query)
     {
-        private readonly PhysicsResource _physicsResource;
-        private readonly InputResource _inputResource;
-        private readonly IEnumerable<EntityComponents<PlayerComponent>> _query;
+        _physicsResource = physicsResource;
+        _inputResource = inputResource;
+        _query = query;
+    }
 
-        public ApplyImpulseSystem(PhysicsResource physicsResource, InputResource inputResource, IEnumerable<EntityComponents<PlayerComponent>> query)
+    public void Run(double deltaTime)
+    {
+        if (_inputResource.Keyboard.IsKeyPressed(MyEngine.Core.Input.MyKey.T))
         {
-            _physicsResource = physicsResource;
-            _inputResource = inputResource;
-            _query = query;
-        }
-
-        public void Run(double deltaTime)
-        {
-            if (_inputResource.Keyboard.IsKeyPressed(MyEngine.Core.Input.MyKey.T))
+            var player = _query.FirstOrDefault();
+            if (player is not null)
             {
-                var player = _query.FirstOrDefault();
-                if (player is not null)
-                {
-                    _physicsResource.ApplyImpulse(player.EntityId, new Vector3(1f, 1f, 0f) * 3f);
-                }
+                _physicsResource.ApplyImpulse(player.EntityId, new Vector3(1f, 1f, 0f) * 3f);
             }
         }
     }

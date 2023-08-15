@@ -1,6 +1,5 @@
-﻿namespace MyEngine.Core.Ecs.Components
+﻿namespace MyEngine.Core.Ecs.Components;
+
+public class DynamicBody2DComponent : IComponent
 {
-    public class DynamicBody2DComponent : IComponent
-    {
-    }
 }

@@ -1,6 +1,5 @@
-﻿namespace MyEngine.Core
+﻿namespace MyEngine.Core;
+
+public interface ICollider2D
 {
-    public interface ICollider2D
-    {
-    }
 }

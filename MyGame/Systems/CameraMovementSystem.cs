@@ -6,104 +6,103 @@ using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 using MyEngine.Core.Input;
 
-namespace MyGame.Systems
+namespace MyGame.Systems;
+
+public class CameraMovementSystem : ISystem
 {
-    public class CameraMovementSystem : ISystem
+    private readonly InputResource _inputResource;
+    private readonly IEnumerable<EntityComponents<Camera3DComponent, TransformComponent>> _camera3DQuery;
+    private readonly IEnumerable<EntityComponents<Camera2DComponent, TransformComponent>> _camera2DQuery;
+
+    public CameraMovementSystem(
+        InputResource inputResource,
+        IEnumerable<EntityComponents<Camera3DComponent, TransformComponent>> camera3dQuery,
+        IEnumerable<EntityComponents<Camera2DComponent, TransformComponent>> camera2dQuery)
     {
-        private readonly InputResource _inputResource;
-        private readonly IEnumerable<EntityComponents<Camera3DComponent, TransformComponent>> _camera3DQuery;
-        private readonly IEnumerable<EntityComponents<Camera2DComponent, TransformComponent>> _camera2DQuery;
+        _inputResource = inputResource;
+        _camera3DQuery = camera3dQuery;
+        _camera2DQuery = camera2dQuery;
+    }
 
-        public CameraMovementSystem(
-            InputResource inputResource,
-            IEnumerable<EntityComponents<Camera3DComponent, TransformComponent>> camera3dQuery,
-            IEnumerable<EntityComponents<Camera2DComponent, TransformComponent>> camera2dQuery)
+    public void Run(double deltaTime)
+    {
+        if (!TryMove3D(deltaTime))
         {
-            _inputResource = inputResource;
-            _camera3DQuery = camera3dQuery;
-            _camera2DQuery = camera2dQuery;
+            TryMove2D(deltaTime);
+        }
+    }
+
+    private bool TryMove3D(double deltaTime)
+    {
+        var components = _camera3DQuery.FirstOrDefault();
+        if (components is null)
+        {
+            return false;
         }
 
-        public void Run(double deltaTime)
+        var cameraTransform = components.Component2.Transform;
+
+        var cameraDirection = MathHelper.ToEulerAngles(cameraTransform.rotation);
+
+        var cameraFront = Vector3.Normalize(cameraDirection);
+
+        var speed = 5.0f * (float)deltaTime;
+        if (_inputResource.Keyboard.IsKeyDown(MyKey.W))
         {
-            if (!TryMove3D(deltaTime))
-            {
-                TryMove2D(deltaTime);
-            }
+            cameraTransform.position += speed * cameraFront;
+        }
+        if (_inputResource.Keyboard.IsKeyDown(MyKey.S))
+        {
+            cameraTransform.position -= speed * cameraFront;
+        }
+        if (_inputResource.Keyboard.IsKeyDown(MyKey.A))
+        {
+            cameraTransform.position -= speed * Vector3.Normalize(Vector3.Cross(cameraFront, Vector3.UnitY));
+        }
+        if (_inputResource.Keyboard.IsKeyDown(MyKey.D))
+        {
+            cameraTransform.position += speed * Vector3.Normalize(Vector3.Cross(cameraFront, Vector3.UnitY));
         }
 
-        private bool TryMove3D(double deltaTime)
+        var lookSensitivity = 0.1f;
+        var mouseDelta = _inputResource.MouseDelta;
+
+        cameraDirection.X += mouseDelta.X * lookSensitivity;
+        cameraDirection.Y -= mouseDelta.Y * lookSensitivity;
+
+        cameraTransform.rotation = MathHelper.ToQuaternion(cameraDirection);
+
+        return true;
+    }
+
+    private bool TryMove2D(double deltaTime)
+    {
+        var components = _camera2DQuery.FirstOrDefault();
+        if (components is null)
         {
-            var components = _camera3DQuery.FirstOrDefault();
-            if (components is null)
-            {
-                return false;
-            }
-
-            var cameraTransform = components.Component2.Transform;
-
-            var cameraDirection = MathHelper.ToEulerAngles(cameraTransform.rotation);
-
-            var cameraFront = Vector3.Normalize(cameraDirection);
-
-            var speed = 5.0f * (float)deltaTime;
-            if (_inputResource.Keyboard.IsKeyDown(MyKey.W))
-            {
-                cameraTransform.position += speed * cameraFront;
-            }
-            if (_inputResource.Keyboard.IsKeyDown(MyKey.S))
-            {
-                cameraTransform.position -= speed * cameraFront;
-            }
-            if (_inputResource.Keyboard.IsKeyDown(MyKey.A))
-            {
-                cameraTransform.position -= speed * Vector3.Normalize(Vector3.Cross(cameraFront, Vector3.UnitY));
-            }
-            if (_inputResource.Keyboard.IsKeyDown(MyKey.D))
-            {
-                cameraTransform.position += speed * Vector3.Normalize(Vector3.Cross(cameraFront, Vector3.UnitY));
-            }
-
-            var lookSensitivity = 0.1f;
-            var mouseDelta = _inputResource.MouseDelta;
-
-            cameraDirection.X += mouseDelta.X * lookSensitivity;
-            cameraDirection.Y -= mouseDelta.Y * lookSensitivity;
-
-            cameraTransform.rotation = MathHelper.ToQuaternion(cameraDirection);
-
-            return true;
+            return false;
         }
 
-        private bool TryMove2D(double deltaTime)
+        var cameraTransform = components.Component2.Transform;
+
+        var speed = 5.0f * (float)deltaTime;
+        if (_inputResource.Keyboard.IsKeyDown(MyKey.W))
         {
-            var components = _camera2DQuery.FirstOrDefault();
-            if (components is null)
-            {
-                return false;
-            }
-
-            var cameraTransform = components.Component2.Transform;
-
-            var speed = 5.0f * (float)deltaTime;
-            if (_inputResource.Keyboard.IsKeyDown(MyKey.W))
-            {
-                cameraTransform.position += speed * Vector3.UnitY;
-            }
-            if (_inputResource.Keyboard.IsKeyDown(MyKey.S))
-            {
-                cameraTransform.position -= speed * Vector3.UnitY;
-            }
-            if (_inputResource.Keyboard.IsKeyDown(MyKey.A))
-            {
-                cameraTransform.position -= speed * Vector3.UnitX;
-            }
-            if (_inputResource.Keyboard.IsKeyDown(MyKey.D))
-            {
-                cameraTransform.position += speed * Vector3.UnitX;
-            }
-
-            return true;
+            cameraTransform.position += speed * Vector3.UnitY;
         }
+        if (_inputResource.Keyboard.IsKeyDown(MyKey.S))
+        {
+            cameraTransform.position -= speed * Vector3.UnitY;
+        }
+        if (_inputResource.Keyboard.IsKeyDown(MyKey.A))
+        {
+            cameraTransform.position -= speed * Vector3.UnitX;
+        }
+        if (_inputResource.Keyboard.IsKeyDown(MyKey.D))
+        {
+            cameraTransform.position += speed * Vector3.UnitX;
+        }
+
+        return true;
     }
 }

@@ -1,7 +1,6 @@
-﻿namespace MyEngine.Core.Ecs.Systems
+﻿namespace MyEngine.Core.Ecs.Systems;
+
+public interface IStartupSystem
 {
-    public interface IStartupSystem
-    {
-        void Run();
-    }
+    void Run();
 }

@@ -1,18 +1,17 @@
-﻿namespace MyEngine.Core.Ecs
+﻿namespace MyEngine.Core.Ecs;
+
+public class EntityId
 {
-    public class EntityId
+    private EntityId()
     {
-        private EntityId()
-        {
 
-        }
+    }
 
-        // todo: determine if there's a better id value
-        public required Guid Value { get; init; }
+    // todo: determine if there's a better id value
+    public required Guid Value { get; init; }
 
-        public static EntityId Generate()
-        {
-            return new EntityId { Value = Guid.NewGuid() };
-        }
+    public static EntityId Generate()
+    {
+        return new EntityId { Value = Guid.NewGuid() };
     }
 }

@@ -1,7 +1,6 @@
-﻿namespace MyEngine.Core.Input
+﻿namespace MyEngine.Core.Input;
+
+public class MyMouse
 {
-    public class MyMouse
-    {
-        public Vector2 Position { get; internal set; }
-    }
+    public Vector2 Position { get; internal set; }
 }

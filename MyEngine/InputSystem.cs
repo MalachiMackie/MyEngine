@@ -2,75 +2,74 @@
 using MyEngine.Core.Ecs.Systems;
 using MyEngine.Core.Input;
 
-namespace MyEngine.Runtime
+namespace MyEngine.Runtime;
+
+internal class InputSystem : ISystem
 {
-    internal class InputSystem : ISystem
+    private readonly MyInput _input;
+    private readonly InputResource _inputResource;
+
+    public InputSystem(
+        MyInput input,
+        InputResource inputResource)
     {
-        private readonly MyInput _input;
-        private readonly InputResource _inputResource;
+        _input = input;
+        _inputResource = inputResource;
 
-        public InputSystem(
-            MyInput input,
-            InputResource inputResource)
+    }
+
+    public void Run(double deltaTime)
+    {
+        UpdateMouse();
+        UpdateKeyboard();
+    }
+
+    private void UpdateMouse()
+    {
+        var newMousePosition = _input.Mouse.Position;
+        var previousMousePosition = _inputResource.Mouse.Position;
+        if (previousMousePosition != default)
         {
-            _input = input;
-            _inputResource = inputResource;
-
+            _inputResource.MouseDelta = newMousePosition - previousMousePosition;
         }
+        _inputResource.Mouse.Position = newMousePosition;
+    }
 
-        public void Run(double deltaTime)
+    private void UpdateKeyboard()
+    {
+        var keyStates = _inputResource.Keyboard.InternalKeyStates;
+        foreach (var key in keyStates.Keys)
         {
-            UpdateMouse();
-            UpdateKeyboard();
-        }
-
-        private void UpdateMouse()
-        {
-            var newMousePosition = _input.Mouse.Position;
-            var previousMousePosition = _inputResource.Mouse.Position;
-            if (previousMousePosition != default)
+            var currentKeyState = keyStates[key];
+            var isKeyPressed = _input.IsKeyPressed(key);
+            switch (currentKeyState)
             {
-                _inputResource.MouseDelta = newMousePosition - previousMousePosition;
-            }
-            _inputResource.Mouse.Position = newMousePosition;
-        }
-
-        private void UpdateKeyboard()
-        {
-            var keyStates = _inputResource.Keyboard.InternalKeyStates;
-            foreach (var key in keyStates.Keys)
-            {
-                var currentKeyState = keyStates[key];
-                var isKeyPressed = _input.IsKeyPressed(key);
-                switch (currentKeyState)
-                {
-                    case KeyState.Pressed:
+                case KeyState.Pressed:
+                    {
+                        keyStates[key] = isKeyPressed ? KeyState.Held : KeyState.Released;
+                        break;
+                    }
+                case KeyState.Held:
+                    {
+                        if (!isKeyPressed)
                         {
-                            keyStates[key] = isKeyPressed ? KeyState.Held : KeyState.Released;
-                            break;
+                            keyStates[key] = KeyState.Released;
                         }
-                    case KeyState.Held:
+                        break;
+                    }
+                case KeyState.Released:
+                    {
+                        keyStates[key] = isKeyPressed ? KeyState.Pressed : KeyState.NotPressed;
+                        break;
+                    }
+                case KeyState.NotPressed:
+                    {
+                        if (isKeyPressed)
                         {
-                            if (!isKeyPressed)
-                            {
-                                keyStates[key] = KeyState.Released;
-                            }
-                            break;
+                            keyStates[key] = KeyState.Pressed;
                         }
-                    case KeyState.Released:
-                        {
-                            keyStates[key] = isKeyPressed ? KeyState.Pressed : KeyState.NotPressed;
-                            break;
-                        }
-                    case KeyState.NotPressed:
-                        {
-                            if (isKeyPressed)
-                            {
-                                keyStates[key] = KeyState.Pressed;
-                            }
-                            break;
-                        }
-                }
+                        break;
+                    }
             }
         }
     }

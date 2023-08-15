@@ -1,6 +1,5 @@
-﻿namespace MyEngine.Core.Ecs.Resources
+﻿namespace MyEngine.Core.Ecs.Resources;
+
+public interface IResource
 {
-    public interface IResource
-    {
-    }
 }
