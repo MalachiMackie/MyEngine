@@ -42,6 +42,8 @@ public struct Impact
     public BodyHandle? bodyHandleB;
     public StaticHandle? staticHandleB;
 
+    public Vector3 normal;
+
     public override bool Equals(object? obj)
     {
         return obj is Impact impact &&
@@ -110,12 +112,18 @@ internal struct MyNarrowPhaseCallback : INarrowPhaseCallbacks
             return false;
         }
 
+        var aIsBody = pair.A.Mobility != CollidableMobility.Static;
+        var bIsBody = pair.B.Mobility != CollidableMobility.Static;
+
+        var normal = manifold.GetNormal(ref manifold, contactIndex: 0); // todo: handle multiple collisions
+
         Impacts.Add(new Impact
         {
-            bodyHandleA = pair.A.Mobility != CollidableMobility.Static ? pair.A.BodyHandle : null,
-            staticHandleA = pair.A.Mobility == CollidableMobility.Static ? pair.A.StaticHandle : null,
-            bodyHandleB = pair.B.Mobility != CollidableMobility.Static ? pair.B.BodyHandle : null,
-            staticHandleB = pair.B.Mobility == CollidableMobility.Static ? pair.B.StaticHandle : null,
+            bodyHandleA = aIsBody ? pair.A.BodyHandle : null,
+            staticHandleA = aIsBody ? null : pair.A.StaticHandle,
+            bodyHandleB = bIsBody ? pair.B.BodyHandle : null,
+            staticHandleB = bIsBody ? null : pair.B.StaticHandle,
+            normal = normal
         });
 
         return true;
@@ -141,8 +149,8 @@ public class MyPhysics : IResource
     private readonly Simulation _simulation;
     private readonly BufferPool _bufferPool;
 
-    private Dictionary<EntityId, (StaticHandle Handle, TypedIndex ShapeIndex)> _staticHandles = new();
-    private Dictionary<EntityId, (BodyHandle Handle, TypedIndex ShapeIndex)> _dynamicHandles = new();
+    private readonly Dictionary<EntityId, (StaticHandle Handle, TypedIndex ShapeIndex)> _staticHandles = new();
+    private readonly Dictionary<EntityId, (BodyHandle Handle, TypedIndex ShapeIndex)> _dynamicHandles = new();
 
     public MyPhysics()
     {
@@ -153,13 +161,23 @@ public class MyPhysics : IResource
             new SolveDescription(6, 1));
     }
 
+    private struct OnCollisionVelocityCache
+    {
+        public Vector3 collisionNormal;
+        public BodyVelocity beforeCollisionVelocity;
+    }
+
     public void Update(double dt, out IEnumerable<Collision> newCollisions, out IEnumerable<Collision> continuingCollisions, out IEnumerable<Collision> oldCollisions)
     {
-        List<Impact> impacts = new(); 
-        if (_simulation.NarrowPhase is NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
+        if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
         {
-            impacts = narrowPhase.Callbacks.Impacts;
+            newCollisions = null!;
+            continuingCollisions = null!;
+            oldCollisions = null!;
+            return;
         }
+
+        var impacts = narrowPhase.Callbacks.Impacts;
 
         var existingImpacts = impacts.ToArray();
 
@@ -230,7 +248,7 @@ public class MyPhysics : IResource
         _simulation.Shapes.Remove(shape);
     }
 
-    public void AddStaticBody(EntityId entityId, Transform transform, float bounciness)
+    public void AddStaticBody(EntityId entityId, Transform transform)
     {
         if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
         {
@@ -280,9 +298,8 @@ public class MyPhysics : IResource
         }
     }
 
-    public void AddStaticBody2D(EntityId entityId, Transform transform, ICollider2D collider2D, float bounciness)
+    public void AddStaticBody2D(EntityId entityId, Transform transform, ICollider2D collider2D)
     {
-
         if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
         {
             return;
@@ -296,7 +313,7 @@ public class MyPhysics : IResource
         {
             FrictionCoefficient = 1f,
             MaximumRecoveryVelocity = 2f,
-            SpringSettings = new SpringSettings(5f + 25f * (1f - bounciness), 1f - bounciness)
+            SpringSettings = new SpringSettings(30f, 1f)
         };
 
         narrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
@@ -360,7 +377,7 @@ public class MyPhysics : IResource
         var body = BodyDescription.CreateDynamic(
             new RigidPose(transform.position, transform.rotation),
             new BodyVelocity(),
-            inertia, // todo: inertia probably needs to be handled differently for 2d
+            inertia,
             new CollidableDescription(shapeIndex),
             new BodyActivityDescription(0.01f));
 

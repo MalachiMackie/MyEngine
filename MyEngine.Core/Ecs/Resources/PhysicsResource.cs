@@ -18,14 +18,14 @@ public class PhysicsResource : IResource
         PhysicsCommands.Enqueue(new RemoveStaticBodyCommand(entityId));
     }
 
-    public void AddStaticBody(EntityId entityId, Transform transform, float bounciness)
+    public void AddStaticBody(EntityId entityId, Transform transform)
     {
-        PhysicsCommands.Enqueue(new AddStaticBodyCommand(entityId, transform, bounciness));
+        PhysicsCommands.Enqueue(new AddStaticBodyCommand(entityId, transform));
     }
 
-    public void AddStaticBody2D(EntityId entityId, Transform transform, ICollider2D collider, float bounciness)
+    public void AddStaticBody2D(EntityId entityId, Transform transform, ICollider2D collider)
     {
-        PhysicsCommands.Enqueue(new AddStaticBody2DCommand(entityId, transform, collider, bounciness));
+        PhysicsCommands.Enqueue(new AddStaticBody2DCommand(entityId, transform, collider));
     }
 
     public void RemoveDynamicBody(EntityId entityId)
@@ -65,8 +65,8 @@ public class PhysicsResource : IResource
     internal record UpdateCommand(double dt) : IPhysicsCommand;
     internal record AddDynamicBodyCommand(EntityId entityId, Transform transform, float bounciness) : IPhysicsCommand;
     internal record AddDynamicBody2DCommand(EntityId entityId, Transform transform, ICollider2D collider, float bounciness) : IPhysicsCommand;
-    internal record AddStaticBodyCommand(EntityId entityId, Transform transform, float bounciness) : IPhysicsCommand;
-    internal record AddStaticBody2DCommand(EntityId entityId, Transform transform, ICollider2D collider, float bounciness) : IPhysicsCommand;
+    internal record AddStaticBodyCommand(EntityId entityId, Transform transform) : IPhysicsCommand;
+    internal record AddStaticBody2DCommand(EntityId entityId, Transform transform, ICollider2D collider) : IPhysicsCommand;
     internal record RemoveDynamicBodyCommand(EntityId entityId) : IPhysicsCommand;
     internal record RemoveStaticBodyCommand(EntityId entityId) : IPhysicsCommand;
     internal record UpdateDynamicTransformCommand(EntityId entityId, Transform transform) : IPhysicsCommand;

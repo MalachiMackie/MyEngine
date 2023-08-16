@@ -204,7 +204,7 @@ internal partial class EcsEngine
 
         _systemInstantiations.Add(typeof(PhysicsSystem), () =>
         {
-            IEnumerable<EntityComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>> GetQuery1Components()
+            IEnumerable<EntityComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent>> GetQuery1Components()
             {
                 foreach (var entityId in _entities)
                 {
@@ -212,13 +212,11 @@ internal partial class EcsEngine
                         && _components.TryGetComponent<StaticBody2DComponent>(entityId, out var staticBodyComponent)
                         && _components.TryGetComponent<Collider2DComponent>(entityId, out var collider2dComponent))
                     {
-                        var physicsMaterial = _components.GetOptionalComponent<PhysicsMaterial>(entityId);
-                        yield return new EntityComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>(entityId)
+                        yield return new EntityComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent>(entityId)
                         {
                             Component1 = transformComponent,
                             Component2 = staticBodyComponent,
                             Component3 = collider2dComponent,
-                            Component4 = physicsMaterial
                         };
                     }
                 }

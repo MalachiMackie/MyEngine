@@ -16,9 +16,9 @@ public class PhysicsResourceTests
         var transform2 = new Transform();
         _physicsResource.Update(1);
         _physicsResource.AddDynamicBody(entityId, transform1, 1);
-        _physicsResource.AddStaticBody(entityId, transform2, 2);
+        _physicsResource.AddStaticBody(entityId, transform2);
         _physicsResource.AddDynamicBody2D(entityId, transform1, new BoxCollider2D(Vector2.One), 1);
-        _physicsResource.AddStaticBody2D(entityId, transform2, new BoxCollider2D(Vector2.One), 1);
+        _physicsResource.AddStaticBody2D(entityId, transform2, new BoxCollider2D(Vector2.One));
         _physicsResource.ApplyAngularImpulse(entityId, Vector3.One);
         _physicsResource.ApplyImpulse(entityId, Vector3.One);
         _physicsResource.RemoveDynamicBody(entityId);
@@ -29,9 +29,9 @@ public class PhysicsResourceTests
         {
             new PhysicsResource.UpdateCommand(1),
             new PhysicsResource.AddDynamicBodyCommand(entityId, transform1, 1),
-            new PhysicsResource.AddStaticBodyCommand(entityId, transform2, 2),
+            new PhysicsResource.AddStaticBodyCommand(entityId, transform2),
             new PhysicsResource.AddDynamicBody2DCommand(entityId, transform1, new BoxCollider2D(Vector2.One), 1),
-            new PhysicsResource.AddStaticBody2DCommand(entityId, transform2, new BoxCollider2D(Vector2.One), 1),
+            new PhysicsResource.AddStaticBody2DCommand(entityId, transform2, new BoxCollider2D(Vector2.One)),
             new PhysicsResource.ApplyAngularImpulseCommand(entityId, Vector3.One),
             new PhysicsResource.ApplyImpulseCommand(entityId, Vector3.One),
             new PhysicsResource.RemoveDynamicBodyCommand(entityId),

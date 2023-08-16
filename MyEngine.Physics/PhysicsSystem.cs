@@ -11,13 +11,13 @@ public class PhysicsSystem : ISystem
     private readonly PhysicsResource _physicsResource;
     private readonly CollisionsResource _collisionsResource;
     private readonly MyPhysics _myPhysics;
-    private readonly IEnumerable<EntityComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>> _staticBodiesQuery;
+    private readonly IEnumerable<EntityComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent>> _staticBodiesQuery;
     private readonly IEnumerable<EntityComponents<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>> _dynamicBodiesQuery;
 
     public PhysicsSystem(PhysicsResource physicsResource,
         CollisionsResource collisionsResource,
         MyPhysics myPhysics,
-        IEnumerable<EntityComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>> staticBodiesQuery,
+        IEnumerable<EntityComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent>> staticBodiesQuery,
         IEnumerable<EntityComponents<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>> dynamicBodiesQuery)
     {
         _physicsResource = physicsResource;
@@ -39,7 +39,7 @@ public class PhysicsSystem : ISystem
 
         foreach (var components in _staticBodiesQuery)
         {
-            var (transform, staticBody, collider, material) = components;
+            var (transform, staticBody, collider) = components;
             if (!extraStaticBodies.Remove(components.EntityId))
             {
                 // this is a new static body
@@ -48,7 +48,7 @@ public class PhysicsSystem : ISystem
                     position = transform.Transform.position,
                     rotation = transform.Transform.rotation,
                     scale = transform.Transform.scale,
-                }, collider.Collider, material.Component?.Bounciness ?? 0f);
+                }, collider.Collider);
             }
         }
         foreach (var components in _dynamicBodiesQuery)
@@ -102,10 +102,10 @@ public class PhysicsSystem : ISystem
                     _myPhysics.UpdateDynamicTransform(updateDynamicTransform.entityId, updateDynamicTransform.transform);
                     break;
                 case PhysicsResource.AddStaticBodyCommand addStaticBody:
-                    _myPhysics.AddStaticBody(addStaticBody.entityId, addStaticBody.transform, addStaticBody.bounciness);
+                    _myPhysics.AddStaticBody(addStaticBody.entityId, addStaticBody.transform);
                     break;
                 case PhysicsResource.AddStaticBody2DCommand addStaticBody2D:
-                    _myPhysics.AddStaticBody2D(addStaticBody2D.entityId, addStaticBody2D.transform, addStaticBody2D.collider, addStaticBody2D.bounciness);
+                    _myPhysics.AddStaticBody2D(addStaticBody2D.entityId, addStaticBody2D.transform, addStaticBody2D.collider);
                     break;
                 case PhysicsResource.AddDynamicBodyCommand addDynamicBody:
                     _myPhysics.AddDynamicBody(addDynamicBody.entityId, addDynamicBody.transform, addDynamicBody.bounciness);
