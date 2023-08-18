@@ -62,7 +62,6 @@ public class AddStartupSpritesSystem : IStartupSystem
             _componentContainerResource.AddComponent(entity, new SpriteComponent());
             _componentContainerResource.AddComponent(entity, new StaticBody2DComponent());
             _componentContainerResource.AddComponent(entity, new Collider2DComponent(new BoxCollider2D(Vector2.One)));
-            // _componentContainerResource.AddComponent(new TestComponent(entity.Id));
             _componentContainerResource.AddComponent(entity, new PhysicsMaterial(0f));
         }
 
@@ -76,7 +75,8 @@ public class AddStartupSpritesSystem : IStartupSystem
             rotation = Quaternion.Identity,
             scale = new Vector3(0.25f, 0.25f, 1f)
         }));
-        _componentContainerResource.AddComponent(playerEntity, new DynamicBody2DComponent());
+        _componentContainerResource.AddComponent(playerEntity, new KinematicBody2DComponent());
+        _componentContainerResource.AddComponent(playerEntity, new KinematicReboundComponent());
         _componentContainerResource.AddComponent(playerEntity, new Collider2DComponent(new CircleCollider2D(1f)));
         _componentContainerResource.AddComponent(playerEntity, new PhysicsMaterial(1f));
     }

@@ -1,4 +1,6 @@
-﻿namespace MyEngine.Core;
+﻿using System.Numerics;
+
+namespace MyEngine.Utils;
 
 public static class MathHelper
 {
@@ -12,7 +14,7 @@ public static class MathHelper
         return radians * 180f / MathF.PI;
     }
 
-    public static Vector3 ToEulerAngles(Quaternion q)
+    public static Vector3 ToEulerAngles(this Quaternion q)
     {
         Vector3 angles = new();
 
@@ -40,7 +42,7 @@ public static class MathHelper
         return angles;
     }
 
-    public static Quaternion ToQuaternion(Vector3 v)
+    public static Quaternion ToQuaternion(this Vector3 v)
     {
         v = new Vector3(DegreesToRadians(v.X), DegreesToRadians(v.Y), DegreesToRadians(v.Z));
 
@@ -58,6 +60,10 @@ public static class MathHelper
             Y = cr * sp * cy + sr * cp * sy,
             Z = cr * cp * sy - sr * sp * cy
         };
+    }
 
+    public static Vector2 XY(this Vector3 v)
+    {
+        return new Vector2(v.X, v.Y);
     }
 }

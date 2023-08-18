@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MyEngine.Core\MyEngine.Core.csproj" />
+    <ProjectReference Include="..\MyEngine.Utils\MyEngine.Utils.csproj" />
   </ItemGroup>
 
 </Project>

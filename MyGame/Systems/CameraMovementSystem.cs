@@ -5,6 +5,7 @@ using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 using MyEngine.Core.Input;
+using MyEngine.Utils;
 
 namespace MyGame.Systems;
 
@@ -42,7 +43,7 @@ public class CameraMovementSystem : ISystem
 
         var cameraTransform = components.Component2.Transform;
 
-        var cameraDirection = MathHelper.ToEulerAngles(cameraTransform.rotation);
+        var cameraDirection = cameraTransform.rotation.ToEulerAngles();
 
         var cameraFront = Vector3.Normalize(cameraDirection);
 

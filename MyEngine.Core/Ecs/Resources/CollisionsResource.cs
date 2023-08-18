@@ -4,7 +4,10 @@
 public class Collision
 {
     public required EntityId EntityA { get; init; }
+
     public required EntityId EntityB { get; init; }
+
+    public required Vector3 Normal { get; init; }
 }
 
 public class CollisionsResource : IResource

@@ -41,6 +41,9 @@ internal partial class EcsEngine
     private RotatePlayerSystem? _rotatePlayerSystem;
     private ToggleSpriteSystem? _toggleSpriteSystem;
     private OnCollisionSystem? _onCollisionSystem;
+    private KinematicVelocitySystem? _kinematicVelocitySystem;
+    private MoveBallSystem? _moveBallSystem;
+    private KinematicBounceSystem? _kinematicBounceSystem;
 
     // render systems
     private RenderSystem? _renderSystem;
@@ -68,6 +71,16 @@ internal partial class EcsEngine
                     .Run();
             }
         }
+
+        foreach (var (systemType, _) in _uninstantiatedSystems
+            .Where(x => x.Value.Length == 0)
+            .ToArray())
+        {
+            // todo: currently each system instantiation will remove itself from `_uninstantiatedSystems`. I want to find a clearer way to do that.
+            // it feels like a weird side effect rather than a clear pattern
+            _systemInstantiations[systemType].Invoke();
+        }
+
     }
 
     public partial void Render(double dt)
@@ -81,6 +94,8 @@ internal partial class EcsEngine
         _inputSystem?.Run(dt);
 
         _physicsSystem?.Run(dt);
+        _kinematicVelocitySystem?.Run(dt);
+        _kinematicBounceSystem?.Run(dt);
 
         _cameraMovementSystem?.Run(dt);
         _quitOnEscapeSystem?.Run(dt);
@@ -89,6 +104,7 @@ internal partial class EcsEngine
         _rotatePlayerSystem?.Run(dt);
         _toggleSpriteSystem?.Run(dt);
         _onCollisionSystem?.Run(dt);
+        _moveBallSystem?.Run(dt);
 
         // todo: do users expect components/entities to be removed from the scene immediately?
         RemoveComponents();
@@ -204,25 +220,7 @@ internal partial class EcsEngine
 
         _systemInstantiations.Add(typeof(PhysicsSystem), () =>
         {
-            IEnumerable<EntityComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent>> GetQuery1Components()
-            {
-                foreach (var entityId in _entities)
-                {
-                    if (_components.TryGetComponent<TransformComponent>(entityId, out var transformComponent)
-                        && _components.TryGetComponent<StaticBody2DComponent>(entityId, out var staticBodyComponent)
-                        && _components.TryGetComponent<Collider2DComponent>(entityId, out var collider2dComponent))
-                    {
-                        yield return new EntityComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent>(entityId)
-                        {
-                            Component1 = transformComponent,
-                            Component2 = staticBodyComponent,
-                            Component3 = collider2dComponent,
-                        };
-                    }
-                }
-            }
-
-            IEnumerable<EntityComponents<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>> GetQuery2Components()
+            IEnumerable<EntityComponents<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>> GetQueryComponents()
             {
                 foreach (var entityId in _entities)
                 {
@@ -242,6 +240,7 @@ internal partial class EcsEngine
                 }
             }
 
+
             if (_resourceContainer.TryGetResource<PhysicsResource>(out var physicsResource)
                 && _resourceContainer.TryGetResource<MyPhysics>(out var myPhysics)
                 && _resourceContainer.TryGetResource<CollisionsResource>(out var collisionsResource))
@@ -250,8 +249,9 @@ internal partial class EcsEngine
                     physicsResource,
                     collisionsResource,
                     myPhysics,
-                    GetQuery1Components(),
-                    GetQuery2Components());
+                    GetComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent>(),
+                    GetQueryComponents(),
+                    GetComponents<TransformComponent, KinematicBody2DComponent, Collider2DComponent>());
                 _uninstantiatedSystems.Remove(typeof(PhysicsSystem));
             }
         });
@@ -305,6 +305,32 @@ internal partial class EcsEngine
                     collisionsResource,
                     GetComponents<TestComponent>(),
                     entityContainerResource);
+                _uninstantiatedSystems.Remove(typeof(OnCollisionSystem));
+            }
+        });
+
+        _systemInstantiations.Add(typeof(KinematicVelocitySystem), () =>
+        {
+            _kinematicVelocitySystem = new KinematicVelocitySystem(GetComponents<TransformComponent, KinematicBody2DComponent>());
+            _uninstantiatedSystems.Remove(typeof(KinematicVelocitySystem));
+        });
+
+        _systemInstantiations.Add(typeof(MoveBallSystem), () =>
+        {
+            if (_resourceContainer.TryGetResource<InputResource>(out var inputResource))
+            {
+                _moveBallSystem = new MoveBallSystem(GetComponents<PlayerComponent, KinematicBody2DComponent>(), inputResource);
+                _uninstantiatedSystems.Remove(typeof(MoveBallSystem));
+            }
+        });
+
+        _systemInstantiations.Add(typeof(KinematicBounceSystem), () =>
+        {
+            if (_resourceContainer.TryGetResource<CollisionsResource>(out var collisionsResource))
+            {
+                _kinematicBounceSystem = new KinematicBounceSystem(GetComponents<KinematicBody2DComponent, KinematicReboundComponent>(),
+                    collisionsResource);
+                _uninstantiatedSystems.Remove(typeof(KinematicBounceSystem));
             }
         });
     }
@@ -312,7 +338,7 @@ internal partial class EcsEngine
     /// <summary>
     /// Dictionary of uninstantiated systems, and the list of resource dependencies they have
     /// </summary>
-    private Dictionary<Type, Type[]> _uninstantiatedSystems = new Dictionary<Type, Type[]>
+    private readonly Dictionary<Type, Type[]> _uninstantiatedSystems = new()
     {
         { typeof(CameraMovementSystem), new [] { typeof(InputResource) } },
         { typeof(InputSystem), new[] { typeof(InputResource), typeof(MyInput) } },
@@ -323,7 +349,10 @@ internal partial class EcsEngine
         { typeof(ApplyImpulseSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } },
         { typeof(RotatePlayerSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } },
         { typeof(ToggleSpriteSystem), new[] { typeof(InputResource), typeof(ComponentContainerResource) } },
-        { typeof(OnCollisionSystem), new [] { typeof(CollisionsResource) } }
+        { typeof(OnCollisionSystem), new [] { typeof(CollisionsResource) } },
+        { typeof(KinematicVelocitySystem), Array.Empty<Type>() },
+        { typeof(MoveBallSystem), new [] { typeof(InputResource) } },
+        { typeof(KinematicBounceSystem), new [] { typeof(CollisionsResource) } },
     };
 
     public partial void RegisterResource<T>(T resource) where T : IResource

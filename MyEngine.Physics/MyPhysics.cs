@@ -8,7 +8,6 @@ using MyEngine.Core;
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
 namespace MyEngine.Physics;
@@ -90,7 +89,7 @@ internal struct MyNarrowPhaseCallback : INarrowPhaseCallbacks
 
     public bool AllowContactGeneration(int workerIndex, CollidableReference a, CollidableReference b, ref float speculativeMargin)
     {
-        return a.Mobility == CollidableMobility.Dynamic || b.Mobility == CollidableMobility.Dynamic;
+        return a.Mobility != CollidableMobility.Static || b.Mobility != CollidableMobility.Static;
     }
 
     public bool AllowContactGeneration(int workerIndex, CollidablePair pair, int childIndexA, int childIndexB)
@@ -106,14 +105,14 @@ internal struct MyNarrowPhaseCallback : INarrowPhaseCallbacks
         pairMaterial.MaximumRecoveryVelocity = MathF.Max(a.MaximumRecoveryVelocity, b.MaximumRecoveryVelocity);
         pairMaterial.SpringSettings = pairMaterial.MaximumRecoveryVelocity == a.MaximumRecoveryVelocity ? a.SpringSettings : b.SpringSettings;
 
-        if (pair.A.Mobility != CollidableMobility.Dynamic && pair.B.Mobility != CollidableMobility.Dynamic)
+        var aIsBody = pair.A.Mobility != CollidableMobility.Static;
+        var bIsBody = pair.B.Mobility != CollidableMobility.Static;
+
+        if (!aIsBody && !bIsBody)
         {
             // pair of statics, how did this happen?
             return false;
         }
-
-        var aIsBody = pair.A.Mobility != CollidableMobility.Static;
-        var bIsBody = pair.B.Mobility != CollidableMobility.Static;
 
         var normal = manifold.GetNormal(ref manifold, contactIndex: 0); // todo: handle multiple collisions
 
@@ -159,12 +158,6 @@ public class MyPhysics : IResource
             new MyNarrowPhaseCallback(),
             new MyPoseIntegratorCallbacks(),
             new SolveDescription(6, 1));
-    }
-
-    private struct OnCollisionVelocityCache
-    {
-        public Vector3 collisionNormal;
-        public BodyVelocity beforeCollisionVelocity;
     }
 
     public void Update(double dt, out IEnumerable<Collision> newCollisions, out IEnumerable<Collision> continuingCollisions, out IEnumerable<Collision> oldCollisions)
@@ -222,7 +215,8 @@ public class MyPhysics : IResource
         return new Collision
         {
             EntityA = entityIdA,
-            EntityB = entityIdB
+            EntityB = entityIdB,
+            Normal = impact.normal
         };   
     }
 
@@ -262,7 +256,7 @@ public class MyPhysics : IResource
         {
             FrictionCoefficient = 1f,
             MaximumRecoveryVelocity = 2f,
-            SpringSettings = new SpringSettings(5f + 25f * (1f - bounciness), 1f - bounciness)
+            SpringSettings = new SpringSettings(30f, 1f)
         };
 
         narrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
@@ -358,6 +352,21 @@ public class MyPhysics : IResource
         _dynamicHandles.Add(entityId, (handle, shapeIndex));
     }
 
+    public void AddKinematicBody2D(EntityId entityId, Transform transform, ICollider2D collider)
+    {
+        var (shapeIndex, _) = AddColliderAsShape(collider, transform, 10f);
+
+        var body = BodyDescription.CreateKinematic(
+            new RigidPose(transform.position, transform.rotation),
+            new BodyVelocity(),
+            new CollidableDescription(shapeIndex),
+            new BodyActivityDescription(0.01f));
+
+        var handle = _simulation.Bodies.Add(body);
+
+        _dynamicHandles.Add(entityId, (handle, shapeIndex));
+    }
+
     public void AddDynamicBody2D(EntityId entityId, Transform transform, ICollider2D collider, float bounciness)
     {
         if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
@@ -415,12 +424,37 @@ public class MyPhysics : IResource
         bodyReference.ApplyAngularImpulse(impulse);
     }
 
-    public void UpdateDynamicTransform(EntityId entityId, Transform transform)
+    public Transform GetDynamicPhysicsTransform(EntityId entityId)
     {
         var (handle, _) = _dynamicHandles[entityId];
         var pose = _simulation.Bodies[handle].Pose;
 
-        transform.position = pose.Position;
-        transform.rotation = pose.Orientation;
+        return new Transform
+        {
+            position = pose.Position,
+            rotation = pose.Orientation
+        };
+    }
+
+    public void ApplyDynamicPhysicsTransform(EntityId entityId, Transform transform)
+    {
+        var (handle, _) = _dynamicHandles[entityId];
+        var body = _simulation.Bodies[handle];
+
+        body.GetDescription(out var description);
+        description.Pose.Position = transform.position;
+        description.Pose.Orientation = transform.rotation;
+        body.ApplyDescription(description);
+    }
+
+    public void ApplyStaticPhysicsTransform(EntityId entityId, Transform transform)
+    {
+        var (handle, _) = _staticHandles[entityId];
+        var body = _simulation.Statics[handle];
+    
+        body.GetDescription(out var description);
+        description.Pose.Position = transform.position;
+        description.Pose.Orientation = transform.rotation;
+        body.ApplyDescription(description);
     }
 }

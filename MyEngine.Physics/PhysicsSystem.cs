@@ -13,29 +13,33 @@ public class PhysicsSystem : ISystem
     private readonly MyPhysics _myPhysics;
     private readonly IEnumerable<EntityComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent>> _staticBodiesQuery;
     private readonly IEnumerable<EntityComponents<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>> _dynamicBodiesQuery;
+    private readonly IEnumerable<EntityComponents<TransformComponent, KinematicBody2DComponent, Collider2DComponent>> _kinematicBodiesQuery;
 
     public PhysicsSystem(PhysicsResource physicsResource,
         CollisionsResource collisionsResource,
         MyPhysics myPhysics,
         IEnumerable<EntityComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent>> staticBodiesQuery,
-        IEnumerable<EntityComponents<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>> dynamicBodiesQuery)
+        IEnumerable<EntityComponents<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>> dynamicBodiesQuery,
+        IEnumerable<EntityComponents<TransformComponent, KinematicBody2DComponent, Collider2DComponent>> kinematicBodiesQuery)
     {
         _physicsResource = physicsResource;
         _collisionsResource = collisionsResource;
         _myPhysics = myPhysics;
         _staticBodiesQuery = staticBodiesQuery;
         _dynamicBodiesQuery = dynamicBodiesQuery;
+        _kinematicBodiesQuery = kinematicBodiesQuery;
     }
 
     public void Run(double deltaTime)
     {
-        // todo: get static bodies and dynamic bodies from the physics engine, rather than trying to remember them
         var staticBodies = _myPhysics.GetStaticBodies();
         var dynamicBodies = _myPhysics.GetDynamicBodies();
 
         var extraStaticBodies = new HashSet<EntityId>(staticBodies);
         var extraDynamicBodies = new HashSet<EntityId>(dynamicBodies);
+        var transformsToGetUpdatesFor = new Dictionary<EntityId, Transform>();
         var dynamicTransformsToUpdate = new Dictionary<EntityId, Transform>();
+        var staticTransformsToUpdate = new Dictionary<EntityId, Transform>();
 
         foreach (var components in _staticBodiesQuery)
         {
@@ -50,6 +54,8 @@ public class PhysicsSystem : ISystem
                     scale = transform.Transform.scale,
                 }, collider.Collider);
             }
+
+            staticTransformsToUpdate.Add(components.EntityId, transform.Transform);
         }
         foreach (var components in _dynamicBodiesQuery)
         {
@@ -65,23 +71,52 @@ public class PhysicsSystem : ISystem
                 }, collider.Collider, material.Component?.Bounciness ?? 0f);
             }
 
+            transformsToGetUpdatesFor.Add(components.EntityId, transform.Transform);
+            dynamicTransformsToUpdate.Add(components.EntityId, transform.Transform);
+        }
+        foreach (var components in _kinematicBodiesQuery)
+        {
+            var (transform, kinematicBody, collider) = components;
+            if (!extraDynamicBodies.Remove(components.EntityId))
+            {
+                // this is a new kinematic body
+                _physicsResource.AddKinematicBody2D(components.EntityId, new Transform
+                {
+                    position = transform.Transform.position,
+                    rotation = transform.Transform.rotation,
+                    scale = transform.Transform.scale,
+                }, collider.Collider);
+            }
+
             dynamicTransformsToUpdate.Add(components.EntityId, transform.Transform);
         }
 
         foreach (var extraStaticBody in extraStaticBodies)
         {
             _physicsResource.RemoveStaticBody(extraStaticBody);
+            staticTransformsToUpdate.Remove(extraStaticBody);
         }
 
         foreach (var extraDynamicBody in extraDynamicBodies)
         {
-            _physicsResource.RemoveStaticBody(extraDynamicBody);
+            _physicsResource.RemoveDynamicBody(extraDynamicBody);
             dynamicTransformsToUpdate.Remove(extraDynamicBody);
+            transformsToGetUpdatesFor.Remove(extraDynamicBody);
+        }
+
+        foreach (var (entityId, transform) in dynamicTransformsToUpdate)
+        {
+            _physicsResource.SetDynamicTransform(entityId, transform);
+        }
+
+        foreach (var (entityId, transform) in staticTransformsToUpdate)
+        {
+            _physicsResource.SetStaticTransform(entityId, transform);
         }
         
         _physicsResource.Update(deltaTime);
 
-        UpdateTransforms(dynamicTransformsToUpdate.Select(x => (x.Key, x.Value)));
+        UpdateTransformsAfterPhysicsUpdate(transformsToGetUpdatesFor.Select(x => (x.Key, x.Value)));
 
         ProcessCommands();
     }
@@ -98,9 +133,20 @@ public class PhysicsSystem : ISystem
                 case PhysicsResource.ApplyAngularImpulseCommand applyAngularImpulse:
                     _myPhysics.ApplyAngularImpulse(applyAngularImpulse.entityId, applyAngularImpulse.impulse);
                     break;
-                case PhysicsResource.UpdateDynamicTransformCommand updateDynamicTransform:
-                    _myPhysics.UpdateDynamicTransform(updateDynamicTransform.entityId, updateDynamicTransform.transform);
+                case PhysicsResource.SetDynamicTransformCommand updateDynamicTransform:
+                    _myPhysics.ApplyDynamicPhysicsTransform(updateDynamicTransform.entityId, updateDynamicTransform.transform);
                     break;
+                case PhysicsResource.SetStaticTransformCommand updateStaticTransform:
+                    _myPhysics.ApplyStaticPhysicsTransform(updateStaticTransform.entityId, updateStaticTransform.transform);
+                    break;
+                case PhysicsResource.UpdateTransformFromPhysicsCommand updateTransformFromPhysics:
+                    {
+                        var physicsTransform = _myPhysics.GetDynamicPhysicsTransform(updateTransformFromPhysics.entityId);
+                        var entityTransform = updateTransformFromPhysics.transform;
+                        entityTransform.position = physicsTransform.position;
+                        entityTransform.rotation = physicsTransform.rotation;
+                        break;
+                    }
                 case PhysicsResource.AddStaticBodyCommand addStaticBody:
                     _myPhysics.AddStaticBody(addStaticBody.entityId, addStaticBody.transform);
                     break;
@@ -112,6 +158,9 @@ public class PhysicsSystem : ISystem
                     break;
                 case PhysicsResource.AddDynamicBody2DCommand addDynamicBody2D:
                     _myPhysics.AddDynamicBody2D(addDynamicBody2D.entityId, addDynamicBody2D.transform, addDynamicBody2D.collider, addDynamicBody2D.bounciness);
+                    break;
+                case PhysicsResource.AddKinematicBody2DCommand addKinematicBody2D:
+                    _myPhysics.AddKinematicBody2D(addKinematicBody2D.entityId, addKinematicBody2D.transform, addKinematicBody2D.collider);
                     break;
                 case PhysicsResource.RemoveStaticBodyCommand removeStaticBody:
                     _myPhysics.RemoveStaticBody(removeStaticBody.entityId);
@@ -131,11 +180,11 @@ public class PhysicsSystem : ISystem
         }
     }
 
-    private void UpdateTransforms(IEnumerable<(EntityId, Transform)> dynamicTransforms)
+    private void UpdateTransformsAfterPhysicsUpdate(IEnumerable<(EntityId, Transform)> dynamicTransforms)
     {
         foreach (var (entityId, transform) in dynamicTransforms)
         {
-            _physicsResource.UpdateDynamicTransform(entityId, transform);
+            _physicsResource.UpdateTransformFromPhysics(entityId, transform);
         }
     }
 }

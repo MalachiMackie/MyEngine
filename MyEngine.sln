@@ -13,7 +13,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.Physics", "MyEngin
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{3EAC168D-DFE5-4960-9B56-F9592DABE617}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Core.Tests", "Tests\MyEngine.Core.Tests\MyEngine.Core.Tests.csproj", "{7E8BFEB5-D438-495A-B002-56B11A34ADCD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.Core.Tests", "Tests\MyEngine.Core.Tests\MyEngine.Core.Tests.csproj", "{7E8BFEB5-D438-495A-B002-56B11A34ADCD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Utils", "MyEngine.Utils\MyEngine.Utils.csproj", "{A83E8877-F6DE-4758-9788-38494CF3FD83}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,6 +43,10 @@ Global
 		{7E8BFEB5-D438-495A-B002-56B11A34ADCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7E8BFEB5-D438-495A-B002-56B11A34ADCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7E8BFEB5-D438-495A-B002-56B11A34ADCD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A83E8877-F6DE-4758-9788-38494CF3FD83}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A83E8877-F6DE-4758-9788-38494CF3FD83}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A83E8877-F6DE-4758-9788-38494CF3FD83}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A83E8877-F6DE-4758-9788-38494CF3FD83}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

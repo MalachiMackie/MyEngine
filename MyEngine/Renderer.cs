@@ -1,6 +1,7 @@
 ﻿using MyEngine.Core;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Runtime.OpenGL;
+using MyEngine.Utils;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 using StbImageSharp;
@@ -127,7 +128,7 @@ internal sealed class Renderer : IDisposable, IResource
 
         _texture.Bind(TextureUnit.Texture0);
 
-        var cameraDirection = MathHelper.ToEulerAngles(cameraTransform.rotation);
+        var cameraDirection = cameraTransform.rotation.ToEulerAngles();
 
         var cameraFront = Vector3.Normalize(cameraDirection);
 
