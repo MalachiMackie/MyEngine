@@ -26,4 +26,17 @@ internal class ResourceContainer
             throw new InvalidOperationException("Resource has already been added");
         }
     }
+
+    public void RegisterResource(Type resourceType, IResource resource)
+    {
+        if (!resourceType.IsAssignableTo(typeof(IResource)))
+        {
+            throw new InvalidOperationException("Resource must implement IResource");
+        }
+
+        if (!_resources.TryAdd(resourceType, resource))
+        {
+            throw new InvalidOperationException("Resource has already been added");
+        }
+    }
 }

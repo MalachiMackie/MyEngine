@@ -3,6 +3,7 @@ using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Physics;
 using MyGame;
+using MyGame.Resources;
 using MyGame.Systems;
 using System.Diagnostics;
 
@@ -55,6 +56,7 @@ internal partial class EcsEngine
 
     public partial void Startup()
     {
+        RegisterResource(new ResourceRegistrationResource());
         RegisterResource(new EntityContainerResource());
         RegisterResource(new ComponentContainerResource());
         RegisterResource(new PhysicsResource());
@@ -112,6 +114,7 @@ internal partial class EcsEngine
 
         AddNewEntities();
         AddNewComponents();
+        AddResources();
     }
 
     private void AddNewEntities()
@@ -142,6 +145,23 @@ internal partial class EcsEngine
         while (components.NewComponents.TryDequeue(out var component))
         {
             _components.AddComponent(component.EntityId, component.Component);
+        }
+    }
+
+    private void AddResources()
+    {
+        Debug.Assert(_resourceContainer.TryGetResource<ResourceRegistrationResource>(out var resourceRegistration));
+        while (resourceRegistration.Registrations.TryDequeue(out var resource))
+        {
+            _resourceContainer.RegisterResource(resource.Key, resource.Value);
+
+            foreach (var (systemType, resourceTypes) in _uninstantiatedSystems)
+            {
+                if (resourceTypes.Contains(resource.Key))
+                {
+                    _systemInstantiations[systemType].Invoke();
+                }
+            }
         }
     }
 
