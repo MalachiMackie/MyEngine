@@ -7,11 +7,11 @@ namespace MyGame;
 
 public class MoveBallSystem : ISystem
 {
-    private readonly IEnumerable<EntityComponents<PlayerComponent, KinematicBody2DComponent>> _playerQuery;
+    private readonly IEnumerable<EntityComponents<BallComponent, KinematicBody2DComponent>> _playerQuery;
     private readonly InputResource _inputResource;
 
     public MoveBallSystem(
-        IEnumerable<EntityComponents<PlayerComponent, KinematicBody2DComponent>> playerQuery,
+        IEnumerable<EntityComponents<BallComponent, KinematicBody2DComponent>> playerQuery,
         InputResource inputResource)
     {
         _playerQuery = playerQuery;

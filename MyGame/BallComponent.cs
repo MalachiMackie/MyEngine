@@ -3,6 +3,6 @@ using MyEngine.Core.Ecs.Components;
 
 namespace MyGame;
 
-public class PlayerComponent : IComponent
+public class BallComponent : IComponent
 {
 }

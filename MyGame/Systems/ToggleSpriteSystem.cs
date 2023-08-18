@@ -7,15 +7,15 @@ namespace MyGame.Systems;
 
 public class ToggleSpriteSystem : ISystem
 {
-    private IEnumerable<EntityComponents<PlayerComponent>> _playerQuery;
+    private IEnumerable<EntityComponents<BallComponent>> _playerQuery;
     // todo: optional component queries
-    private IEnumerable<EntityComponents<PlayerComponent, SpriteComponent>> _playerWithSpriteComponentQuery;
+    private IEnumerable<EntityComponents<BallComponent, SpriteComponent>> _playerWithSpriteComponentQuery;
     private ComponentContainerResource _componentsResource;
     private InputResource _inputResource;
 
     public ToggleSpriteSystem(
-        IEnumerable<EntityComponents<PlayerComponent>> playerQuery,
-        IEnumerable<EntityComponents<PlayerComponent, SpriteComponent>> playerWithSpriteComponentQuery,
+        IEnumerable<EntityComponents<BallComponent>> playerQuery,
+        IEnumerable<EntityComponents<BallComponent, SpriteComponent>> playerWithSpriteComponentQuery,
         ComponentContainerResource componentsResource,
         InputResource inputResource)
     {

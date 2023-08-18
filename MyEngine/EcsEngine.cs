@@ -45,6 +45,7 @@ internal partial class EcsEngine
     private KinematicVelocitySystem? _kinematicVelocitySystem;
     private MoveBallSystem? _moveBallSystem;
     private KinematicBounceSystem? _kinematicBounceSystem;
+    private BallOutOfBoundsSystem? _ballOutOfBoundsSystem;
 
     // render systems
     private RenderSystem? _renderSystem;
@@ -69,8 +70,11 @@ internal partial class EcsEngine
             {
                 new AddCameraStartupSystem(componentContainer, entityContainer)
                     .Run();
-                new AddStartupSpritesSystem(entityContainer, componentContainer)
-                    .Run();
+                if (_resourceContainer.TryGetResource<ResourceRegistrationResource>(out var resourceRegistrationResource))
+                {
+                    new AddStartupSpritesSystem(entityContainer, componentContainer, resourceRegistrationResource)
+                        .Run();
+                }
             }
         }
 
@@ -107,6 +111,7 @@ internal partial class EcsEngine
         _toggleSpriteSystem?.Run(dt);
         _onCollisionSystem?.Run(dt);
         _moveBallSystem?.Run(dt);
+        _ballOutOfBoundsSystem?.Run(dt);
 
         // todo: do users expect components/entities to be removed from the scene immediately?
         RemoveComponents();
@@ -284,7 +289,7 @@ internal partial class EcsEngine
                 _applyImpulseSystem = new ApplyImpulseSystem(
                     physicsResource,
                     inputResource,
-                    GetComponents<PlayerComponent>());
+                    GetComponents<BallComponent>());
                 _uninstantiatedSystems.Remove(typeof(ApplyImpulseSystem));
             }
         });
@@ -295,7 +300,7 @@ internal partial class EcsEngine
                 && _resourceContainer.TryGetResource<PhysicsResource>(out var physicsResource))
             {
                 _rotatePlayerSystem = new RotatePlayerSystem(
-                    GetComponents<PlayerComponent>(),
+                    GetComponents<BallComponent>(),
                     physicsResource,
                     inputResource);
                 _uninstantiatedSystems.Remove(typeof(RotatePlayerSystem));
@@ -308,8 +313,8 @@ internal partial class EcsEngine
                 && _resourceContainer.TryGetResource<ComponentContainerResource>(out var componentContainer))
             {
                 _toggleSpriteSystem = new ToggleSpriteSystem(
-                    GetComponents<PlayerComponent>(),
-                    GetComponents<PlayerComponent, SpriteComponent>(),
+                    GetComponents<BallComponent>(),
+                    GetComponents<BallComponent, SpriteComponent>(),
                     componentContainer,
                     inputResource);
                 _uninstantiatedSystems.Remove(typeof(ToggleSpriteSystem));
@@ -339,7 +344,7 @@ internal partial class EcsEngine
         {
             if (_resourceContainer.TryGetResource<InputResource>(out var inputResource))
             {
-                _moveBallSystem = new MoveBallSystem(GetComponents<PlayerComponent, KinematicBody2DComponent>(), inputResource);
+                _moveBallSystem = new MoveBallSystem(GetComponents<BallComponent, KinematicBody2DComponent>(), inputResource);
                 _uninstantiatedSystems.Remove(typeof(MoveBallSystem));
             }
         });
@@ -351,6 +356,16 @@ internal partial class EcsEngine
                 _kinematicBounceSystem = new KinematicBounceSystem(GetComponents<KinematicBody2DComponent, KinematicReboundComponent>(),
                     collisionsResource);
                 _uninstantiatedSystems.Remove(typeof(KinematicBounceSystem));
+            }
+        });
+
+        _systemInstantiations.Add(typeof(BallOutOfBoundsSystem), () =>
+        {
+            if (_resourceContainer.TryGetResource<WorldSizeResource>(out var worldSizeResource))
+            {
+                _ballOutOfBoundsSystem = new BallOutOfBoundsSystem(GetComponents<TransformComponent, BallComponent, KinematicBody2DComponent>(),
+                    worldSizeResource);
+                _uninstantiatedSystems.Remove(typeof(BallOutOfBoundsSystem));
             }
         });
     }
@@ -373,6 +388,7 @@ internal partial class EcsEngine
         { typeof(KinematicVelocitySystem), Array.Empty<Type>() },
         { typeof(MoveBallSystem), new [] { typeof(InputResource) } },
         { typeof(KinematicBounceSystem), new [] { typeof(CollisionsResource) } },
+        { typeof(BallOutOfBoundsSystem), new [] { typeof(WorldSizeResource) } }
     };
 
     public partial void RegisterResource<T>(T resource) where T : IResource

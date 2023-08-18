@@ -9,9 +9,9 @@ public class ApplyImpulseSystem : ISystem
 {
     private readonly PhysicsResource _physicsResource;
     private readonly InputResource _inputResource;
-    private readonly IEnumerable<EntityComponents<PlayerComponent>> _query;
+    private readonly IEnumerable<EntityComponents<BallComponent>> _query;
 
-    public ApplyImpulseSystem(PhysicsResource physicsResource, InputResource inputResource, IEnumerable<EntityComponents<PlayerComponent>> query)
+    public ApplyImpulseSystem(PhysicsResource physicsResource, InputResource inputResource, IEnumerable<EntityComponents<BallComponent>> query)
     {
         _physicsResource = physicsResource;
         _inputResource = inputResource;

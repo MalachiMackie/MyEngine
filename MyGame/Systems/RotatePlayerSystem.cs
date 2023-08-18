@@ -8,11 +8,11 @@ namespace MyGame.Systems;
 
 public class RotatePlayerSystem : ISystem
 {
-    private readonly IEnumerable<EntityComponents<PlayerComponent>> _playerQuery;
+    private readonly IEnumerable<EntityComponents<BallComponent>> _playerQuery;
     private readonly PhysicsResource _physicsResource;
     private readonly InputResource _inputResource;
 
-    public RotatePlayerSystem(IEnumerable<EntityComponents<PlayerComponent>> playerQuery, PhysicsResource physicsResource, InputResource inputResource)
+    public RotatePlayerSystem(IEnumerable<EntityComponents<BallComponent>> playerQuery, PhysicsResource physicsResource, InputResource inputResource)
     {
         _physicsResource = physicsResource;
         _playerQuery = playerQuery;
