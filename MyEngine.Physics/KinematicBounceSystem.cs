@@ -9,11 +9,11 @@ namespace MyEngine.Physics;
 
 public class KinematicBounceSystem : ISystem
 {
-    private readonly IQuery<KinematicBody2DComponent, KinematicReboundComponent> _kinematicQuery;
+    private readonly IQuery<KinematicBody2DComponent, OptionalComponent<KinematicReboundComponent>> _kinematicQuery;
     private readonly CollisionsResource _collisionsResource;
 
     public KinematicBounceSystem(
-        IQuery<KinematicBody2DComponent, KinematicReboundComponent> kinematicQuery,
+        IQuery<KinematicBody2DComponent, OptionalComponent<KinematicReboundComponent>> kinematicQuery,
         CollisionsResource collisionsResource)
     {
         _kinematicQuery = kinematicQuery;
@@ -25,28 +25,36 @@ public class KinematicBounceSystem : ISystem
         var kinematicBodies = _kinematicQuery.ToDictionary(x => x.EntityId);
         foreach (var collision in _collisionsResource.NewCollisions)
         {
-            var kinematicBodyA = kinematicBodies.GetValueOrDefault(collision.EntityA);
-            var kinematicBodyB = kinematicBodies.GetValueOrDefault(collision.EntityB);
+            var kinematicBodyA = _kinematicQuery.TryGetForEntity(collision.EntityA);
+            var kinematicBodyB = _kinematicQuery.TryGetForEntity(collision.EntityB);
 
-            if (!(kinematicBodyA is null ^ kinematicBodyB is null))
+            if (kinematicBodyA is null && kinematicBodyB is null)
             {
-                // either both bodies were kinematic, or neither were
+                // neither bodies were kinematic, dont need to do any bouncing here
                 continue;
             }
 
+            if (kinematicBodyA is null || kinematicBodyB is null)
+            {
+                // only once is a kinematic body
+                var (kinematicBody, bounce) = (kinematicBodyA ?? kinematicBodyB)!; 
+
+                if (bounce.HasComponent)
+                {
+                    // only bounce the body if the bounce component exists
+                    kinematicBody.Velocity = GetReboundedVelocity(kinematicBody.Velocity, collision.Normal.XY());
+                }
+
+                continue;
+            }
+
+
             // todo: do bounce when both bodies are kinematic
-            // this will mean the query Rebound component needs to be optional 
-            // probably want a GetForEntity function for a given query.
-            // That means we need to move back to a strongly typed query
             //
             // When we have two kinematic bodies that are both kinematic, we have 2 cases
             // case 1: only one is configured for bounce. That's easy
             // case 2: both have bounce. should we worry about mass? probably not.
             //     just bounce them according to their velocity, assuming equal mass
-
-            var (kinematicBody, _) = (kinematicBodyA ?? kinematicBodyB)!;
-
-            kinematicBody.Velocity = GetReboundedVelocity(kinematicBody.Velocity, collision.Normal.XY());
 
         }
     }

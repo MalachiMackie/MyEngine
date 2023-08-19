@@ -334,7 +334,21 @@ internal partial class EcsEngine
         {
             if (_resourceContainer.TryGetResource<CollisionsResource>(out var collisionsResource))
             {
-                _kinematicBounceSystem = new KinematicBounceSystem(GetQuery<KinematicBody2DComponent, KinematicReboundComponent>(),
+                EntityComponents<KinematicBody2DComponent, OptionalComponent<KinematicReboundComponent>>? GetComponents(EntityId entityId)
+                {
+                    if (_components.TryGetComponent<KinematicBody2DComponent>(entityId, out var kinematicBody2DComponent))
+                    {
+                        return new EntityComponents<KinematicBody2DComponent, OptionalComponent<KinematicReboundComponent>>(entityId)
+                        {
+                            Component1 = kinematicBody2DComponent,
+                            Component2 = _components.GetOptionalComponent<KinematicReboundComponent>(entityId)
+                        };
+                    }
+
+                    return null;
+                }
+
+                _kinematicBounceSystem = new KinematicBounceSystem(GetQuery(GetComponents),
                     collisionsResource);
                 _uninstantiatedSystems.Remove(typeof(KinematicBounceSystem));
             }
