@@ -3,7 +3,9 @@ using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
+using MyGame.Components;
 using MyGame.Resources;
+using MyGame.Utils;
 using System.Numerics;
 
 namespace MyGame.Systems;
@@ -13,6 +15,7 @@ public class AddStartupSpritesSystem : IStartupSystem
     private readonly EntityContainerResource _entityContainerResource;
     private readonly ComponentContainerResource _componentContainerResource;
     private readonly ResourceRegistrationResource _resourceRegistrationResource;
+    private readonly BrickSizeResource _brickSizeResource = new() { Dimensions = new Vector2(0.5f, 0.2f) };
 
     public AddStartupSpritesSystem(EntityContainerResource entityContainerResource,
         ComponentContainerResource componentContainerResource,
@@ -24,6 +27,61 @@ public class AddStartupSpritesSystem : IStartupSystem
     }
 
     public void Run()
+    {
+        _resourceRegistrationResource.AddResource(new WorldSizeResource {
+            Bottom = -2.5f,
+            Top = 2.5f,
+            Left = -4.25f,
+            Right = 4.25f
+        });
+        _resourceRegistrationResource.AddResource(_brickSizeResource);
+
+        AddWalls();
+        AddBall();
+        AddBricks();
+
+    }
+
+    private static readonly Vector2 Origin = new(0f, 1f);
+
+    private Vector2 GridPositionToWorldPosition(int x, int y)
+    {
+        return Origin + new Vector2(x * _brickSizeResource.Dimensions.X, y * _brickSizeResource.Dimensions.Y);
+    }
+
+    private void AddBricks()
+    {
+        var brickPositions = new[]
+        {
+            GridPositionToWorldPosition(0, 1),
+            GridPositionToWorldPosition(1, 1),
+            GridPositionToWorldPosition(2, 1),
+            GridPositionToWorldPosition(-1, 1),
+            GridPositionToWorldPosition(-2, 1),
+            GridPositionToWorldPosition(0, 2),
+            GridPositionToWorldPosition(1, 2),
+            GridPositionToWorldPosition(2, 2),
+            GridPositionToWorldPosition(-1, 2),
+            GridPositionToWorldPosition(-2, 2),
+            GridPositionToWorldPosition(0, 3),
+            GridPositionToWorldPosition(1, 3),
+            GridPositionToWorldPosition(2, 3),
+            GridPositionToWorldPosition(-1, 3),
+            GridPositionToWorldPosition(-2, 3),
+        };
+
+        foreach (var position in brickPositions)
+        {
+            var brick = BrickBuilder.BuildBrick(position, _brickSizeResource.Dimensions.X, _brickSizeResource.Dimensions.Y);
+            _entityContainerResource.AddEntity(brick.EntityId);
+            foreach (var component in brick.Components)
+            {
+                _componentContainerResource.AddComponent(brick.EntityId, component);
+            }
+        }
+    }
+
+    private void AddWalls()
     {
         var walls = new[]
         {
@@ -46,13 +104,7 @@ public class AddStartupSpritesSystem : IStartupSystem
                 scale = new Vector3(8f, 0.1f, 1f)
             },
         };
-        _resourceRegistrationResource.AddResource(new WorldSizeResource {
-            Bottom = -2.5f,
-            Top = 2.5f,
-            Left = -4.25f,
-            Right = 4.25f
-        });
-
+        
         foreach (var transform in walls)
         {
             var entity = EntityId.Generate();
@@ -62,7 +114,10 @@ public class AddStartupSpritesSystem : IStartupSystem
             _componentContainerResource.AddComponent(entity, new StaticBody2DComponent());
             _componentContainerResource.AddComponent(entity, new Collider2DComponent(new BoxCollider2D(Vector2.One)));
         }
+    }
 
+    private void AddBall()
+    {
         var ballEntity = EntityId.Generate();
         _entityContainerResource.AddEntity(ballEntity);
         _componentContainerResource.AddComponent(ballEntity, new BallComponent());

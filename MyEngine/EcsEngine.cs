@@ -2,7 +2,7 @@
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Physics;
-using MyGame;
+using MyGame.Components;
 using MyGame.Resources;
 using MyGame.Systems;
 using System.Diagnostics;
@@ -323,13 +323,10 @@ internal partial class EcsEngine
 
         _systemInstantiations.Add(typeof(OnCollisionSystem), () =>
         {
-            if (_resourceContainer.TryGetResource<CollisionsResource>(out var collisionsResource)
-                && _resourceContainer.TryGetResource<EntityContainerResource>(out var entityContainerResource))
+            if (_resourceContainer.TryGetResource<CollisionsResource>(out var collisionsResource))
             {
                 _onCollisionSystem = new OnCollisionSystem(
-                    collisionsResource,
-                    GetComponents<TestComponent>(),
-                    entityContainerResource);
+                    collisionsResource);
                 _uninstantiatedSystems.Remove(typeof(OnCollisionSystem));
             }
         });

@@ -2,6 +2,7 @@
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
+using MyGame.Components;
 using System.Numerics;
 
 namespace MyGame.Systems;

@@ -66,4 +66,9 @@ public static class MathHelper
     {
         return new Vector2(v.X, v.Y);
     }
+
+    public static Vector3 Extend(this Vector2 v, float z)
+    {
+        return new Vector3(v, z);
+    }
 }

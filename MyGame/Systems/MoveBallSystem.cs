@@ -2,8 +2,9 @@
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
+using MyGame.Components;
 
-namespace MyGame;
+namespace MyGame.Systems;
 
 public class MoveBallSystem : ISystem
 {
