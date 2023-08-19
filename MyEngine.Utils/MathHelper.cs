@@ -71,4 +71,31 @@ public static class MathHelper
     {
         return new Vector3(v, z);
     }
+
+    public static Vector2 Normalize(this Vector2 v)
+    {
+        return Vector2.Normalize(v);
+    }
+
+    public static Vector2 WithMagnitude(this Vector2 v, float magnitude)
+    {
+        if (magnitude < 0)
+        {
+            throw new InvalidOperationException("Cannot set magnitude to less than 0");
+        }
+
+        if (magnitude < 0.00001f)
+        {
+            // setting magnitude to zero removes all data 
+            return Vector2.Zero;
+        }
+
+        if (v.Length() < 0.00001f)
+        {
+            // if current magnitude is zero, then we just keep it at zero 
+            return Vector2.Zero;
+        }
+
+        return v.Normalize() * magnitude;
+    }
 }

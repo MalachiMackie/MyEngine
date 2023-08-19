@@ -45,6 +45,7 @@ internal partial class EcsEngine
     private MoveBallSystem? _moveBallSystem;
     private KinematicBounceSystem? _kinematicBounceSystem;
     private BallOutOfBoundsSystem? _ballOutOfBoundsSystem;
+    private LogBallPositionSystem? _logBallPositionSystem;
 
     // render systems
     private RenderSystem? _renderSystem;
@@ -110,6 +111,7 @@ internal partial class EcsEngine
         _onCollisionSystem?.Run(dt);
         _moveBallSystem?.Run(dt);
         _ballOutOfBoundsSystem?.Run(dt);
+        _logBallPositionSystem?.Run(dt);
 
         // todo: do users expect components/entities to be removed from the scene immediately?
         RemoveComponents();
@@ -363,6 +365,12 @@ internal partial class EcsEngine
                 _uninstantiatedSystems.Remove(typeof(BallOutOfBoundsSystem));
             }
         });
+
+        _systemInstantiations.Add(typeof(LogBallPositionSystem), () =>
+        {
+            _logBallPositionSystem = new LogBallPositionSystem(GetQuery<LogPositionComponent, TransformComponent>());
+            _uninstantiatedSystems.Remove(typeof(LogBallPositionSystem));
+        });
     }
 
     /// <summary>
@@ -382,7 +390,8 @@ internal partial class EcsEngine
         { typeof(KinematicVelocitySystem), Array.Empty<Type>() },
         { typeof(MoveBallSystem), new [] { typeof(InputResource) } },
         { typeof(KinematicBounceSystem), new [] { typeof(CollisionsResource) } },
-        { typeof(BallOutOfBoundsSystem), new [] { typeof(WorldSizeResource) } }
+        { typeof(BallOutOfBoundsSystem), new [] { typeof(WorldSizeResource) } },
+        { typeof(LogBallPositionSystem), Array.Empty<Type>() }
     };
 
     public partial void RegisterResource<T>(T resource) where T : IResource

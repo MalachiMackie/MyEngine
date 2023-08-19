@@ -108,9 +108,8 @@ internal struct MyNarrowPhaseCallback : INarrowPhaseCallbacks
         var aIsBody = pair.A.Mobility != CollidableMobility.Static;
         var bIsBody = pair.B.Mobility != CollidableMobility.Static;
 
-        if (!aIsBody && !bIsBody)
+        if (manifold.Count == 0)
         {
-            // pair of statics, how did this happen?
             return false;
         }
 

@@ -39,7 +39,6 @@ public class AddStartupSpritesSystem : IStartupSystem
         AddWalls();
         AddBall();
         AddBricks();
-
     }
 
     private static readonly Vector2 Origin = new(0f, 1f);
@@ -122,6 +121,7 @@ public class AddStartupSpritesSystem : IStartupSystem
         _entityContainerResource.AddEntity(ballEntity);
         _componentContainerResource.AddComponent(ballEntity, new BallComponent());
         _componentContainerResource.AddComponent(ballEntity, new SpriteComponent());
+        _componentContainerResource.AddComponent(ballEntity, new LogPositionComponent { Name = "Ball" });
         _componentContainerResource.AddComponent(ballEntity, new TransformComponent(new Transform
         {
             position = new Vector3(0f, -1f, 0f),

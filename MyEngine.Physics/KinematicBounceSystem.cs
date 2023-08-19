@@ -25,19 +25,19 @@ public class KinematicBounceSystem : ISystem
         var kinematicBodies = _kinematicQuery.ToDictionary(x => x.EntityId);
         foreach (var collision in _collisionsResource.NewCollisions)
         {
-            var kinematicBodyA = _kinematicQuery.TryGetForEntity(collision.EntityA);
-            var kinematicBodyB = _kinematicQuery.TryGetForEntity(collision.EntityB);
+            var kinematicBodyComponentsA = _kinematicQuery.TryGetForEntity(collision.EntityA);
+            var kinematicBodyComponentsB = _kinematicQuery.TryGetForEntity(collision.EntityB);
 
-            if (kinematicBodyA is null && kinematicBodyB is null)
+            if (kinematicBodyComponentsA is null && kinematicBodyComponentsB is null)
             {
                 // neither bodies were kinematic, dont need to do any bouncing here
                 continue;
             }
 
-            if (kinematicBodyA is null || kinematicBodyB is null)
+            if (kinematicBodyComponentsA is null || kinematicBodyComponentsB is null)
             {
                 // only once is a kinematic body
-                var (kinematicBody, bounce) = (kinematicBodyA ?? kinematicBodyB)!; 
+                var (kinematicBody, bounce) = (kinematicBodyComponentsA ?? kinematicBodyComponentsB)!; 
 
                 if (bounce.HasComponent)
                 {
@@ -48,19 +48,75 @@ public class KinematicBounceSystem : ISystem
                 continue;
             }
 
+            // both bodies are kinematic
 
-            // todo: do bounce when both bodies are kinematic
-            //
-            // When we have two kinematic bodies that are both kinematic, we have 2 cases
-            // case 1: only one is configured for bounce. That's easy
-            // case 2: both have bounce. should we worry about mass? probably not.
-            //     just bounce them according to their velocity, assuming equal mass
+            var (kinematicBodyA, bounceA) = kinematicBodyComponentsA;
+            var (kinematicBodyB, bounceB) = kinematicBodyComponentsB;
 
+            if (!bounceA.HasComponent && !bounceB.HasComponent)
+            {
+                // neither bodies have a bounce component. don't do anything
+                continue;
+            }
+
+            if (bounceA.HasComponent && !bounceB.HasComponent)
+            {
+                // A has the bounce component
+                kinematicBodyA.Velocity = GetReboundedVelocity(kinematicBodyA.Velocity, collision.Normal.XY());
+                continue;
+            }
+
+            if (bounceB.HasComponent && !bounceA.HasComponent)
+            {
+                // B has the bounce component
+                kinematicBodyB.Velocity = GetReboundedVelocity(kinematicBodyB.Velocity, collision.Normal.XY());
+                continue;
+            }
+
+            // both A and B have bounce component
+
+            // get the rebounded velocities for each body 
+
+            var aMagnitude = kinematicBodyA.Velocity.Length();
+            var bMagnitude = kinematicBodyB.Velocity.Length();
+
+            var aReboundedVelocity = GetReboundedVelocity(kinematicBodyA.Velocity, collision.Normal.XY());
+            var bReboundedVelocity = GetReboundedVelocity(kinematicBodyB.Velocity, collision.Normal.XY());
+
+            var aReboundMagnitude = aReboundedVelocity.Length();
+            var bReboundMagnitude = bReboundedVelocity.Length();
+
+            // assign the rebounded velocities, using the magnitude of the opposite body, as a crude transfer of momentum
+            if (aMagnitude >= 0.0001f)
+            {
+                kinematicBodyA.Velocity = aReboundedVelocity.WithMagnitude(bReboundMagnitude);
+            }
+            else
+            {
+                // if we were previously still, we now want to be moving in the direction of the normal
+                kinematicBodyA.Velocity = collision.Normal.XY() * bMagnitude;
+            }
+
+            if (bMagnitude >= 0.0001f)
+            {
+                kinematicBodyB.Velocity = bReboundedVelocity.WithMagnitude(aReboundMagnitude);
+            }
+            else
+            {
+
+                // if we were previously still, we now want to be moving in the opposite direction of the normal
+                kinematicBodyB.Velocity = collision.Normal.XY() * -aMagnitude;
+            }
         }
     }
 
     public static Vector2 GetReboundedVelocity(Vector2 currentVelocity, Vector2 collisionNormal)
     {
+        if (currentVelocity.Length() < 0.0001f)
+        {
+            return Vector2.Zero;
+        }
+
         // r=d−2(d⋅n)n
         // d = direction
         // n = normal
