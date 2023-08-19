@@ -1,4 +1,5 @@
-﻿using MyEngine.Core.Ecs.Components;
+﻿using MyEngine.Core.Ecs;
+using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Systems;
 
 namespace MyEngine.Runtime;
@@ -6,15 +7,15 @@ namespace MyEngine.Runtime;
 internal class RenderSystem : IRenderSystem
 {
     private readonly Renderer _renderer;
-    private readonly IEnumerable<EntityComponents<Camera3DComponent, TransformComponent>> _camera3DQuery;
-    private readonly IEnumerable<EntityComponents<Camera2DComponent, TransformComponent>> _camera2DQuery;
-    private readonly IEnumerable<EntityComponents<SpriteComponent, TransformComponent>> _spriteQuery;
+    private readonly IQuery<Camera3DComponent, TransformComponent> _camera3DQuery;
+    private readonly IQuery<Camera2DComponent, TransformComponent> _camera2DQuery;
+    private readonly IQuery<SpriteComponent, TransformComponent> _spriteQuery;
 
     public RenderSystem(
         Renderer renderer,
-        IEnumerable<EntityComponents<Camera3DComponent, TransformComponent>> camera3DQuery,
-        IEnumerable<EntityComponents<Camera2DComponent, TransformComponent>> camera2DQuery,
-        IEnumerable<EntityComponents<SpriteComponent, TransformComponent>> spriteQuery)
+        IQuery<Camera3DComponent, TransformComponent> camera3DQuery,
+        IQuery<Camera2DComponent, TransformComponent> camera2DQuery,
+        IQuery<SpriteComponent, TransformComponent> spriteQuery)
     {
         _renderer = renderer;
         _camera3DQuery = camera3DQuery;

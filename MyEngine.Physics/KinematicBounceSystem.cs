@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
@@ -8,11 +9,11 @@ namespace MyEngine.Physics;
 
 public class KinematicBounceSystem : ISystem
 {
-    private readonly IEnumerable<EntityComponents<KinematicBody2DComponent, KinematicReboundComponent>> _kinematicQuery;
+    private readonly IQuery<KinematicBody2DComponent, KinematicReboundComponent> _kinematicQuery;
     private readonly CollisionsResource _collisionsResource;
 
     public KinematicBounceSystem(
-        IEnumerable<EntityComponents<KinematicBody2DComponent, KinematicReboundComponent>> kinematicQuery,
+        IQuery<KinematicBody2DComponent, KinematicReboundComponent> kinematicQuery,
         CollisionsResource collisionsResource)
     {
         _kinematicQuery = kinematicQuery;

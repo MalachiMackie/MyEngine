@@ -50,11 +50,11 @@ internal class ComponentCollection
     }
 
     public bool TryGetComponent<TComponent>(EntityId entityId, [NotNullWhen(true)] out TComponent? component)
-        where TComponent : class, IComponent
+        where TComponent : IComponent
     {
         if (!_components.TryGetValue(typeof(TComponent), out var components))
         {
-            component = null;
+            component = default;
             return false;
         }
 
@@ -69,7 +69,7 @@ internal class ComponentCollection
             return true;
         }
 
-        component = null;
+        component = default;
         return false;
     }
 

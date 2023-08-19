@@ -12,12 +12,12 @@ public class AddSpritesSystem : ISystem
     private readonly EntityContainerResource _entityContainerResource;
     private readonly ComponentContainerResource _componentContainerResource;
 
-    private readonly IEnumerable<EntityComponents<SpriteComponent, TransformComponent>> _query;
+    private readonly IQuery<SpriteComponent, TransformComponent> _query;
 
     public AddSpritesSystem(InputResource inputResource,
         EntityContainerResource entityContainerResource,
         ComponentContainerResource componentContainerResource,
-        IEnumerable<EntityComponents<SpriteComponent, TransformComponent>> query)
+        IQuery<SpriteComponent, TransformComponent> query)
     {
         _inputResource = inputResource;
         _entityContainerResource = entityContainerResource;

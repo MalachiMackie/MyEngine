@@ -10,11 +10,11 @@ namespace MyGame.Systems;
 
 public class BallOutOfBoundsSystem : ISystem
 {
-    private readonly IEnumerable<EntityComponents<TransformComponent, BallComponent, KinematicBody2DComponent>> _ballQuery;
+    private readonly IQuery<TransformComponent, BallComponent, KinematicBody2DComponent> _ballQuery;
     private readonly WorldSizeResource _worldSizeResource;
 
     public BallOutOfBoundsSystem(
-        IEnumerable<EntityComponents<TransformComponent, BallComponent, KinematicBody2DComponent>> ballQuery,
+        IQuery<TransformComponent, BallComponent, KinematicBody2DComponent> ballQuery,
         WorldSizeResource worldSizeResource)
     {
         _ballQuery = ballQuery;

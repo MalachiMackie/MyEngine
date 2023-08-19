@@ -12,13 +12,13 @@ namespace MyGame.Systems;
 public class CameraMovementSystem : ISystem
 {
     private readonly InputResource _inputResource;
-    private readonly IEnumerable<EntityComponents<Camera3DComponent, TransformComponent>> _camera3DQuery;
-    private readonly IEnumerable<EntityComponents<Camera2DComponent, TransformComponent>> _camera2DQuery;
+    private readonly IQuery<Camera3DComponent, TransformComponent> _camera3DQuery;
+    private readonly IQuery<Camera2DComponent, TransformComponent> _camera2DQuery;
 
     public CameraMovementSystem(
         InputResource inputResource,
-        IEnumerable<EntityComponents<Camera3DComponent, TransformComponent>> camera3dQuery,
-        IEnumerable<EntityComponents<Camera2DComponent, TransformComponent>> camera2dQuery)
+        IQuery<Camera3DComponent, TransformComponent> camera3dQuery,
+        IQuery<Camera2DComponent, TransformComponent> camera2dQuery)
     {
         _inputResource = inputResource;
         _camera3DQuery = camera3dQuery;

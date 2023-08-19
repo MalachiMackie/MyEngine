@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Systems;
 
@@ -6,9 +7,9 @@ namespace MyEngine.Physics;
 
 public class KinematicVelocitySystem : ISystem
 {
-    private readonly IEnumerable<EntityComponents<TransformComponent, KinematicBody2DComponent>> _kinematicQuery;
+    private readonly IQuery<TransformComponent, KinematicBody2DComponent> _kinematicQuery;
 
-    public KinematicVelocitySystem(IEnumerable<EntityComponents<TransformComponent, KinematicBody2DComponent>> kinematicQuery)
+    public KinematicVelocitySystem(IQuery<TransformComponent, KinematicBody2DComponent> kinematicQuery)
     {
         _kinematicQuery = kinematicQuery;
     }

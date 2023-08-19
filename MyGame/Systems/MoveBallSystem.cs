@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
@@ -8,11 +9,11 @@ namespace MyGame.Systems;
 
 public class MoveBallSystem : ISystem
 {
-    private readonly IEnumerable<EntityComponents<BallComponent, KinematicBody2DComponent>> _playerQuery;
+    private readonly IQuery<BallComponent, KinematicBody2DComponent> _playerQuery;
     private readonly InputResource _inputResource;
 
     public MoveBallSystem(
-        IEnumerable<EntityComponents<BallComponent, KinematicBody2DComponent>> playerQuery,
+        IQuery<BallComponent, KinematicBody2DComponent> playerQuery,
         InputResource inputResource)
     {
         _playerQuery = playerQuery;

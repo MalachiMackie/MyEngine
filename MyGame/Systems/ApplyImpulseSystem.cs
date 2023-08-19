@@ -1,4 +1,5 @@
-﻿using MyEngine.Core.Ecs.Components;
+﻿using MyEngine.Core.Ecs;
+using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 using MyGame.Components;
@@ -10,9 +11,9 @@ public class ApplyImpulseSystem : ISystem
 {
     private readonly PhysicsResource _physicsResource;
     private readonly InputResource _inputResource;
-    private readonly IEnumerable<EntityComponents<BallComponent>> _query;
+    private readonly IQuery<BallComponent> _query;
 
-    public ApplyImpulseSystem(PhysicsResource physicsResource, InputResource inputResource, IEnumerable<EntityComponents<BallComponent>> query)
+    public ApplyImpulseSystem(PhysicsResource physicsResource, InputResource inputResource, IQuery<BallComponent> query)
     {
         _physicsResource = physicsResource;
         _inputResource = inputResource;

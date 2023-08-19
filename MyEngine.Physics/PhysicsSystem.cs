@@ -11,16 +11,16 @@ public class PhysicsSystem : ISystem
     private readonly PhysicsResource _physicsResource;
     private readonly CollisionsResource _collisionsResource;
     private readonly MyPhysics _myPhysics;
-    private readonly IEnumerable<EntityComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent>> _staticBodiesQuery;
-    private readonly IEnumerable<EntityComponents<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>> _dynamicBodiesQuery;
-    private readonly IEnumerable<EntityComponents<TransformComponent, KinematicBody2DComponent, Collider2DComponent>> _kinematicBodiesQuery;
+    private readonly IQuery<TransformComponent, StaticBody2DComponent, Collider2DComponent> _staticBodiesQuery;
+    private readonly IQuery<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>> _dynamicBodiesQuery;
+    private readonly IQuery<TransformComponent, KinematicBody2DComponent, Collider2DComponent> _kinematicBodiesQuery;
 
     public PhysicsSystem(PhysicsResource physicsResource,
         CollisionsResource collisionsResource,
         MyPhysics myPhysics,
-        IEnumerable<EntityComponents<TransformComponent, StaticBody2DComponent, Collider2DComponent>> staticBodiesQuery,
-        IEnumerable<EntityComponents<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>> dynamicBodiesQuery,
-        IEnumerable<EntityComponents<TransformComponent, KinematicBody2DComponent, Collider2DComponent>> kinematicBodiesQuery)
+        IQuery<TransformComponent, StaticBody2DComponent, Collider2DComponent> staticBodiesQuery,
+        IQuery<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>> dynamicBodiesQuery,
+        IQuery<TransformComponent, KinematicBody2DComponent, Collider2DComponent> kinematicBodiesQuery)
     {
         _physicsResource = physicsResource;
         _collisionsResource = collisionsResource;
