@@ -73,6 +73,11 @@ public class PhysicsResource : IResource
         PhysicsCommands.Enqueue(new ApplyAngularImpulseCommand(entityId, impulse));
     }
 
+    public void SetKinematicBody2DVelocity(EntityId entityId, Vector2 velocity)
+    {
+        PhysicsCommands.Enqueue(new SetKinematicBody2DVelocityCommand(entityId, velocity));
+    }
+
     internal interface IPhysicsCommand
     {
     }
@@ -87,6 +92,7 @@ public class PhysicsResource : IResource
     internal record RemoveStaticBodyCommand(EntityId entityId) : IPhysicsCommand;
     internal record SetDynamicTransformCommand(EntityId entityId, Transform transform) : IPhysicsCommand;
     internal record SetStaticTransformCommand(EntityId entityId, Transform transform) : IPhysicsCommand;
+    internal record SetKinematicBody2DVelocityCommand(EntityId entityId, Vector2 velocity) : IPhysicsCommand;
     internal record UpdateTransformFromPhysicsCommand(EntityId entityId, Transform transform) : IPhysicsCommand;
     internal record ApplyImpulseCommand(EntityId entityId, Vector3 impulse) : IPhysicsCommand;
     internal record ApplyAngularImpulseCommand(EntityId entityId, Vector3 impulse) : IPhysicsCommand;

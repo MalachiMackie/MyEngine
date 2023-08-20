@@ -8,6 +8,7 @@ using MyEngine.Core;
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
+using MyEngine.Utils;
 using System.Numerics;
 
 namespace MyEngine.Physics;
@@ -289,6 +290,14 @@ public class MyPhysics : IResource
             default:
                 throw new NotImplementedException();
         }
+    }
+
+    public void SetDynamicBody2DVelocity(EntityId entityId, Vector2 velocity)
+    {
+        var (bodyHandle, _) = _dynamicHandles[entityId];
+        var bodyRef = _simulation.Bodies[bodyHandle];
+        ref var currentVelocity = ref bodyRef.Velocity;
+        currentVelocity.Linear = velocity.Extend(currentVelocity.Linear.Z);
     }
 
     public void AddStaticBody2D(EntityId entityId, Transform transform, ICollider2D collider2D)

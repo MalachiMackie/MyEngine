@@ -41,7 +41,6 @@ internal partial class EcsEngine
     private ApplyImpulseSystem? _applyImpulseSystem;
     private RotatePlayerSystem? _rotatePlayerSystem;
     private OnCollisionSystem? _onCollisionSystem;
-    private KinematicVelocitySystem? _kinematicVelocitySystem;
     private MoveBallSystem? _moveBallSystem;
     private KinematicBounceSystem? _kinematicBounceSystem;
     private BallOutOfBoundsSystem? _ballOutOfBoundsSystem;
@@ -100,7 +99,6 @@ internal partial class EcsEngine
         _inputSystem?.Run(dt);
 
         _physicsSystem?.Run(dt);
-        _kinematicVelocitySystem?.Run(dt);
         _kinematicBounceSystem?.Run(dt);
 
         _cameraMovementSystem?.Run(dt);
@@ -317,12 +315,6 @@ internal partial class EcsEngine
             }
         });
 
-        _systemInstantiations.Add(typeof(KinematicVelocitySystem), () =>
-        {
-            _kinematicVelocitySystem = new KinematicVelocitySystem(GetQuery<TransformComponent, KinematicBody2DComponent>());
-            _uninstantiatedSystems.Remove(typeof(KinematicVelocitySystem));
-        });
-
         _systemInstantiations.Add(typeof(MoveBallSystem), () =>
         {
             if (_resourceContainer.TryGetResource<InputResource>(out var inputResource))
@@ -387,7 +379,6 @@ internal partial class EcsEngine
         { typeof(ApplyImpulseSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } },
         { typeof(RotatePlayerSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } },
         { typeof(OnCollisionSystem), new [] { typeof(CollisionsResource) } },
-        { typeof(KinematicVelocitySystem), Array.Empty<Type>() },
         { typeof(MoveBallSystem), new [] { typeof(InputResource) } },
         { typeof(KinematicBounceSystem), new [] { typeof(CollisionsResource) } },
         { typeof(BallOutOfBoundsSystem), new [] { typeof(WorldSizeResource) } },

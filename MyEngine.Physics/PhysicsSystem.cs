@@ -87,7 +87,13 @@ public class PhysicsSystem : ISystem
                     scale = transform.Transform.scale,
                 }, collider.Collider);
             }
+            else if (kinematicBody.Dirty)
+            {
+                _physicsResource.SetKinematicBody2DVelocity(components.EntityId, kinematicBody.Velocity);
+                kinematicBody.Dirty = false;
+            }
 
+            transformsToGetUpdatesFor.Add(components.EntityId, transform.Transform);
             dynamicTransformsToUpdate.Add(components.EntityId, transform.Transform);
         }
 
@@ -167,6 +173,9 @@ public class PhysicsSystem : ISystem
                     break;
                 case PhysicsResource.RemoveDynamicBodyCommand removeDynamicBody:
                     _myPhysics.RemoveDynamicBody(removeDynamicBody.entityId);
+                    break;
+                case PhysicsResource.SetKinematicBody2DVelocityCommand setKinematicBody2DVelocityCommand:
+                    _myPhysics.SetDynamicBody2DVelocity(setKinematicBody2DVelocityCommand.entityId, setKinematicBody2DVelocityCommand.velocity);
                     break;
                 case PhysicsResource.UpdateCommand update:
                     {
