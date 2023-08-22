@@ -2,7 +2,7 @@
 
 public class TransformComponent : IComponent
 {
-    private static Transform DefaultTransform(Vector3? position = null, Vector3? scale = null, Quaternion? rotation = null)
+    public static Transform DefaultTransform(Vector3? position = null, Vector3? scale = null, Quaternion? rotation = null)
     {
         return new Transform
         {

@@ -9,18 +9,18 @@ namespace MyGame.Systems;
 public class AddSpritesSystem : ISystem
 {
     private readonly InputResource _inputResource;
-    private readonly EntityContainerResource _entityContainerResource;
+    private readonly IEntityCommands _entityCommands;
     private readonly ComponentContainerResource _componentContainerResource;
 
     private readonly IQuery<SpriteComponent, TransformComponent> _query;
 
     public AddSpritesSystem(InputResource inputResource,
-        EntityContainerResource entityContainerResource,
+        IEntityCommands entityCommands,
         ComponentContainerResource componentContainerResource,
         IQuery<SpriteComponent, TransformComponent> query)
     {
         _inputResource = inputResource;
-        _entityContainerResource = entityContainerResource;
+        _entityCommands = entityCommands;
         _componentContainerResource = componentContainerResource;
         _query = query;
     }
@@ -44,19 +44,14 @@ public class AddSpritesSystem : ISystem
             return;
         }
 
-        var newEntity = EntityId.Generate();
-        var newTransformComponent = new TransformComponent(new MyEngine.Core.Transform
+        var newTransform = new MyEngine.Core.Transform
         {
-            position = minTransform.position,
+            position = new System.Numerics.Vector3(minTransform.position.X - 1, minTransform.position.Y, minTransform.position.Z),
             rotation = minTransform.rotation,
             scale = minTransform.scale
-        });
+        };
 
-        ref var position = ref newTransformComponent.Transform.position;
-        position.X -= 1;
-
-        _entityContainerResource.AddEntity(newEntity);
-        _componentContainerResource.AddComponent(newEntity, newTransformComponent);
+        var newEntity = _entityCommands.AddEntity(newTransform);
         _componentContainerResource.AddComponent(newEntity, new SpriteComponent());
     }
 }

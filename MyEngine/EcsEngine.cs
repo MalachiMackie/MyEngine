@@ -58,14 +58,14 @@ internal partial class EcsEngine
     {
         RegisterResource<IHierarchyCommands>(new HierarchyCommands(_components));
         RegisterResource(new ResourceRegistrationResource());
-        RegisterResource(new EntityContainerResource());
+        RegisterResource<IEntityCommands>(new EntityCommands(_components, _entities));
         RegisterResource(new ComponentContainerResource());
         RegisterResource(new PhysicsResource());
         RegisterResource(new MyPhysics());
         RegisterResource(new CollisionsResource());
 
         {
-            if (_resourceContainer.TryGetResource<EntityContainerResource>(out var entityContainer)
+            if (_resourceContainer.TryGetResource<IEntityCommands>(out var entityContainer)
                 && _resourceContainer.TryGetResource<ComponentContainerResource>(out var componentContainer))
             {
                 new AddCameraStartupSystem(componentContainer, entityContainer)
@@ -86,7 +86,6 @@ internal partial class EcsEngine
             // it feels like a weird side effect rather than a clear pattern
             _systemInstantiations[systemType].Invoke();
         }
-
     }
 
     public partial void Render(double dt)
@@ -112,35 +111,10 @@ internal partial class EcsEngine
         _ballOutOfBoundsSystem?.Run(dt);
         _logBallPositionSystem?.Run(dt);
 
-        // todo: do users expect components/entities to be removed from the scene immediately?
         RemoveComponents();
-        RemoveEntities();
 
-        AddNewEntities();
         AddNewComponents();
         AddResources();
-    }
-
-    private void AddNewEntities()
-    {
-        Debug.Assert(_resourceContainer.TryGetResource<EntityContainerResource>(out var entityContainer));
-        while (entityContainer.NewEntities.TryDequeue(out var entity))
-        {
-            if (!_entities.Add(entity))
-            {
-                throw new InvalidOperationException("Cannot add the same entity multiple times");
-            }
-        }
-    }
-
-    private void RemoveEntities()
-    {
-        Debug.Assert(_resourceContainer.TryGetResource<EntityContainerResource>(out var entityContainer));
-        while (entityContainer.DeleteEntities.TryDequeue(out var entity))
-        {
-            _components.DeleteComponentsForEntity(entity);
-            _entities.Remove(entity);
-        }
     }
 
     private void AddNewComponents()
@@ -230,7 +204,7 @@ internal partial class EcsEngine
         _systemInstantiations.Add(typeof(AddSpritesSystem), () =>
         {
             if (_resourceContainer.TryGetResource<InputResource>(out var inputResource)
-                && _resourceContainer.TryGetResource<EntityContainerResource>(out var entityContainer)
+                && _resourceContainer.TryGetResource<IEntityCommands>(out var entityContainer)
                 && _resourceContainer.TryGetResource<ComponentContainerResource>(out var componentContainer))
             {
                 _addSpritesSystem = new AddSpritesSystem(
@@ -308,7 +282,7 @@ internal partial class EcsEngine
         _systemInstantiations.Add(typeof(OnCollisionSystem), () =>
         {
             if (_resourceContainer.TryGetResource<CollisionsResource>(out var collisionsResource)
-                && _resourceContainer.TryGetResource<EntityContainerResource>(out var entityContainerResource))
+                && _resourceContainer.TryGetResource<IEntityCommands>(out var entityContainerResource))
             {
                 _onCollisionSystem = new OnCollisionSystem(
                     collisionsResource);
@@ -375,11 +349,11 @@ internal partial class EcsEngine
         { typeof(InputSystem), new[] { typeof(InputResource), typeof(MyInput) } },
         { typeof(RenderSystem), new[] { typeof(Renderer) } },
         { typeof(QuitOnEscapeSystem), new[] { typeof(InputResource), typeof(MyWindow) } },
-        { typeof(AddSpritesSystem), new[] { typeof(InputResource), typeof(EntityContainerResource), typeof(ComponentContainerResource) } },
+        { typeof(AddSpritesSystem), new[] { typeof(InputResource), typeof(IEntityCommands), typeof(ComponentContainerResource) } },
         { typeof(PhysicsSystem), new[] { typeof(PhysicsResource), typeof(CollisionsResource), typeof(MyPhysics) } },
         { typeof(ApplyImpulseSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } },
         { typeof(RotatePlayerSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } },
-        { typeof(OnCollisionSystem), new [] { typeof(CollisionsResource) } },
+        { typeof(OnCollisionSystem), new [] { typeof(CollisionsResource), typeof(IEntityCommands) } },
         { typeof(MoveBallSystem), new [] { typeof(InputResource) } },
         { typeof(KinematicBounceSystem), new [] { typeof(CollisionsResource) } },
         { typeof(BallOutOfBoundsSystem), new [] { typeof(WorldSizeResource) } },

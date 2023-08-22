@@ -9,21 +9,19 @@ namespace MyEngine.Runtime;
 internal class AddCameraStartupSystem : IStartupSystem
 {
     private readonly ComponentContainerResource _componentContainer;
-    private readonly EntityContainerResource _entityContainer;
+    private readonly IEntityCommands _entityCommands;
 
     public AddCameraStartupSystem(
         ComponentContainerResource componentContainer,
-        EntityContainerResource entityContainer)
+        IEntityCommands entityContainer)
     {
         _componentContainer = componentContainer;
-        _entityContainer = entityContainer;
+        _entityCommands = entityContainer;
     }
 
     public void Run()
     {
-        var entity = EntityId.Generate();
-        _entityContainer.AddEntity(entity);
+        var entity = _entityCommands.AddEntity();
         _componentContainer.AddComponent(entity, new Camera2DComponent(new Vector2(8f, 4.5f)));
-        _componentContainer.AddComponent(entity, new TransformComponent());
     }
 }
