@@ -58,21 +58,19 @@ internal partial class EcsEngine
     {
         RegisterResource<IHierarchyCommands>(new HierarchyCommands(_components));
         RegisterResource(new ResourceRegistrationResource());
-        RegisterResource<IEntityCommands>(new EntityCommands(_components, _entities));
-        RegisterResource(new ComponentContainerResource());
+        RegisterResource<ICommands>(new Commands(_components, _entities));
         RegisterResource(new PhysicsResource());
         RegisterResource(new MyPhysics());
         RegisterResource(new CollisionsResource());
 
         {
-            if (_resourceContainer.TryGetResource<IEntityCommands>(out var entityContainer)
-                && _resourceContainer.TryGetResource<ComponentContainerResource>(out var componentContainer))
+            if (_resourceContainer.TryGetResource<ICommands>(out var entityContainer))
             {
-                new AddCameraStartupSystem(componentContainer, entityContainer)
+                new AddCameraStartupSystem(entityContainer)
                     .Run();
                 if (_resourceContainer.TryGetResource<ResourceRegistrationResource>(out var resourceRegistrationResource))
                 {
-                    new AddStartupSpritesSystem(entityContainer, componentContainer, resourceRegistrationResource)
+                    new AddStartupSpritesSystem(entityContainer, resourceRegistrationResource)
                         .Run();
                 }
             }
@@ -111,19 +109,7 @@ internal partial class EcsEngine
         _ballOutOfBoundsSystem?.Run(dt);
         _logBallPositionSystem?.Run(dt);
 
-        RemoveComponents();
-
-        AddNewComponents();
         AddResources();
-    }
-
-    private void AddNewComponents()
-    {
-        Debug.Assert(_resourceContainer.TryGetResource<ComponentContainerResource>(out var components));
-        while (components.NewComponents.TryDequeue(out var component))
-        {
-            _components.AddComponent(component.EntityId, component.Component);
-        }
     }
 
     private void AddResources()
@@ -140,15 +126,6 @@ internal partial class EcsEngine
                     _systemInstantiations[systemType].Invoke();
                 }
             }
-        }
-    }
-
-    private void RemoveComponents()
-    {
-        Debug.Assert(_resourceContainer.TryGetResource<ComponentContainerResource>(out var components));
-        while (components.RemoveComponents.TryDequeue(out var removeComponent))
-        {
-            _components.DeleteComponent(removeComponent.EntityId, removeComponent.ComponentType);
         }
     }
 
@@ -204,13 +181,11 @@ internal partial class EcsEngine
         _systemInstantiations.Add(typeof(AddSpritesSystem), () =>
         {
             if (_resourceContainer.TryGetResource<InputResource>(out var inputResource)
-                && _resourceContainer.TryGetResource<IEntityCommands>(out var entityContainer)
-                && _resourceContainer.TryGetResource<ComponentContainerResource>(out var componentContainer))
+                && _resourceContainer.TryGetResource<ICommands>(out var entityContainer))
             {
                 _addSpritesSystem = new AddSpritesSystem(
                     inputResource,
                     entityContainer,
-                    componentContainer,
                     GetQuery<SpriteComponent, TransformComponent>());
                 _uninstantiatedSystems.Remove(typeof(AddSpritesSystem));
             }
@@ -282,7 +257,7 @@ internal partial class EcsEngine
         _systemInstantiations.Add(typeof(OnCollisionSystem), () =>
         {
             if (_resourceContainer.TryGetResource<CollisionsResource>(out var collisionsResource)
-                && _resourceContainer.TryGetResource<IEntityCommands>(out var entityContainerResource))
+                && _resourceContainer.TryGetResource<ICommands>(out var entityContainerResource))
             {
                 _onCollisionSystem = new OnCollisionSystem(
                     collisionsResource);
@@ -349,11 +324,11 @@ internal partial class EcsEngine
         { typeof(InputSystem), new[] { typeof(InputResource), typeof(MyInput) } },
         { typeof(RenderSystem), new[] { typeof(Renderer) } },
         { typeof(QuitOnEscapeSystem), new[] { typeof(InputResource), typeof(MyWindow) } },
-        { typeof(AddSpritesSystem), new[] { typeof(InputResource), typeof(IEntityCommands), typeof(ComponentContainerResource) } },
+        { typeof(AddSpritesSystem), new[] { typeof(InputResource), typeof(ICommands) } },
         { typeof(PhysicsSystem), new[] { typeof(PhysicsResource), typeof(CollisionsResource), typeof(MyPhysics) } },
         { typeof(ApplyImpulseSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } },
         { typeof(RotatePlayerSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } },
-        { typeof(OnCollisionSystem), new [] { typeof(CollisionsResource), typeof(IEntityCommands) } },
+        { typeof(OnCollisionSystem), new [] { typeof(CollisionsResource), typeof(ICommands) } },
         { typeof(MoveBallSystem), new [] { typeof(InputResource) } },
         { typeof(KinematicBounceSystem), new [] { typeof(CollisionsResource) } },
         { typeof(BallOutOfBoundsSystem), new [] { typeof(WorldSizeResource) } },

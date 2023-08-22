@@ -5,27 +5,34 @@ using MyEngine.Core.Ecs.Resources;
 
 namespace MyEngine.Runtime;
 
-internal class EntityCommands : IEntityCommands
+internal class Commands : ICommands
 {
     private readonly ICollection<EntityId> _entities;
     private readonly ComponentCollection _componentCollection;
 
-    public EntityCommands(ComponentCollection componentCollection, ICollection<EntityId> entities)
+    public Commands(ComponentCollection componentCollection, ICollection<EntityId> entities)
     {
         _componentCollection = componentCollection;
         _entities = entities;
     }
 
-    public EntityId AddEntity()
+    public void AddComponent(EntityId entityId, IComponent component)
     {
-        return AddEntity(TransformComponent.DefaultTransform());
+        _componentCollection.AddComponent(entityId, component);
     }
 
-    public EntityId AddEntity(Transform transform)
+    public EntityId AddEntity(Func<IEntityBuilderTransformStep, IEntityBuilder> entityBuilderFunc)
     {
+        var entityBuilder = EntityBuilder.Create();
+        var result = entityBuilderFunc(entityBuilder);
+        var components = result.Build();
+
         var entityId = EntityId.Generate();
         _entities.Add(entityId);
-        _componentCollection.AddComponent(entityId, new TransformComponent(transform));
+        foreach (var component in components)
+        {
+            _componentCollection.AddComponent(entityId, component);
+        }
 
         return entityId;
     }

@@ -2,26 +2,23 @@
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
+using MyEngine.Utils;
 using MyGame.Components;
 using MyGame.Resources;
-using MyGame.Utils;
 using System.Numerics;
 
 namespace MyGame.Systems;
 
 public class AddStartupSpritesSystem : IStartupSystem
 {
-    private readonly IEntityCommands _entityCommands;
-    private readonly ComponentContainerResource _componentContainerResource;
+    private readonly ICommands _entityCommands;
     private readonly ResourceRegistrationResource _resourceRegistrationResource;
     private readonly BrickSizeResource _brickSizeResource = new() { Dimensions = new Vector2(0.5f, 0.2f) };
 
-    public AddStartupSpritesSystem(IEntityCommands entityContainerResource,
-        ComponentContainerResource componentContainerResource,
+    public AddStartupSpritesSystem(ICommands entityContainerResource,
         ResourceRegistrationResource resourceRegistrationResource)
     {
         _entityCommands = entityContainerResource;
-        _componentContainerResource = componentContainerResource;
         _resourceRegistrationResource = resourceRegistrationResource;
     }
 
@@ -70,11 +67,10 @@ public class AddStartupSpritesSystem : IStartupSystem
 
         foreach (var position in brickPositions)
         {
-            var brick = BrickBuilder.BuildBrick(_entityCommands, position, _brickSizeResource.Dimensions.X, _brickSizeResource.Dimensions.Y);
-            foreach (var component in brick.Components)
-            {
-                _componentContainerResource.AddComponent(brick.EntityId, component);
-            }
+            _entityCommands.AddEntity(x => x.WithTransform(TransformComponent.DefaultTransform(position: position.Extend(3.0f), scale: _brickSizeResource.Dimensions.Extend(1f)))
+                .WithComponent(new SpriteComponent())
+                .WithComponent(new StaticBody2DComponent())
+                .WithComponent(new Collider2DComponent(new BoxCollider2D(Vector2.One))));
         }
     }
 
@@ -104,26 +100,25 @@ public class AddStartupSpritesSystem : IStartupSystem
         
         foreach (var transform in walls)
         {
-            var entity = _entityCommands.AddEntity(transform);
-            _componentContainerResource.AddComponent(entity, new SpriteComponent());
-            _componentContainerResource.AddComponent(entity, new StaticBody2DComponent());
-            _componentContainerResource.AddComponent(entity, new Collider2DComponent(new BoxCollider2D(Vector2.One)));
+            _entityCommands.AddEntity(x => x.WithTransform(transform)
+                .WithComponent(new SpriteComponent())
+                .WithComponent(new StaticBody2DComponent())
+                .WithComponent(new Collider2DComponent(new BoxCollider2D(Vector2.One))));
         }
     }
 
     private void AddBall()
     {
-        var ballEntity = _entityCommands.AddEntity(new Transform
-        {
-            position = new Vector3(0f, -1f, 0f),
-            rotation = Quaternion.Identity,
-            scale = new Vector3(0.25f, 0.25f, 1f)
-        });
-        _componentContainerResource.AddComponent(ballEntity, new BallComponent());
-        _componentContainerResource.AddComponent(ballEntity, new SpriteComponent());
-        _componentContainerResource.AddComponent(ballEntity, new LogPositionComponent { Name = "Ball" });
-        _componentContainerResource.AddComponent(ballEntity, new KinematicBody2DComponent());
-        _componentContainerResource.AddComponent(ballEntity, new KinematicReboundComponent());
-        _componentContainerResource.AddComponent(ballEntity, new Collider2DComponent(new CircleCollider2D(1f)));
+        _entityCommands.AddEntity(x => x.WithTransform(new Transform {
+                position = new Vector3(0f, -1f, 0f),
+                rotation = Quaternion.Identity,
+                scale = new Vector3(0.25f, 0.25f, 1f)
+            })
+            .WithComponent(new BallComponent())
+            .WithComponent(new SpriteComponent())
+            .WithComponent(new LogPositionComponent { Name = "Ball" })
+            .WithComponent(new KinematicBody2DComponent())
+            .WithComponent(new KinematicReboundComponent())
+            .WithComponent(new Collider2DComponent(new CircleCollider2D(1f))));
     }
 }

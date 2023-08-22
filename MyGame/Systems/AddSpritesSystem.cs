@@ -9,19 +9,16 @@ namespace MyGame.Systems;
 public class AddSpritesSystem : ISystem
 {
     private readonly InputResource _inputResource;
-    private readonly IEntityCommands _entityCommands;
-    private readonly ComponentContainerResource _componentContainerResource;
+    private readonly ICommands _entityCommands;
 
     private readonly IQuery<SpriteComponent, TransformComponent> _query;
 
     public AddSpritesSystem(InputResource inputResource,
-        IEntityCommands entityCommands,
-        ComponentContainerResource componentContainerResource,
+        ICommands entityCommands,
         IQuery<SpriteComponent, TransformComponent> query)
     {
         _inputResource = inputResource;
         _entityCommands = entityCommands;
-        _componentContainerResource = componentContainerResource;
         _query = query;
     }
 
@@ -51,7 +48,7 @@ public class AddSpritesSystem : ISystem
             scale = minTransform.scale
         };
 
-        var newEntity = _entityCommands.AddEntity(newTransform);
-        _componentContainerResource.AddComponent(newEntity, new SpriteComponent());
+        _entityCommands.AddEntity(x => x.WithTransform(newTransform)
+            .WithComponent(new SpriteComponent()));
     }
 }
