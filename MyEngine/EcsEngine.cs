@@ -56,6 +56,7 @@ internal partial class EcsEngine
 
     public partial void Startup()
     {
+        RegisterResource<IHierarchyCommands>(new HierarchyCommands(_components));
         RegisterResource(new ResourceRegistrationResource());
         RegisterResource(new EntityContainerResource());
         RegisterResource(new ComponentContainerResource());
@@ -382,7 +383,7 @@ internal partial class EcsEngine
         { typeof(MoveBallSystem), new [] { typeof(InputResource) } },
         { typeof(KinematicBounceSystem), new [] { typeof(CollisionsResource) } },
         { typeof(BallOutOfBoundsSystem), new [] { typeof(WorldSizeResource) } },
-        { typeof(LogBallPositionSystem), Array.Empty<Type>() }
+        { typeof(LogBallPositionSystem), Array.Empty<Type>() },
     };
 
     public partial void RegisterResource<T>(T resource) where T : IResource

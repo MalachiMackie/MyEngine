@@ -49,6 +49,12 @@ internal class ComponentCollection
         }
     }
 
+    public void DeleteComponent<T>(EntityId entityId)
+        where T : IComponent
+    {
+        DeleteComponent(entityId, typeof(T));
+    }
+
     public bool TryGetComponent<TComponent>(EntityId entityId, [NotNullWhen(true)] out TComponent? component)
         where TComponent : IComponent
     {

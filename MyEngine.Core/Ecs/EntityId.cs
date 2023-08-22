@@ -14,4 +14,9 @@ public class EntityId
     {
         return new EntityId { Value = Guid.NewGuid() };
     }
+
+    public override string ToString()
+    {
+        return Value.ToString();
+    }
 }

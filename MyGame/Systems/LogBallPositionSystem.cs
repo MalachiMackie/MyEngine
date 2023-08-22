@@ -20,7 +20,7 @@ public class LogBallPositionSystem : ISystem
         {
             var (log, transform) = components;
 
-            Console.WriteLine("Position of {0}: {1}", log.Name, transform.Transform.position);
+            // Console.WriteLine("Position of {0}: {1}", log.Name, transform.Transform.position);
 
         }
     }
