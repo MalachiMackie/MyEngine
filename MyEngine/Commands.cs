@@ -1,5 +1,4 @@
-﻿using MyEngine.Core;
-using MyEngine.Core.Ecs;
+﻿using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 
@@ -35,6 +34,11 @@ internal class Commands : ICommands
         }
 
         return entityId;
+    }
+
+    public void RemoveComponent<T>(EntityId entityId) where T : IComponent
+    {
+        _componentCollection.DeleteComponent<T>(entityId);
     }
 
     public void RemoveEntity(EntityId entityId)

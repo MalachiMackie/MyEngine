@@ -19,6 +19,8 @@ internal class AddCameraStartupSystem : IStartupSystem
     public void Run()
     {
         var entity = _entityCommands.AddEntity(x => x.WithDefaultTransform()
+            .WithNoDisplay()
+            .WithoutPhysics()
             .WithComponent(new Camera2DComponent(new Vector2(8f, 4.5f))));
     }
 }

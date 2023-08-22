@@ -7,5 +7,8 @@ public interface ICommands : IResource
     public EntityId AddEntity(Func<IEntityBuilderTransformStep, IEntityBuilder> entityBuilderFunc);
 
     public void AddComponent(EntityId entityId, IComponent component);
+
+    public void RemoveComponent<T>(EntityId entityId)
+        where T : IComponent;
 }
 

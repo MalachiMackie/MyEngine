@@ -49,6 +49,7 @@ public class AddSpritesSystem : ISystem
         };
 
         _entityCommands.AddEntity(x => x.WithTransform(newTransform)
-            .WithComponent(new SpriteComponent()));
+            .WithSprite()
+            .WithoutPhysics());
     }
 }

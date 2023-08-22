@@ -68,9 +68,9 @@ public class AddStartupSpritesSystem : IStartupSystem
         foreach (var position in brickPositions)
         {
             _entityCommands.AddEntity(x => x.WithTransform(TransformComponent.DefaultTransform(position: position.Extend(3.0f), scale: _brickSizeResource.Dimensions.Extend(1f)))
-                .WithComponent(new SpriteComponent())
-                .WithComponent(new StaticBody2DComponent())
-                .WithComponent(new Collider2DComponent(new BoxCollider2D(Vector2.One))));
+                .WithSprite()
+                .WithStatic2DPhysics()
+                .WithBox2DCollider(Vector2.One));
         }
     }
 
@@ -101,24 +101,25 @@ public class AddStartupSpritesSystem : IStartupSystem
         foreach (var transform in walls)
         {
             _entityCommands.AddEntity(x => x.WithTransform(transform)
-                .WithComponent(new SpriteComponent())
-                .WithComponent(new StaticBody2DComponent())
-                .WithComponent(new Collider2DComponent(new BoxCollider2D(Vector2.One))));
+                .WithSprite()
+                .WithStatic2DPhysics()
+                .WithBox2DCollider(Vector2.One));
         }
     }
 
     private void AddBall()
     {
-        _entityCommands.AddEntity(x => x.WithTransform(new Transform {
-                position = new Vector3(0f, -1f, 0f),
-                rotation = Quaternion.Identity,
-                scale = new Vector3(0.25f, 0.25f, 1f)
-            })
+        _entityCommands.AddEntity(x => x.WithTransform(new Transform
+        {
+            position = new Vector3(0f, -1f, 0f),
+            rotation = Quaternion.Identity,
+            scale = new Vector3(0.25f, 0.25f, 1f)
+        })
+            .WithSprite()
+            .WithKinematic2DPhysics()
+            .WithRebound()
+            .WithCircle2DCollider(1f)
             .WithComponent(new BallComponent())
-            .WithComponent(new SpriteComponent())
-            .WithComponent(new LogPositionComponent { Name = "Ball" })
-            .WithComponent(new KinematicBody2DComponent())
-            .WithComponent(new KinematicReboundComponent())
-            .WithComponent(new Collider2DComponent(new CircleCollider2D(1f))));
+            .WithComponent(new LogPositionComponent { Name = "Ball" }));
     }
 }
