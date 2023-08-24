@@ -87,3 +87,31 @@ public class EntityComponents<T1, T2, T3, T4> : EntityComponents
         component4 = Component4;
     }
 }
+
+public class EntityComponents<T1, T2, T3, T4, T5> : EntityComponents
+    where T1 : IComponent
+    where T2 : IComponent
+    where T3 : IComponent
+    where T4 : IComponent
+    where T5 : IComponent
+{
+    internal EntityComponents(EntityId entityId) : base(entityId)
+    {
+
+    }
+
+    public required T1 Component1 { get; init; }
+    public required T2 Component2 { get; init; }
+    public required T3 Component3 { get; init; }
+    public required T4 Component4 { get; init; }
+    public required T5 Component5 { get; init; }
+
+    public void Deconstruct(out T1 component1, out T2 component2, out T3 component3, out T4 component4, out T5 component5)
+    {
+        component1 = Component1;
+        component2 = Component2;
+        component3 = Component3;
+        component4 = Component4;
+        component5 = Component5;
+    }
+}

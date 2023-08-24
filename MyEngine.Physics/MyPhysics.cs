@@ -437,11 +437,7 @@ public class MyPhysics : IResource
         var (handle, _) = _dynamicHandles[entityId];
         var pose = _simulation.Bodies[handle].Pose;
 
-        return new GlobalTransform
-        {
-            position = pose.Position,
-            rotation = pose.Orientation
-        };
+        return new GlobalTransform(pose.Position, pose.Orientation, Vector3.One);
     }
 
     public void ApplyDynamicPhysicsTransform(EntityId entityId, GlobalTransform transform)

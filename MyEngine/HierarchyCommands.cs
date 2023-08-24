@@ -1,4 +1,5 @@
-﻿using MyEngine.Core.Ecs;
+﻿using System.Numerics;
+using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 
 namespace MyEngine.Runtime;
@@ -28,7 +29,28 @@ internal class HierarchyCommands : IHierarchyCommands
 
         _componentCollection.AddComponent(childId, new ParentComponent(parentId));
 
-        // todo: traverse down the tree and adjust global transforms
+        if (!_componentCollection.TryGetComponent<TransformComponent>(parentId, out var parentTransformComponent))
+        {
+            throw new InvalidOperationException("Entity is missing a transform");
+        }
+
+        if (!_componentCollection.TryGetComponent<TransformComponent>(childId, out var childTransformComponent))
+        {
+            throw new InvalidOperationException("Entity is missing a transform");
+        }
+
+        // update local transform so that global transform stays the same
+        var localPosition = childTransformComponent.GlobalTransform.position - parentTransformComponent.GlobalTransform.position;
+        // apply global rotation, then inverse parent rotation
+        // quaternions get applied/rotated right to left
+        // localRotation = parentRotation.Inversed * globalRotation
+        var localRotation = Quaternion.Inverse(parentTransformComponent.GlobalTransform.rotation) * childTransformComponent.GlobalTransform.rotation;
+        var localScale = childTransformComponent.GlobalTransform.scale / parentTransformComponent.GlobalTransform.scale;
+
+        childTransformComponent.LocalTransform.position = localPosition;
+        childTransformComponent.LocalTransform.rotation = localRotation;
+        childTransformComponent.LocalTransform.scale = localScale;
+
     }
 
     public void RemoveChild(EntityId parentId, EntityId childId)
@@ -39,6 +61,15 @@ internal class HierarchyCommands : IHierarchyCommands
             childrenComponent.RemoveChild(childId);
         }
 
-        // todo: traverse down the tree and adjust global transforms 
+        if (!_componentCollection.TryGetComponent<TransformComponent>(childId, out var transformComponent))
+        {
+            throw new InvalidOperationException("Entity is missing a transform");
+        }
+
+        // set child's local transform to be equal to their global transform
+        transformComponent.LocalTransform.position = transformComponent.GlobalTransform.position;
+        transformComponent.LocalTransform.rotation = transformComponent.GlobalTransform.rotation;
+        transformComponent.LocalTransform.scale = transformComponent.GlobalTransform.scale;
+
     }
 }

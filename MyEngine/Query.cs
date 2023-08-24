@@ -91,3 +91,27 @@ internal class Query<T1, T2, T3, T4> : IQuery<T1, T2, T3, T4>
         return GetEnumerator();
     }
 }
+
+internal class Query<T1, T2, T3, T4, T5> : IQuery<T1, T2, T3, T4, T5>
+    where T1 : IComponent
+    where T2 : IComponent
+    where T3 : IComponent
+    where T4 : IComponent
+    where T5 : IComponent
+{
+    public required Func<IEnumerable<EntityComponents<T1, T2, T3, T4, T5>>> GetAllImpl { get; init; }
+    public required Func<EntityId, EntityComponents<T1, T2, T3, T4, T5>?> TryGetForEntityImpl { get; init; }
+
+    public EntityComponents<T1, T2, T3, T4, T5>? TryGetForEntity(EntityId entityId) => TryGetForEntityImpl(entityId);
+
+    public IEnumerator<EntityComponents<T1, T2, T3, T4, T5>> GetEnumerator()
+    {
+        var enumerable = GetAllImpl();
+        return enumerable.GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
+}

@@ -2,34 +2,14 @@
 
 public class TransformComponent : IComponent
 {
-    public TransformComponent(GlobalTransform? parentTransform, Transform localTransform)
+    public TransformComponent(Transform transform)
     {
-        ParentGlobalTransform = parentTransform;
-        GlobalTransform = CalculateGlobalTransform(parentTransform, localTransform);
+        LocalTransform = transform;
+        GlobalTransform = GlobalTransform.FromTransform(transform);
     }
 
-    public TransformComponent(GlobalTransform? parentTransform, GlobalTransform globalTransform)
-    {
-        ParentGlobalTransform = parentTransform;
-        GlobalTransform = globalTransform;
-    }
-
-    public GlobalTransform? ParentGlobalTransform { get; }
-
+    public Transform LocalTransform { get; set; }
     public GlobalTransform GlobalTransform { get; }
-
-    public Transform LocalTransform
-    {
-        get => CalculateLocalTransform(ParentGlobalTransform, GlobalTransform);
-        set
-        {
-            var calculatedGlobalTransform = CalculateGlobalTransform(ParentGlobalTransform, localTransform: value);
-
-            GlobalTransform.position = calculatedGlobalTransform.position;
-            GlobalTransform.rotation = calculatedGlobalTransform.rotation;
-            GlobalTransform.scale = calculatedGlobalTransform.scale;
-        }
-    }
 
     private GlobalTransform CalculateGlobalTransform(GlobalTransform? parentGlobalTransform, Transform localTransform)
     {
@@ -43,12 +23,7 @@ public class TransformComponent : IComponent
         var globalRotation = parentGlobalTransform.rotation * localTransform.rotation;
         var globalScale = parentGlobalTransform.scale * localTransform.scale;
 
-        return new GlobalTransform
-        {
-            position = globalPosition,
-            rotation = globalRotation,
-            scale = globalScale
-        };
+        return new GlobalTransform(globalPosition, globalRotation, globalScale);
     }
 
     private Transform CalculateLocalTransform(GlobalTransform? parentGlobalTransform, GlobalTransform globalTransform)
@@ -66,11 +41,6 @@ public class TransformComponent : IComponent
         var localRotation = Quaternion.Inverse(parentGlobalTransform.rotation) * globalTransform.rotation;
         var localScale = globalTransform.scale / parentGlobalTransform.scale;
 
-        return new Transform
-        {
-            position = localPosition,
-            rotation = localRotation,
-            scale = localScale
-        };
+        return new Transform(localPosition, localRotation, localScale);
     }
 }

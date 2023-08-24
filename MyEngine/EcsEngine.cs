@@ -36,7 +36,6 @@ internal partial class EcsEngine
     private CameraMovementSystem? _cameraMovementSystem;
     private InputSystem? _inputSystem;
     private QuitOnEscapeSystem? _quitOnEscapeSystem;
-    private AddSpritesSystem? _addSpritesSystem;
     private PhysicsSystem? _physicsSystem;
     private ApplyImpulseSystem? _applyImpulseSystem;
     private RotatePlayerSystem? _rotatePlayerSystem;
@@ -45,6 +44,7 @@ internal partial class EcsEngine
     private KinematicBounceSystem? _kinematicBounceSystem;
     private BallOutOfBoundsSystem? _ballOutOfBoundsSystem;
     private LogBallPositionSystem? _logBallPositionSystem;
+    private TransformSyncSystem? _transformSyncSystem;
 
     // render systems
     private RenderSystem? _renderSystem;
@@ -101,13 +101,15 @@ internal partial class EcsEngine
 
         _cameraMovementSystem?.Run(dt);
         _quitOnEscapeSystem?.Run(dt);
-        _addSpritesSystem?.Run(dt);
         _applyImpulseSystem?.Run(dt);
         _rotatePlayerSystem?.Run(dt);
         _onCollisionSystem?.Run(dt);
         _moveBallSystem?.Run(dt);
         _ballOutOfBoundsSystem?.Run(dt);
         _logBallPositionSystem?.Run(dt);
+
+        // this must be run last 
+        _transformSyncSystem?.Run(dt);
 
         AddResources();
     }
@@ -178,34 +180,40 @@ internal partial class EcsEngine
             }
         });
 
-        _systemInstantiations.Add(typeof(AddSpritesSystem), () =>
-        {
-            if (_resourceContainer.TryGetResource<InputResource>(out var inputResource)
-                && _resourceContainer.TryGetResource<ICommands>(out var entityContainer))
-            {
-                _addSpritesSystem = new AddSpritesSystem(
-                    inputResource,
-                    entityContainer,
-                    GetQuery<SpriteComponent, TransformComponent>());
-                _uninstantiatedSystems.Remove(typeof(AddSpritesSystem));
-            }
-        });
-
         _systemInstantiations.Add(typeof(PhysicsSystem), () =>
         {
-            EntityComponents<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>? GetQueryComponents(EntityId entityId)
+            EntityComponents<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>, OptionalComponent<ParentComponent>>? GetQuery2Components(EntityId entityId)
             {
                 if (_components.TryGetComponent<TransformComponent>(entityId, out var transformComponent)
                     && _components.TryGetComponent<DynamicBody2DComponent>(entityId, out var dynamicBodyComponent)
                     && _components.TryGetComponent<Collider2DComponent>(entityId, out var collider2DComponent))
                 {
                     var physicsMaterial = _components.GetOptionalComponent<PhysicsMaterial>(entityId);
-                    return new EntityComponents<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>>(entityId)
+                    return new EntityComponents<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>, OptionalComponent<ParentComponent>>(entityId)
                     {
                         Component1 = transformComponent,
                         Component2 = dynamicBodyComponent,
                         Component3 = collider2DComponent,
-                        Component4 = physicsMaterial
+                        Component4 = physicsMaterial,
+                        Component5 = _components.GetOptionalComponent<ParentComponent>(entityId)
+                    };
+                }
+
+                return null;
+            }
+
+            EntityComponents<TransformComponent, KinematicBody2DComponent, Collider2DComponent, OptionalComponent<ParentComponent>>? GetQuery3Components(EntityId entityId)
+            {
+                if (_components.TryGetComponent<TransformComponent>(entityId, out var transformComponent)
+                    && _components.TryGetComponent<KinematicBody2DComponent>(entityId, out var kinematicBody2DComponent)
+                    && _components.TryGetComponent<Collider2DComponent>(entityId, out var collider2DComponent))
+                {
+                    return new EntityComponents<TransformComponent, KinematicBody2DComponent, Collider2DComponent, OptionalComponent<ParentComponent>>(entityId)
+                    {
+                        Component1 = transformComponent,
+                        Component2 = kinematicBody2DComponent,
+                        Component3 = collider2DComponent,
+                        Component4 = _components.GetOptionalComponent<ParentComponent>(entityId)
                     };
                 }
 
@@ -222,8 +230,9 @@ internal partial class EcsEngine
                     collisionsResource,
                     myPhysics,
                     GetQuery<TransformComponent, StaticBody2DComponent, Collider2DComponent>(),
-                    GetQuery(GetQueryComponents),
-                    GetQuery<TransformComponent, KinematicBody2DComponent, Collider2DComponent>());
+                    GetQuery(GetQuery2Components),
+                    GetQuery(GetQuery3Components),
+                    GetQuery<TransformComponent>());
                 _uninstantiatedSystems.Remove(typeof(PhysicsSystem));
             }
         });
@@ -313,6 +322,26 @@ internal partial class EcsEngine
             _logBallPositionSystem = new LogBallPositionSystem(GetQuery<LogPositionComponent, TransformComponent>());
             _uninstantiatedSystems.Remove(typeof(LogBallPositionSystem));
         });
+
+        _systemInstantiations.Add(typeof(TransformSyncSystem), () =>
+        {
+            EntityComponents<TransformComponent, OptionalComponent<ParentComponent>, OptionalComponent<ChildrenComponent>>? GetComponents(EntityId entityId)
+            {
+                if (_components.TryGetComponent<TransformComponent>(entityId, out var transformComponent))
+                {
+                    return new EntityComponents<TransformComponent, OptionalComponent<ParentComponent>, OptionalComponent<ChildrenComponent>>(entityId)
+                    {
+                        Component1 = transformComponent,
+                        Component2 = _components.GetOptionalComponent<ParentComponent>(entityId),
+                        Component3 = _components.GetOptionalComponent<ChildrenComponent>(entityId),
+                    };
+                }
+
+                return null;
+            }
+            _transformSyncSystem = new TransformSyncSystem(GetQuery(GetComponents));
+            _uninstantiatedSystems.Remove(typeof(TransformSyncSystem));
+        });
     }
 
     /// <summary>
@@ -324,7 +353,6 @@ internal partial class EcsEngine
         { typeof(InputSystem), new[] { typeof(InputResource), typeof(MyInput) } },
         { typeof(RenderSystem), new[] { typeof(Renderer) } },
         { typeof(QuitOnEscapeSystem), new[] { typeof(InputResource), typeof(MyWindow) } },
-        { typeof(AddSpritesSystem), new[] { typeof(InputResource), typeof(ICommands) } },
         { typeof(PhysicsSystem), new[] { typeof(PhysicsResource), typeof(CollisionsResource), typeof(MyPhysics) } },
         { typeof(ApplyImpulseSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } },
         { typeof(RotatePlayerSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } },
@@ -333,6 +361,7 @@ internal partial class EcsEngine
         { typeof(KinematicBounceSystem), new [] { typeof(CollisionsResource) } },
         { typeof(BallOutOfBoundsSystem), new [] { typeof(WorldSizeResource) } },
         { typeof(LogBallPositionSystem), Array.Empty<Type>() },
+        { typeof(TransformSyncSystem), Array.Empty<Type>() },
     };
 
     public partial void RegisterResource<T>(T resource) where T : IResource
@@ -500,6 +529,59 @@ internal partial class EcsEngine
                 Component2 = component2,
                 Component3 = component3,
                 Component4 = component4,
+            };
+        }
+
+        return null;
+    }
+
+    private IQuery<T1, T2, T3, T4, T5> GetQuery<T1, T2, T3, T4, T5>(Func<EntityId, EntityComponents<T1, T2, T3, T4, T5>?>? getEntityFunc = null)
+        where T1 : IComponent
+        where T2 : IComponent
+        where T3 : IComponent
+        where T4 : IComponent
+        where T5 : IComponent
+    {
+        getEntityFunc ??= TryGetComponentsForEntity<T1, T2, T3, T4, T5>;
+        return new Query<T1, T2, T3, T4, T5>
+        {
+            GetAllImpl = GetComponentsFunc(getEntityFunc),
+            TryGetForEntityImpl = getEntityFunc
+        };
+    }
+
+    private Func<IEnumerable<EntityComponents<T1, T2, T3, T4, T5>>> GetComponentsFunc<T1, T2, T3, T4, T5>(Func<EntityId, EntityComponents<T1, T2, T3, T4, T5>?> getEntityFunc)
+        where T1 : IComponent
+        where T2 : IComponent
+        where T3 : IComponent
+        where T4 : IComponent
+        where T5 : IComponent
+    {
+        return () => _entities.Select(getEntityFunc)
+            .Where(x => x is not null)
+            .Cast<EntityComponents<T1, T2, T3, T4, T5>>();
+    }
+
+    private EntityComponents<T1, T2, T3, T4, T5>? TryGetComponentsForEntity<T1, T2, T3, T4, T5>(EntityId entityId)
+        where T1 : IComponent
+        where T2 : IComponent
+        where T3 : IComponent
+        where T4 : IComponent
+        where T5 : IComponent
+    {
+        if (_components.TryGetComponent<T1>(entityId, out var component1)
+            && _components.TryGetComponent<T2>(entityId, out var component2)
+            && _components.TryGetComponent<T3>(entityId, out var component3)
+            && _components.TryGetComponent<T4>(entityId, out var component4)
+            && _components.TryGetComponent<T5>(entityId, out var component5))
+        {
+            return new EntityComponents<T1, T2, T3, T4, T5>(entityId)
+            {
+                Component1 = component1,
+                Component2 = component2,
+                Component3 = component3,
+                Component4 = component4,
+                Component5 = component5,
             };
         }
 
