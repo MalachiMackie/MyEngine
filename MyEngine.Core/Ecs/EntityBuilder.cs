@@ -77,13 +77,13 @@ public class EntityBuilder :
 
     public IEntityBuilderDisplayStep WithDefaultTransform()
     {
-        _components.Add(new TransformComponent());
+        _components.Add(new TransformComponent(parentTransform: null, Transform.Default()));
         return this;
     }
 
     public IEntityBuilderDisplayStep WithTransform(Transform transform)
     {
-        _components.Add(new TransformComponent(transform));
+        _components.Add(new TransformComponent(parentTransform: null, transform));
         return this;
     }
 

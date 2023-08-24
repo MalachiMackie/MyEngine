@@ -67,7 +67,7 @@ public class AddStartupSpritesSystem : IStartupSystem
 
         foreach (var position in brickPositions)
         {
-            _entityCommands.AddEntity(x => x.WithTransform(TransformComponent.DefaultTransform(position: position.Extend(3.0f), scale: _brickSizeResource.Dimensions.Extend(1f)))
+            _entityCommands.AddEntity(x => x.WithTransform(Transform.Default(position: position.Extend(3.0f), scale: _brickSizeResource.Dimensions.Extend(1f)))
                 .WithSprite()
                 .WithStatic2DPhysics()
                 .WithBox2DCollider(Vector2.One));

@@ -37,9 +37,9 @@ public class PhysicsSystem : ISystem
 
         var extraStaticBodies = new HashSet<EntityId>(staticBodies);
         var extraDynamicBodies = new HashSet<EntityId>(dynamicBodies);
-        var transformsToGetUpdatesFor = new Dictionary<EntityId, Transform>();
-        var dynamicTransformsToUpdate = new Dictionary<EntityId, Transform>();
-        var staticTransformsToUpdate = new Dictionary<EntityId, Transform>();
+        var transformsToGetUpdatesFor = new Dictionary<EntityId, GlobalTransform>();
+        var dynamicTransformsToUpdate = new Dictionary<EntityId, GlobalTransform>();
+        var staticTransformsToUpdate = new Dictionary<EntityId, GlobalTransform>();
 
         foreach (var components in _staticBodiesQuery)
         {
@@ -47,15 +47,10 @@ public class PhysicsSystem : ISystem
             if (!extraStaticBodies.Remove(components.EntityId))
             {
                 // this is a new static body
-                _physicsResource.AddStaticBody2D(components.EntityId, new Transform
-                {
-                    position = transform.Transform.position,
-                    rotation = transform.Transform.rotation,
-                    scale = transform.Transform.scale,
-                }, collider.Collider);
+                _physicsResource.AddStaticBody2D(components.EntityId, transform.GlobalTransform, collider.Collider);
             }
 
-            staticTransformsToUpdate.Add(components.EntityId, transform.Transform);
+            staticTransformsToUpdate.Add(components.EntityId, transform.GlobalTransform);
         }
         foreach (var components in _dynamicBodiesQuery)
         {
@@ -63,16 +58,11 @@ public class PhysicsSystem : ISystem
             if (!extraDynamicBodies.Remove(components.EntityId))
             {
                 // this is a new dynamic body
-                _physicsResource.AddDynamicBody2D(components.EntityId, new Transform
-                {
-                    position = transform.Transform.position,
-                    rotation = transform.Transform.rotation,
-                    scale = transform.Transform.scale,
-                }, collider.Collider, material.Component?.Bounciness ?? 0f);
+                _physicsResource.AddDynamicBody2D(components.EntityId, transform.GlobalTransform, collider.Collider, material.Component?.Bounciness ?? 0f);
             }
 
-            transformsToGetUpdatesFor.Add(components.EntityId, transform.Transform);
-            dynamicTransformsToUpdate.Add(components.EntityId, transform.Transform);
+            transformsToGetUpdatesFor.Add(components.EntityId, transform.GlobalTransform);
+            dynamicTransformsToUpdate.Add(components.EntityId, transform.GlobalTransform);
         }
         foreach (var components in _kinematicBodiesQuery)
         {
@@ -80,12 +70,7 @@ public class PhysicsSystem : ISystem
             if (!extraDynamicBodies.Remove(components.EntityId))
             {
                 // this is a new kinematic body
-                _physicsResource.AddKinematicBody2D(components.EntityId, new Transform
-                {
-                    position = transform.Transform.position,
-                    rotation = transform.Transform.rotation,
-                    scale = transform.Transform.scale,
-                }, collider.Collider);
+                _physicsResource.AddKinematicBody2D(components.EntityId, transform.GlobalTransform, collider.Collider);
             }
             else if (kinematicBody.Dirty)
             {
@@ -93,8 +78,8 @@ public class PhysicsSystem : ISystem
                 kinematicBody.Dirty = false;
             }
 
-            transformsToGetUpdatesFor.Add(components.EntityId, transform.Transform);
-            dynamicTransformsToUpdate.Add(components.EntityId, transform.Transform);
+            transformsToGetUpdatesFor.Add(components.EntityId, transform.GlobalTransform);
+            dynamicTransformsToUpdate.Add(components.EntityId, transform.GlobalTransform);
         }
 
         foreach (var extraStaticBody in extraStaticBodies)
@@ -189,7 +174,7 @@ public class PhysicsSystem : ISystem
         }
     }
 
-    private void UpdateTransformsAfterPhysicsUpdate(IEnumerable<(EntityId, Transform)> dynamicTransforms)
+    private void UpdateTransformsAfterPhysicsUpdate(IEnumerable<(EntityId, GlobalTransform)> dynamicTransforms)
     {
         foreach (var (entityId, transform) in dynamicTransforms)
         {

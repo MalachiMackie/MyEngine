@@ -40,7 +40,7 @@ internal class RenderSystem : IRenderSystem
             return false;
         }
 
-        _renderer.Render(components.Component2.Transform, _spriteQuery.Select(x => x.Component2.Transform));
+        _renderer.Render(components.Component2.GlobalTransform, _spriteQuery.Select(x => x.Component2.GlobalTransform));
 
         return true;
     }
@@ -54,7 +54,7 @@ internal class RenderSystem : IRenderSystem
         }
         var (camera, transformComponent) = components;
 
-        _renderer.RenderOrthographic(transformComponent.Transform.position, camera.Size, _spriteQuery.Select(x => x.Component2.Transform));
+        _renderer.RenderOrthographic(transformComponent.GlobalTransform.position, camera.Size, _spriteQuery.Select(x => x.Component2.GlobalTransform));
 
         return true;
     }

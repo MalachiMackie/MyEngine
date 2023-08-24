@@ -91,7 +91,7 @@ internal sealed class Renderer : IDisposable, IResource
         _height = (uint)size.Y;
     }
 
-    public unsafe void RenderOrthographic(Vector3 cameraPosition, Vector2 viewSize, IEnumerable<Transform> transforms)
+    public unsafe void RenderOrthographic(Vector3 cameraPosition, Vector2 viewSize, IEnumerable<GlobalTransform> transforms)
     {
         _gl.Clear(ClearBufferMask.ColorBufferBit);
 
@@ -118,7 +118,7 @@ internal sealed class Renderer : IDisposable, IResource
 
     } 
 
-    public unsafe void Render(Transform cameraTransform, IEnumerable<Transform> transforms)
+    public unsafe void Render(GlobalTransform cameraTransform, IEnumerable<GlobalTransform> transforms)
     {
         _gl.Clear(ClearBufferMask.ColorBufferBit);
 

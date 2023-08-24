@@ -1,5 +1,4 @@
 ﻿using System.Numerics;
-using MyEngine.Core;
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
@@ -41,7 +40,7 @@ public class CameraMovementSystem : ISystem
             return false;
         }
 
-        var cameraTransform = components.Component2.Transform;
+        var cameraTransform = components.Component2.LocalTransform;
 
         var cameraDirection = cameraTransform.rotation.ToEulerAngles();
 
@@ -73,6 +72,8 @@ public class CameraMovementSystem : ISystem
 
         cameraTransform.rotation = MathHelper.ToQuaternion(cameraDirection);
 
+        components.Component2.LocalTransform = cameraTransform;
+
         return true;
     }
 
@@ -84,7 +85,7 @@ public class CameraMovementSystem : ISystem
             return false;
         }
 
-        var cameraTransform = components.Component2.Transform;
+        var cameraTransform = components.Component2.LocalTransform;
 
         var speed = 5.0f * (float)deltaTime;
         if (_inputResource.Keyboard.IsKeyDown(MyKey.W))
@@ -103,6 +104,8 @@ public class CameraMovementSystem : ISystem
         {
             cameraTransform.position += speed * Vector3.UnitX;
         }
+
+        components.Component2.LocalTransform = cameraTransform;
 
         return true;
     }

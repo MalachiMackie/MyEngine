@@ -25,16 +25,18 @@ public class BallOutOfBoundsSystem : ISystem
     {
         foreach (var ballComponents in _ballQuery)
         {
-            var (transform, _, kinematicBody2DComponent) = ballComponents;
-            if (transform.Transform.position.X < _worldSizeResource.Left
-                || transform.Transform.position.X > _worldSizeResource.Right
-                || transform.Transform.position.Y < _worldSizeResource.Bottom
-                || transform.Transform.position.Y > _worldSizeResource.Top)
+            var (transformComponent, _, kinematicBody2DComponent) = ballComponents;
+            var localTransform = transformComponent.LocalTransform;
+            if (localTransform.position.X < _worldSizeResource.Left
+                || localTransform.position.X > _worldSizeResource.Right
+                || localTransform.position.Y < _worldSizeResource.Bottom
+                || localTransform.position.Y > _worldSizeResource.Top)
             {
-                Console.WriteLine("Ball was out of bounds {0}. Resetting", transform.Transform.position);
+                Console.WriteLine("Ball was out of bounds {0}. Resetting", localTransform.position);
 
                 kinematicBody2DComponent.Velocity = Vector2.Zero;
-                transform.Transform.position = new Vector3(0f, -1f, 0f);
+                localTransform.position = new Vector3(0f, -1f, 0f);
+                transformComponent.LocalTransform = localTransform;
             }
         }
     }

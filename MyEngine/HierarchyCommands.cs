@@ -27,6 +27,8 @@ internal class HierarchyCommands : IHierarchyCommands
         childrenComponent.AddChild(childId);
 
         _componentCollection.AddComponent(childId, new ParentComponent(parentId));
+
+        // todo: traverse down the tree and adjust global transforms
     }
 
     public void RemoveChild(EntityId parentId, EntityId childId)
@@ -36,5 +38,7 @@ internal class HierarchyCommands : IHierarchyCommands
         {
             childrenComponent.RemoveChild(childId);
         }
+
+        // todo: traverse down the tree and adjust global transforms 
     }
 }

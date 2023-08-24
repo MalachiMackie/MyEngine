@@ -12,8 +12,8 @@ public class PhysicsResourceTests
     public void Should_EnqueueAllCommandsInOrder()
     {
         var entityId = EntityId.Generate();
-        var transform1 = new Transform();
-        var transform2 = new Transform();
+        var transform1 = new GlobalTransform();
+        var transform2 = new GlobalTransform();
         _physicsResource.Update(1);
         _physicsResource.AddDynamicBody(entityId, transform1, 1);
         _physicsResource.AddStaticBody(entityId, transform2);

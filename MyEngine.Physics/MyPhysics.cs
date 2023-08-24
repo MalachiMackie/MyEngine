@@ -242,7 +242,7 @@ public class MyPhysics : IResource
         _simulation.Shapes.Remove(shape);
     }
 
-    public void AddStaticBody(EntityId entityId, Transform transform)
+    public void AddStaticBody(EntityId entityId, GlobalTransform transform)
     {
         if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
         {
@@ -264,7 +264,7 @@ public class MyPhysics : IResource
         _staticHandles[entityId] = (handle, shape);
     }
 
-    private (TypedIndex ShapeIndex, BodyInertia ShapeInertia) AddColliderAsShape(ICollider2D collider2D, Transform transform, float mass)
+    private (TypedIndex ShapeIndex, BodyInertia ShapeInertia) AddColliderAsShape(ICollider2D collider2D, GlobalTransform transform, float mass)
     {
         switch (collider2D)
         {
@@ -300,7 +300,7 @@ public class MyPhysics : IResource
         currentVelocity.Linear = velocity.Extend(currentVelocity.Linear.Z);
     }
 
-    public void AddStaticBody2D(EntityId entityId, Transform transform, ICollider2D collider2D)
+    public void AddStaticBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider2D)
     {
         if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
         {
@@ -332,7 +332,7 @@ public class MyPhysics : IResource
         _simulation.Shapes.Remove(shape);
     }
 
-    public void AddDynamicBody(EntityId entityId, Transform transform, float bounciness)
+    public void AddDynamicBody(EntityId entityId, GlobalTransform transform, float bounciness)
     {
         if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
         {
@@ -360,7 +360,7 @@ public class MyPhysics : IResource
         _dynamicHandles.Add(entityId, (handle, shapeIndex));
     }
 
-    public void AddKinematicBody2D(EntityId entityId, Transform transform, ICollider2D collider)
+    public void AddKinematicBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider)
     {
         var (shapeIndex, _) = AddColliderAsShape(collider, transform, 10f);
 
@@ -375,7 +375,7 @@ public class MyPhysics : IResource
         _dynamicHandles.Add(entityId, (handle, shapeIndex));
     }
 
-    public void AddDynamicBody2D(EntityId entityId, Transform transform, ICollider2D collider, float bounciness)
+    public void AddDynamicBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider, float bounciness)
     {
         if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
         {
@@ -432,19 +432,19 @@ public class MyPhysics : IResource
         bodyReference.ApplyAngularImpulse(impulse);
     }
 
-    public Transform GetDynamicPhysicsTransform(EntityId entityId)
+    public GlobalTransform GetDynamicPhysicsTransform(EntityId entityId)
     {
         var (handle, _) = _dynamicHandles[entityId];
         var pose = _simulation.Bodies[handle].Pose;
 
-        return new Transform
+        return new GlobalTransform
         {
             position = pose.Position,
             rotation = pose.Orientation
         };
     }
 
-    public void ApplyDynamicPhysicsTransform(EntityId entityId, Transform transform)
+    public void ApplyDynamicPhysicsTransform(EntityId entityId, GlobalTransform transform)
     {
         var (handle, _) = _dynamicHandles[entityId];
         var body = _simulation.Bodies[handle];
@@ -455,7 +455,7 @@ public class MyPhysics : IResource
         body.ApplyDescription(description);
     }
 
-    public void ApplyStaticPhysicsTransform(EntityId entityId, Transform transform)
+    public void ApplyStaticPhysicsTransform(EntityId entityId, GlobalTransform transform)
     {
         var (handle, _) = _staticHandles[entityId];
         var body = _simulation.Statics[handle];

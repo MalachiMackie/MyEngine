@@ -32,7 +32,7 @@ public class AddSpritesSystem : ISystem
         }
 
         // get far left sprite
-        var minTransform = _query.Select(x => x.Component2.Transform)
+        var minTransform = _query.Select(x => x.Component2.GlobalTransform)
             .MinBy(x => x.position.X);
 
         if (minTransform is null)
