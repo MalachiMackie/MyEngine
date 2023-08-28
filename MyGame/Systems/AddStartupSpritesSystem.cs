@@ -1,4 +1,5 @@
 ﻿using MyEngine.Core;
+using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
@@ -13,13 +14,16 @@ public class AddStartupSpritesSystem : IStartupSystem
 {
     private readonly ICommands _entityCommands;
     private readonly ResourceRegistrationResource _resourceRegistrationResource;
+    private readonly IHierarchyCommands _hierarchyCommands; 
     private readonly BrickSizeResource _brickSizeResource = new() { Dimensions = new Vector2(0.5f, 0.2f) };
 
     public AddStartupSpritesSystem(ICommands entityContainerResource,
-        ResourceRegistrationResource resourceRegistrationResource)
+        ResourceRegistrationResource resourceRegistrationResource,
+        IHierarchyCommands hierarchyCommands)
     {
         _entityCommands = entityContainerResource;
         _resourceRegistrationResource = resourceRegistrationResource;
+        _hierarchyCommands = hierarchyCommands;
     }
 
     public void Run()
@@ -33,7 +37,7 @@ public class AddStartupSpritesSystem : IStartupSystem
         _resourceRegistrationResource.AddResource(_brickSizeResource);
 
         AddWalls();
-        AddBall();
+        AddPaddleAndBall();
         AddBricks();
     }
 
@@ -67,10 +71,10 @@ public class AddStartupSpritesSystem : IStartupSystem
 
         foreach (var position in brickPositions)
         {
-            _entityCommands.AddEntity(x => x.WithTransform(Transform.Default(position: position.Extend(3.0f), scale: _brickSizeResource.Dimensions.Extend(1f)))
-                .WithSprite()
-                .WithStatic2DPhysics()
-                .WithBox2DCollider(Vector2.One));
+             _entityCommands.AddEntity(x => x.WithTransform(Transform.Default(position: position.Extend(3.0f), scale: _brickSizeResource.Dimensions.Extend(1f)))
+                 .WithSprite()
+                 .WithStatic2DPhysics()
+                 .WithBox2DCollider(Vector2.One));
         }
     }
 
@@ -107,13 +111,25 @@ public class AddStartupSpritesSystem : IStartupSystem
         }
     }
 
-    private void AddBall()
+    private void AddPaddleAndBall()
     {
-        _entityCommands.AddEntity(x => x.WithTransform(new Transform
+        var paddleScale = new Vector3(1.5f, 0.15f, 1f);
+        var paddleId = _entityCommands.AddEntity(x => x.WithTransform(new Transform
         {
-            position = new Vector3(0f, -1f, 0f),
+            position = new Vector3(0f, -1.25f, 0f),
             rotation = Quaternion.Identity,
-            scale = new Vector3(0.25f, 0.25f, 1f)
+            scale = paddleScale
+        }).WithSprite()
+        .WithKinematic2DPhysics()
+        .WithoutRebound()
+        .WithBox2DCollider(Vector2.One)
+        .WithComponent(new PaddleComponent()));
+
+        var ballId = _entityCommands.AddEntity(x => x.WithTransform(new Transform
+        {
+            position = new Vector3(0f, 1f, 0f),
+            rotation = Quaternion.Identity,
+            scale = new Vector3(0.25f / paddleScale.X, 0.25f / paddleScale.Y, 1f / paddleScale.Z)
         })
             .WithSprite()
             .WithKinematic2DPhysics()
@@ -121,5 +137,9 @@ public class AddStartupSpritesSystem : IStartupSystem
             .WithCircle2DCollider(1f)
             .WithComponent(new BallComponent())
             .WithComponent(new LogPositionComponent { Name = "Ball" }));
+
+        _hierarchyCommands.AddChild(paddleId, ballId);
+
     }
 }
+

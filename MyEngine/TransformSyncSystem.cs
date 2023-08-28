@@ -5,6 +5,9 @@ using MyEngine.Core.Ecs.Systems;
 
 namespace MyEngine.Runtime;
 
+/// <summary>
+///  System to sync local Transform changes up to GlobalTransform
+/// </summary>
 internal class TransformSyncSystem : ISystem
 {
     private readonly IQuery<TransformComponent, OptionalComponent<ParentComponent>, OptionalComponent<ChildrenComponent>> _query;
@@ -16,35 +19,30 @@ internal class TransformSyncSystem : ISystem
 
     public void Run(double deltaTime)
     {
-        // update all of the transforms without parents, then update their children
         foreach (var components in _query.Where(x => !x.Component2.HasComponent))
         {
             var (transform, _, children) = components;
-            transform.GlobalTransform.SyncWithLocalTransform(null, transform.LocalTransform);
+            transform.GlobalTransform.SetWithTransform(transform.LocalTransform);
 
-            UpdateChildrenTransforms(transform.GlobalTransform, children);
+            if (children.HasComponent)
+            {
+                SyncChildren(transform.GlobalTransform, children.Component.Children);
+            }
         }
     }
 
-    private void UpdateChildrenTransforms(GlobalTransform parentTransform, OptionalComponent<ChildrenComponent> children)
+    private void SyncChildren(GlobalTransform parentTransform, IEnumerable<EntityId> children)
     {
-        if (!children.HasComponent)
+        foreach (var child in children)
         {
-            return;
-        }
+            var (transform, _, grandChildren) = _query.TryGetForEntity(child)!;
 
-        foreach (var child in children.Component.Children)
-        {
-            var childComponents = _query.TryGetForEntity(child);
-            if (childComponents is null)
+            transform.GlobalTransform.SetWithParentTransform(parentTransform, transform.LocalTransform);
+
+            if (grandChildren.HasComponent)
             {
-                throw new InvalidOperationException("Entity is missing transform");
+                SyncChildren(transform.GlobalTransform, grandChildren.Component.Children);
             }
-
-            var (transform, _, grandChildren) = childComponents;
-            transform.GlobalTransform.SyncWithLocalTransform(parentTransform, transform.LocalTransform);
-
-            UpdateChildrenTransforms(transform.GlobalTransform, grandChildren);
         }
     }
 }

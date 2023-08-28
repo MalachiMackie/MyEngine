@@ -15,7 +15,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{3EAC168D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.Core.Tests", "Tests\MyEngine.Core.Tests\MyEngine.Core.Tests.csproj", "{7E8BFEB5-D438-495A-B002-56B11A34ADCD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Utils", "MyEngine.Utils\MyEngine.Utils.csproj", "{A83E8877-F6DE-4758-9788-38494CF3FD83}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.Utils", "MyEngine.Utils\MyEngine.Utils.csproj", "{A83E8877-F6DE-4758-9788-38494CF3FD83}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

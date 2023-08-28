@@ -25,11 +25,11 @@ public class RotatePlayerSystem : ISystem
     {
         if (_inputResource.Keyboard.IsKeyPressed(MyEngine.Core.Input.MyKey.Q))
         {
-            _physicsResource.ApplyAngularImpulse(_playerQuery.First().EntityId, new Vector3(0f, 0f, 0.1f));
+            // _physicsResource.ApplyAngularImpulse(_playerQuery.First().EntityId, new Vector3(0f, 0f, 0.1f));
         }
         else if (_inputResource.Keyboard.IsKeyPressed(MyEngine.Core.Input.MyKey.E))
         {
-            _physicsResource.ApplyAngularImpulse(_playerQuery.First().EntityId, new Vector3(0f, 0f, -0.1f));
+            // _physicsResource.ApplyAngularImpulse(_playerQuery.First().EntityId, new Vector3(0f, 0f, -0.1f));
         }
     }
 }

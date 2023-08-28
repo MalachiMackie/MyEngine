@@ -109,7 +109,7 @@ internal sealed class Renderer : IDisposable, IResource
 
         foreach (var transform in transforms)
         {
-            var model = transform.ViewMatrix;
+            var model = transform.ModelMatrix;
 
             _shader.SetUniform1("uModel", model);
 
@@ -128,11 +128,13 @@ internal sealed class Renderer : IDisposable, IResource
 
         _texture.Bind(TextureUnit.Texture0);
 
-        var cameraDirection = cameraTransform.rotation.ToEulerAngles();
+        var (cameraPosition, cameraRotation, _) = cameraTransform.GetPositionRotationScale();
+
+        var cameraDirection = cameraRotation.ToEulerAngles();
 
         var cameraFront = Vector3.Normalize(cameraDirection);
 
-        var view = Matrix4x4.CreateLookAt(cameraTransform.position, cameraTransform.position + cameraFront, Vector3.UnitY);
+        var view = Matrix4x4.CreateLookAt(cameraPosition, cameraPosition + cameraFront, Vector3.UnitY);
         var projection = Matrix4x4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), _width / _height, 0.1f, 100.0f);
 
         _shader.SetUniform1("uView", view);
@@ -140,7 +142,7 @@ internal sealed class Renderer : IDisposable, IResource
 
         foreach (var transform in transforms)
         {
-            var model = transform.ViewMatrix;
+            var model = transform.ModelMatrix;
 
             _shader.SetUniform1("uModel", model);
 

@@ -26,6 +26,8 @@ public class CameraMovementSystem : ISystem
 
     public void Run(double deltaTime)
     {
+        return;
+
         if (!TryMove3D(deltaTime))
         {
             TryMove2D(deltaTime);
@@ -72,8 +74,6 @@ public class CameraMovementSystem : ISystem
 
         cameraTransform.rotation = MathHelper.ToQuaternion(cameraDirection);
 
-        components.Component2.LocalTransform = cameraTransform;
-
         return true;
     }
 
@@ -104,8 +104,6 @@ public class CameraMovementSystem : ISystem
         {
             cameraTransform.position += speed * Vector3.UnitX;
         }
-
-        components.Component2.LocalTransform = cameraTransform;
 
         return true;
     }

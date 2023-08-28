@@ -12,4 +12,8 @@
 		<InternalsVisibleTo Include="MyEngine.Core.Tests" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\MyEngine.Utils\MyEngine.Utils.csproj" />
+	</ItemGroup>
+
 </Project>

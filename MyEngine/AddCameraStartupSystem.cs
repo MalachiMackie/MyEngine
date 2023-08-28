@@ -21,6 +21,7 @@ internal class AddCameraStartupSystem : IStartupSystem
         var entity = _entityCommands.AddEntity(x => x.WithDefaultTransform()
             .WithNoDisplay()
             .WithoutPhysics()
-            .WithComponent(new Camera2DComponent(new Vector2(8f, 4.5f))));
+            // todo: detect screen aspect ratio
+            .WithComponent(new Camera2DComponent(new Vector2(8f, 6f))));
     }
 }

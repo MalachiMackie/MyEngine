@@ -45,6 +45,7 @@ internal partial class EcsEngine
     private BallOutOfBoundsSystem? _ballOutOfBoundsSystem;
     private LogBallPositionSystem? _logBallPositionSystem;
     private TransformSyncSystem? _transformSyncSystem;
+    private MovePaddleSystem? _movePaddleSystem;
 
     // render systems
     private RenderSystem? _renderSystem;
@@ -53,6 +54,8 @@ internal partial class EcsEngine
     {
         AddSystemInstantiations();
     }
+
+    // todo: WithoutComponent<T>
 
     public partial void Startup()
     {
@@ -68,10 +71,13 @@ internal partial class EcsEngine
             {
                 new AddCameraStartupSystem(entityContainer)
                     .Run();
-                if (_resourceContainer.TryGetResource<ResourceRegistrationResource>(out var resourceRegistrationResource))
+                if (_resourceContainer.TryGetResource<ResourceRegistrationResource>(out var resourceRegistrationResource)
+                    && _resourceContainer.TryGetResource<IHierarchyCommands>(out var hierarchyCommands))
                 {
-                    new AddStartupSpritesSystem(entityContainer, resourceRegistrationResource)
-                        .Run();
+                    new AddStartupSpritesSystem(
+                        entityContainer,
+                        resourceRegistrationResource,
+                        hierarchyCommands).Run();
                 }
             }
         }
@@ -107,8 +113,8 @@ internal partial class EcsEngine
         _moveBallSystem?.Run(dt);
         _ballOutOfBoundsSystem?.Run(dt);
         _logBallPositionSystem?.Run(dt);
+        _movePaddleSystem?.Run(dt);
 
-        // this must be run last 
         _transformSyncSystem?.Run(dt);
 
         AddResources();
@@ -161,11 +167,27 @@ internal partial class EcsEngine
         {
             if (_resourceContainer.TryGetResource<Renderer>(out var renderer))
             {
+                EntityComponents<SpriteComponent, TransformComponent, OptionalComponent<ParentComponent>>? GetQuery3Components(EntityId entityId)
+                {
+                    if (_components.TryGetComponent<SpriteComponent>(entityId, out var component1)
+                        && _components.TryGetComponent<TransformComponent>(entityId, out var component2))
+                    {
+                        return new EntityComponents<SpriteComponent, TransformComponent, OptionalComponent<ParentComponent>>(entityId)
+                        {
+                            Component1 = component1,
+                            Component2 = component2,
+                            Component3 = _components.GetOptionalComponent<ParentComponent>(entityId),
+                        };
+                    }
+
+                    return null;
+                }
+
                 _renderSystem = new RenderSystem(
                     renderer,
                     GetQuery<Camera3DComponent, TransformComponent>(),
                     GetQuery<Camera2DComponent, TransformComponent>(),
-                    GetQuery<SpriteComponent, TransformComponent>());
+                    GetQuery(GetQuery3Components));
                 _uninstantiatedSystems.Remove(typeof(RenderSystem));
             }
         });
@@ -220,6 +242,20 @@ internal partial class EcsEngine
                 return null;
             }
 
+            EntityComponents<TransformComponent, OptionalComponent<ParentComponent>>? GetQuery4Components(EntityId entityId)
+            {
+                if (_components.TryGetComponent<TransformComponent>(entityId, out var component1))
+                {
+                    return new EntityComponents<TransformComponent, OptionalComponent<ParentComponent>>(entityId)
+                    {
+                        Component1 = component1,
+                        Component2 = _components.GetOptionalComponent<ParentComponent>(entityId)
+                    };
+                }
+
+                return null;
+            }
+
 
             if (_resourceContainer.TryGetResource<PhysicsResource>(out var physicsResource)
                 && _resourceContainer.TryGetResource<MyPhysics>(out var myPhysics)
@@ -232,7 +268,7 @@ internal partial class EcsEngine
                     GetQuery<TransformComponent, StaticBody2DComponent, Collider2DComponent>(),
                     GetQuery(GetQuery2Components),
                     GetQuery(GetQuery3Components),
-                    GetQuery<TransformComponent>());
+                    GetQuery(GetQuery4Components));
                 _uninstantiatedSystems.Remove(typeof(PhysicsSystem));
             }
         });
@@ -325,22 +361,32 @@ internal partial class EcsEngine
 
         _systemInstantiations.Add(typeof(TransformSyncSystem), () =>
         {
-            EntityComponents<TransformComponent, OptionalComponent<ParentComponent>, OptionalComponent<ChildrenComponent>>? GetComponents(EntityId entityId)
+            EntityComponents<TransformComponent, OptionalComponent<ParentComponent>, OptionalComponent<ChildrenComponent>>? GetQuery1Components(EntityId entityId)
             {
-                if (_components.TryGetComponent<TransformComponent>(entityId, out var transformComponent))
+                if (_components.TryGetComponent<TransformComponent>(entityId, out var component1))
                 {
                     return new EntityComponents<TransformComponent, OptionalComponent<ParentComponent>, OptionalComponent<ChildrenComponent>>(entityId)
                     {
-                        Component1 = transformComponent,
+                        Component1 = component1,
                         Component2 = _components.GetOptionalComponent<ParentComponent>(entityId),
-                        Component3 = _components.GetOptionalComponent<ChildrenComponent>(entityId),
+                        Component3 = _components.GetOptionalComponent<ChildrenComponent>(entityId)
                     };
                 }
 
                 return null;
-            }
-            _transformSyncSystem = new TransformSyncSystem(GetQuery(GetComponents));
+            };
+
+            _transformSyncSystem = new TransformSyncSystem(GetQuery(GetQuery1Components));
             _uninstantiatedSystems.Remove(typeof(TransformSyncSystem));
+        });
+
+        _systemInstantiations.Add(typeof(MovePaddleSystem), () =>
+        {
+            if (_resourceContainer.TryGetResource<InputResource>(out var inputResource))
+            {
+                _movePaddleSystem = new MovePaddleSystem(GetQuery<TransformComponent, PaddleComponent>(), inputResource);
+                _uninstantiatedSystems.Remove(typeof(MovePaddleSystem));
+            }
         });
     }
 
@@ -362,6 +408,7 @@ internal partial class EcsEngine
         { typeof(BallOutOfBoundsSystem), new [] { typeof(WorldSizeResource) } },
         { typeof(LogBallPositionSystem), Array.Empty<Type>() },
         { typeof(TransformSyncSystem), Array.Empty<Type>() },
+        { typeof(MovePaddleSystem), new [] { typeof(InputResource) } },
     };
 
     public partial void RegisterResource<T>(T resource) where T : IResource

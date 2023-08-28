@@ -15,7 +15,7 @@ public class PhysicsSystem : ISystem
     private readonly IQuery<TransformComponent, StaticBody2DComponent, Collider2DComponent> _staticBodiesQuery;
     private readonly IQuery<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>, OptionalComponent<ParentComponent>> _dynamicBodiesQuery;
     private readonly IQuery<TransformComponent, KinematicBody2DComponent, Collider2DComponent, OptionalComponent<ParentComponent>> _kinematicBodiesQuery;
-    private readonly IQuery<TransformComponent> _transformQuery;
+    private readonly IQuery<TransformComponent, OptionalComponent<ParentComponent>> _transformAndParentQuery;
 
     public PhysicsSystem(PhysicsResource physicsResource,
         CollisionsResource collisionsResource,
@@ -23,7 +23,7 @@ public class PhysicsSystem : ISystem
         IQuery<TransformComponent, StaticBody2DComponent, Collider2DComponent> staticBodiesQuery,
         IQuery<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>, OptionalComponent<ParentComponent>> dynamicBodiesQuery,
         IQuery<TransformComponent, KinematicBody2DComponent, Collider2DComponent, OptionalComponent<ParentComponent>> kinematicBodiesQuery,
-        IQuery<TransformComponent> transformQuery)
+        IQuery<TransformComponent, OptionalComponent<ParentComponent>> transformAndParentQuery)
     {
         _physicsResource = physicsResource;
         _collisionsResource = collisionsResource;
@@ -31,7 +31,7 @@ public class PhysicsSystem : ISystem
         _staticBodiesQuery = staticBodiesQuery;
         _dynamicBodiesQuery = dynamicBodiesQuery;
         _kinematicBodiesQuery = kinematicBodiesQuery;
-        _transformQuery = transformQuery;
+        _transformAndParentQuery = transformAndParentQuery;
     }
 
     // todo: split into systems: writeToPhysics, physicsStep, writeBackPhysics
@@ -43,45 +43,46 @@ public class PhysicsSystem : ISystem
         var extraStaticBodies = new HashSet<EntityId>(staticBodies);
         var extraDynamicBodies = new HashSet<EntityId>(dynamicBodies);
         var transformsToGetUpdatesFor = new Dictionary<EntityId, TransformWriteBack>();
-        var dynamicTransformsToUpdate = new Dictionary<EntityId, TransformComponent>();
-        var staticTransformsToUpdate = new Dictionary<EntityId, TransformComponent>();
+        var dynamicTransformsToUpdate = new Dictionary<EntityId, GlobalTransform>();
+        var staticTransformsToUpdate = new Dictionary<EntityId, GlobalTransform>();
+
+        var existingGlobalTransforms = new Dictionary<EntityId, GlobalTransform>();
 
         foreach (var components in _staticBodiesQuery)
         {
-            var (transform, staticBody, collider) = components;
+            var (transform, _, collider) = components;
+
             if (!extraStaticBodies.Remove(components.EntityId))
             {
                 // this is a new static body
                 _physicsResource.AddStaticBody2D(components.EntityId, transform.GlobalTransform, collider.Collider);
             }
 
-            staticTransformsToUpdate.Add(components.EntityId, transform);
+            staticTransformsToUpdate.Add(components.EntityId, transform.GlobalTransform);
         }
         foreach (var components in _dynamicBodiesQuery)
         {
-            var (transform, dynamicBody, collider, material, parent) = components;
+            var (transform, _, collider, material, parent) = components;
+
             if (!extraDynamicBodies.Remove(components.EntityId))
             {
                 // this is a new dynamic body
                 _physicsResource.AddDynamicBody2D(components.EntityId, transform.GlobalTransform, collider.Collider, material.Component?.Bounciness ?? 0f);
             }
 
-            GlobalTransform? parentTransform = null;
-            if (parent.HasComponent)
-            {
-                parentTransform = _transformQuery.TryGetForEntity(parent.Component.Parent)!.Component.GlobalTransform;
-            }
-
-            transformsToGetUpdatesFor.Add(components.EntityId, new TransformWriteBack(components.EntityId, transform, parentTransform));
-            dynamicTransformsToUpdate.Add(components.EntityId, transform);
+            transformsToGetUpdatesFor.Add(components.EntityId, new TransformWriteBack(components.EntityId, transform));
+            dynamicTransformsToUpdate.Add(components.EntityId, transform.GlobalTransform);
         }
+
         foreach (var components in _kinematicBodiesQuery)
         {
-            var (transform, kinematicBody, collider, parent) = components;
+            var (transform, kinematicBody, collider, _) = components;
+
+            var globalTransform = transform.GlobalTransform;
             if (!extraDynamicBodies.Remove(components.EntityId))
             {
                 // this is a new kinematic body
-                _physicsResource.AddKinematicBody2D(components.EntityId, transform.GlobalTransform, collider.Collider);
+                _physicsResource.AddKinematicBody2D(components.EntityId, globalTransform, collider.Collider);
             }
             else if (kinematicBody.Dirty)
             {
@@ -89,15 +90,8 @@ public class PhysicsSystem : ISystem
                 kinematicBody.Dirty = false;
             }
 
-            GlobalTransform? parentTransform = null;
-
-            if (parent.HasComponent)
-            {
-                parentTransform = _transformQuery.TryGetForEntity(parent.Component.Parent)!.Component.GlobalTransform;
-            }
-
-            transformsToGetUpdatesFor.Add(components.EntityId, new TransformWriteBack(components.EntityId, transform, parentTransform));
-            dynamicTransformsToUpdate.Add(components.EntityId, transform);
+            transformsToGetUpdatesFor.Add(components.EntityId, new TransformWriteBack(components.EntityId, transform));
+            dynamicTransformsToUpdate.Add(components.EntityId, globalTransform);
         }
 
         foreach (var extraStaticBody in extraStaticBodies)
@@ -115,12 +109,12 @@ public class PhysicsSystem : ISystem
 
         foreach (var (entityId, transform) in dynamicTransformsToUpdate)
         {
-            _physicsResource.SetDynamicTransform(entityId, transform.GlobalTransform);
+            _physicsResource.SetDynamicTransform(entityId, transform);
         }
 
         foreach (var (entityId, transform) in staticTransformsToUpdate)
         {
-            _physicsResource.SetStaticTransform(entityId, transform.GlobalTransform);
+            _physicsResource.SetStaticTransform(entityId, transform);
         }
         
         _physicsResource.Update(deltaTime);
@@ -151,25 +145,9 @@ public class PhysicsSystem : ISystem
                 case PhysicsResource.UpdateTransformFromPhysicsCommand updateTransformFromPhysics:
                     {
                         var entityTransform = updateTransformFromPhysics.transform;
-                        var physicsGlobalTransform = _myPhysics.GetDynamicPhysicsTransform(updateTransformFromPhysics.entityId);
+                        var (physicsPosition, physicsRotation) = _myPhysics.GetDynamicPhysicsTransform(updateTransformFromPhysics.entityId);
 
-                        if (updateTransformFromPhysics.parentTransform is not null)
-                        {
-                            // we have a parent transform, so we need to convert our physicsGlobalTransform to a local transform
-                            var parentTransform = updateTransformFromPhysics.parentTransform;
-                            var positionDifference = parentTransform.position * -1;
-                            var rotationDifference = Quaternion.Inverse(parentTransform.rotation);
-
-                            entityTransform.position = physicsGlobalTransform.position + positionDifference;
-                            entityTransform.rotation = rotationDifference * physicsGlobalTransform.rotation;
-                        }
-                        else
-                        {
-                            // no parent, just write the physicsGlobalTransform to the transform
-                            entityTransform.position = physicsGlobalTransform.position;
-                            entityTransform.rotation = physicsGlobalTransform.rotation;
-                        }
-
+                        entityTransform.SetComponents(physicsPosition, physicsRotation, entityTransform.Scale);
                         break;
                     }
                 case PhysicsResource.AddStaticBodyCommand addStaticBody:
@@ -208,13 +186,13 @@ public class PhysicsSystem : ISystem
         }
     }
 
-    private record struct TransformWriteBack(EntityId EntityId, TransformComponent TransformComponent, GlobalTransform? ParentTransform); 
+    private record struct TransformWriteBack(EntityId EntityId, TransformComponent TransformComponent); 
 
     private void UpdateTransformsAfterPhysicsUpdate(IEnumerable<TransformWriteBack> dynamicTransforms)
     {
-        foreach (var (entityId, transformComponent, parentTransform) in dynamicTransforms)
+        foreach (var (entityId, transformComponent) in dynamicTransforms)
         {
-            _physicsResource.UpdateTransformFromPhysics(entityId, transformComponent.LocalTransform, parentTransform);
+            _physicsResource.UpdateTransformFromPhysics(entityId, transformComponent.GlobalTransform);
         }
     }
 }

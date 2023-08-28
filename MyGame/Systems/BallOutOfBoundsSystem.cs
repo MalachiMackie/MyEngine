@@ -36,7 +36,6 @@ public class BallOutOfBoundsSystem : ISystem
 
                 kinematicBody2DComponent.Velocity = Vector2.Zero;
                 localTransform.position = new Vector3(0f, -1f, 0f);
-                transformComponent.LocalTransform = localTransform;
             }
         }
     }

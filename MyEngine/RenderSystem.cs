@@ -1,4 +1,5 @@
-﻿using MyEngine.Core.Ecs;
+﻿using MyEngine.Core;
+using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Systems;
 
@@ -9,13 +10,13 @@ internal class RenderSystem : IRenderSystem
     private readonly Renderer _renderer;
     private readonly IQuery<Camera3DComponent, TransformComponent> _camera3DQuery;
     private readonly IQuery<Camera2DComponent, TransformComponent> _camera2DQuery;
-    private readonly IQuery<SpriteComponent, TransformComponent> _spriteQuery;
+    private readonly IQuery<SpriteComponent, TransformComponent, OptionalComponent<ParentComponent>> _spriteQuery;
 
     public RenderSystem(
         Renderer renderer,
         IQuery<Camera3DComponent, TransformComponent> camera3DQuery,
         IQuery<Camera2DComponent, TransformComponent> camera2DQuery,
-        IQuery<SpriteComponent, TransformComponent> spriteQuery)
+        IQuery<SpriteComponent, TransformComponent, OptionalComponent<ParentComponent>> spriteQuery)
     {
         _renderer = renderer;
         _camera3DQuery = camera3DQuery;
@@ -34,13 +35,16 @@ internal class RenderSystem : IRenderSystem
 
     private bool TryRender3D()
     {
-        var components = _camera3DQuery.FirstOrDefault();
-        if (components is null)
+        var cameraComponents = _camera3DQuery.FirstOrDefault();
+        if (cameraComponents is null)
         {
             return false;
         }
 
-        _renderer.Render(components.Component2.GlobalTransform, _spriteQuery.Select(x => x.Component2.GlobalTransform));
+        // todo: this ignores any parent transform
+        var cameraTransform = GlobalTransform.FromTransform(cameraComponents.Component2.LocalTransform);
+
+        _renderer.Render(cameraTransform, _spriteQuery.Select(x => x.Component2.GlobalTransform));
 
         return true;
     }
@@ -54,7 +58,10 @@ internal class RenderSystem : IRenderSystem
         }
         var (camera, transformComponent) = components;
 
-        _renderer.RenderOrthographic(transformComponent.GlobalTransform.position, camera.Size, _spriteQuery.Select(x => x.Component2.GlobalTransform));
+        // todo: this ignores any parent components
+        var cameraPosition = transformComponent.LocalTransform.position;
+
+        _renderer.RenderOrthographic(cameraPosition, camera.Size, _spriteQuery.Select(x => x.Component2.GlobalTransform));
 
         return true;
     }

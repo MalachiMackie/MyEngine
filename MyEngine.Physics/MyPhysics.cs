@@ -249,8 +249,10 @@ public class MyPhysics : IResource
             return;
         }
 
-        var shape = _simulation.Shapes.Add(new Box(transform.scale.X, transform.scale.Y, transform.scale.Z));
-        var handle = _simulation.Statics.Add(new StaticDescription(transform.position, transform.rotation, shape));
+        var (position, rotation, _) = transform.GetPositionRotationScale();
+
+        var shape = _simulation.Shapes.Add(new Box(transform.Scale.X, transform.Scale.Y, transform.Scale.Z));
+        var handle = _simulation.Statics.Add(new StaticDescription(position, rotation, shape));
 
         var material = new SimpleMaterial
         {
@@ -264,13 +266,13 @@ public class MyPhysics : IResource
         _staticHandles[entityId] = (handle, shape);
     }
 
-    private (TypedIndex ShapeIndex, BodyInertia ShapeInertia) AddColliderAsShape(ICollider2D collider2D, GlobalTransform transform, float mass)
+    private (TypedIndex ShapeIndex, BodyInertia ShapeInertia) AddColliderAsShape(ICollider2D collider2D, Vector3 scale, float mass)
     {
         switch (collider2D)
         {
             case BoxCollider2D boxCollider:
                 {
-                    var shape = new Box(boxCollider.Dimensions.X * transform.scale.X, boxCollider.Dimensions.Y * transform.scale.Y, 1000f);
+                    var shape = new Box(boxCollider.Dimensions.X * scale.X, boxCollider.Dimensions.Y * scale.Y, 1000f);
                     var inertia = shape.ComputeInertia(mass);
 
                     var shapeIndex = _simulation.Shapes.Add(shape);
@@ -280,7 +282,7 @@ public class MyPhysics : IResource
             case CircleCollider2D circleCollider:
                 {
                     // todo: how to scale this?
-                    var shape = new Sphere(circleCollider.Radius * transform.scale.X);
+                    var shape = new Sphere(circleCollider.Radius * scale.X);
                     var inertia = shape.ComputeInertia(mass);
 
                     var shapeIndex = _simulation.Shapes.Add(shape);
@@ -307,9 +309,11 @@ public class MyPhysics : IResource
             return;
         }
 
+        var (position, rotation, _) = transform.GetPositionRotationScale();
+
         // todo: don't require mass
-        var (shape, _) = AddColliderAsShape(collider2D, transform, 10f);
-        var handle = _simulation.Statics.Add(new StaticDescription(transform.position, transform.rotation, shape));
+        var (shape, _) = AddColliderAsShape(collider2D, transform.Scale, 10f);
+        var handle = _simulation.Statics.Add(new StaticDescription(position, rotation, shape));
 
         var material = new SimpleMaterial
         {
@@ -339,10 +343,12 @@ public class MyPhysics : IResource
             return;
         }
 
-        var shape = new Box(transform.scale.X, transform.scale.Y, transform.scale.Z);
+        var (position, rotation, _) = transform.GetPositionRotationScale();
+
+        var shape = new Box(transform.Scale.X, transform.Scale.Y, transform.Scale.Z);
         var shapeIndex = _simulation.Shapes.Add(shape);
         var handle = _simulation.Bodies.Add(BodyDescription.CreateDynamic(
-            new RigidPose(transform.position, transform.rotation),
+            new RigidPose(position, rotation),
             new BodyVelocity(new Vector3(0f, 0f, 0f)),
             shape.ComputeInertia(10f),
             new CollidableDescription(shapeIndex),
@@ -362,10 +368,12 @@ public class MyPhysics : IResource
 
     public void AddKinematicBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider)
     {
-        var (shapeIndex, _) = AddColliderAsShape(collider, transform, 10f);
+        var (shapeIndex, _) = AddColliderAsShape(collider, transform.Scale, 10f);
+
+        var (position, rotation, _) = transform.GetPositionRotationScale();
 
         var body = BodyDescription.CreateKinematic(
-            new RigidPose(transform.position, transform.rotation),
+            new RigidPose(position, rotation),
             new BodyVelocity(),
             new CollidableDescription(shapeIndex),
             new BodyActivityDescription(0.01f));
@@ -382,7 +390,7 @@ public class MyPhysics : IResource
             return;
         }
 
-        var (shapeIndex, inertia) = AddColliderAsShape(collider, transform, 10f);
+        var (shapeIndex, inertia) = AddColliderAsShape(collider, transform.Scale, 10f);
         var inverseInertiaTensor = inertia.InverseInertiaTensor;
 
         // dont allow rotation along X or Y Axis for 2D
@@ -391,8 +399,10 @@ public class MyPhysics : IResource
 
         inertia.InverseInertiaTensor = inverseInertiaTensor;
 
+        var (position, rotation, _) = transform.GetPositionRotationScale();
+
         var body = BodyDescription.CreateDynamic(
-            new RigidPose(transform.position, transform.rotation),
+            new RigidPose(position, rotation),
             new BodyVelocity(),
             inertia,
             new CollidableDescription(shapeIndex),
@@ -432,12 +442,13 @@ public class MyPhysics : IResource
         bodyReference.ApplyAngularImpulse(impulse);
     }
 
-    public GlobalTransform GetDynamicPhysicsTransform(EntityId entityId)
+    public (Vector3 Position, Quaternion Rotation) GetDynamicPhysicsTransform(EntityId entityId)
     {
         var (handle, _) = _dynamicHandles[entityId];
-        var pose = _simulation.Bodies[handle].Pose;
+        var body = _simulation.Bodies[handle];
+        var pose = body.Pose;
 
-        return new GlobalTransform(pose.Position, pose.Orientation, Vector3.One);
+        return (pose.Position, pose.Orientation);
     }
 
     public void ApplyDynamicPhysicsTransform(EntityId entityId, GlobalTransform transform)
@@ -446,8 +457,11 @@ public class MyPhysics : IResource
         var body = _simulation.Bodies[handle];
 
         body.GetDescription(out var description);
-        description.Pose.Position = transform.position;
-        description.Pose.Orientation = transform.rotation;
+
+        var (position, rotation, _) = transform.GetPositionRotationScale();
+
+        description.Pose.Position = position;
+        description.Pose.Orientation = rotation;
         body.ApplyDescription(description);
     }
 
@@ -455,10 +469,13 @@ public class MyPhysics : IResource
     {
         var (handle, _) = _staticHandles[entityId];
         var body = _simulation.Statics[handle];
-    
+
+        var (position, rotation, _) = transform.GetPositionRotationScale();
+
         body.GetDescription(out var description);
-        description.Pose.Position = transform.position;
-        description.Pose.Orientation = transform.rotation;
+
+        description.Pose.Position = position;
+        description.Pose.Orientation = rotation;
         body.ApplyDescription(description);
     }
 }
