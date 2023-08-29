@@ -8,6 +8,11 @@ using MyGame.Components;
 using MyGame.Resources;
 using System.Numerics;
 
+using AddPaddleAndBallError = MyEngine.Utils.OneOf<
+    MyGame.Systems.AddStartupSpritesSystem.AddPaddleError,
+    MyGame.Systems.AddStartupSpritesSystem.AddBallError,
+    MyGame.Systems.AddStartupSpritesSystem.AddBallAsPaddleChildError>;
+
 namespace MyGame.Systems;
 
 public class AddStartupSpritesSystem : IStartupSystem
@@ -36,9 +41,25 @@ public class AddStartupSpritesSystem : IStartupSystem
         });
         _resourceRegistrationResource.AddResource(_brickSizeResource);
 
-        AddWalls();
-        AddPaddleAndBall();
-        AddBricks();
+        if (AddWalls().TryGetError(out var addWallsError))
+        {
+            Console.WriteLine("Failed to add wall: {0}", addWallsError);
+            return;
+        }
+
+        if (AddPaddleAndBall().TryGetError(out var addPaddleAndBallError))
+        {
+            addPaddleAndBallError.Match(
+                addPaddleError => Console.WriteLine("Failed to add paddle: {0}", addPaddleError.Error),
+                addBallError => Console.WriteLine("Failed to add ball: {0}", addBallError.Error),
+                addBallAsPaddleChildError => Console.WriteLine("Failed to add ball as paddle child: {0}", addBallAsPaddleChildError.Error));
+            return;
+        }
+
+        if (AddBricks().TryGetError(out var addBricksError))
+        {
+            Console.WriteLine("Failed to add brick: {0}", addBricksError);
+        }
     }
 
     private static readonly Vector2 Origin = new(0f, 1f);
@@ -48,7 +69,7 @@ public class AddStartupSpritesSystem : IStartupSystem
         return Origin + new Vector2(x * _brickSizeResource.Dimensions.X, y * _brickSizeResource.Dimensions.Y);
     }
 
-    private void AddBricks()
+    private Result<Unit, AddEntityCommandError> AddBricks()
     {
         var brickPositions = new[]
         {
@@ -69,16 +90,34 @@ public class AddStartupSpritesSystem : IStartupSystem
             GridPositionToWorldPosition(-2, 3),
         };
 
+        var successfulBricks = new List<EntityId>(brickPositions.Length);
+
         foreach (var position in brickPositions)
         {
-             _entityCommands.AddEntity(x => x.WithTransform(Transform.Default(position: position.Extend(3.0f), scale: _brickSizeResource.Dimensions.Extend(1f)))
+             var createEntityResult = _entityCommands.CreateEntity(x => x.WithTransform(Transform.Default(position: position.Extend(3.0f), scale: _brickSizeResource.Dimensions.Extend(1f)))
                  .WithSprite()
                  .WithStatic2DPhysics()
                  .WithBox2DCollider(Vector2.One));
+
+            if (createEntityResult.TryGetValue(out var brickId))
+            {
+                successfulBricks.Add(brickId);
+            }
+            else
+            {
+                foreach (var brick in successfulBricks)
+                {
+                    _entityCommands.RemoveEntity(brick).Expect(because: "We checked that entity was added successfully");
+                }
+
+                return createEntityResult.Map(_ => Unit.Value);
+            }
         }
+
+        return Result.Success<Unit, AddEntityCommandError>(Unit.Value);
     }
 
-    private void AddWalls()
+    private Result<Unit, AddEntityCommandError> AddWalls()
     {
         var walls = new[]
         {
@@ -101,20 +140,35 @@ public class AddStartupSpritesSystem : IStartupSystem
                 scale = new Vector3(8f, 0.1f, 1f)
             },
         };
+
+        var successfulWalls = new List<EntityId>(walls.Length);
         
         foreach (var transform in walls)
         {
-            _entityCommands.AddEntity(x => x.WithTransform(transform)
+            var addWallResult = _entityCommands.CreateEntity(x => x.WithTransform(transform)
                 .WithSprite()
                 .WithStatic2DPhysics()
                 .WithBox2DCollider(Vector2.One));
+
+            if (addWallResult.IsFailure)
+            {
+                foreach (var wall in successfulWalls)
+                {
+                    _entityCommands.RemoveEntity(wall).Expect("We checked success of add wall");
+                }
+
+                return addWallResult.Map(_ => Unit.Value);
+            }
         }
+
+        return Result.Success<Unit, AddEntityCommandError>(Unit.Value);
     }
 
-    private void AddPaddleAndBall()
+
+    private Result<Unit, AddPaddleAndBallError> AddPaddleAndBall()
     {
         var paddleScale = new Vector3(1.5f, 0.15f, 1f);
-        var paddleId = _entityCommands.AddEntity(x => x.WithTransform(new Transform
+        var paddleIdResult = _entityCommands.CreateEntity(x => x.WithTransform(new Transform
         {
             position = new Vector3(0f, -1.25f, 0f),
             rotation = Quaternion.Identity,
@@ -123,9 +177,15 @@ public class AddStartupSpritesSystem : IStartupSystem
         .WithKinematic2DPhysics()
         .WithoutRebound()
         .WithBox2DCollider(Vector2.One)
-        .WithComponent(new PaddleComponent()));
+        .WithComponent(new PaddleComponent()))
+            .MapError(x => new AddPaddleError(x));
 
-        var ballId = _entityCommands.AddEntity(x => x.WithTransform(new Transform
+        if (!paddleIdResult.TryGetValue(out var paddleId))
+        {
+            return Result.Failure<Unit, AddPaddleAndBallError>(new AddPaddleAndBallError(paddleIdResult.UnwrapError()));
+        }
+
+        var ballIdResult = _entityCommands.CreateEntity(x => x.WithTransform(new Transform
         {
             position = new Vector3(0f, 1f, 0f),
             rotation = Quaternion.Identity,
@@ -136,10 +196,29 @@ public class AddStartupSpritesSystem : IStartupSystem
             .WithRebound()
             .WithCircle2DCollider(1f)
             .WithComponent(new BallComponent())
-            .WithComponent(new LogPositionComponent { Name = "Ball" }));
+            .WithComponent(new LogPositionComponent { Name = "Ball" }))
+            .MapError(x => new AddBallError(x));
 
-        _hierarchyCommands.AddChild(paddleId, ballId);
+        if (!ballIdResult.TryGetValue(out var ballId))
+        {
+            _entityCommands.RemoveEntity(paddleId).Expect("We checked the success of add paddle");
+            return Result.Failure<Unit, AddPaddleAndBallError>(new AddPaddleAndBallError(ballIdResult.UnwrapError()));
+        }
 
+        var addChildResult = _hierarchyCommands.AddChild(paddleId, ballId);
+        if (addChildResult.TryGetError(out var error))
+        {
+            _entityCommands.RemoveEntity(paddleId).Expect("We checked the success of add paddle");
+            _entityCommands.RemoveEntity(ballId).Expect("We checked the success of add ball");
+
+            return Result.Failure<Unit, AddPaddleAndBallError>(new AddPaddleAndBallError(new AddBallAsPaddleChildError(error)));
+        }
+
+        return Result.Success<Unit, AddPaddleAndBallError>(Unit.Value);
     }
+
+    public readonly record struct AddPaddleError(AddEntityCommandError Error);
+    public readonly record struct AddBallError(AddEntityCommandError Error);
+    public readonly record struct AddBallAsPaddleChildError(AddChildError Error);
 }
 

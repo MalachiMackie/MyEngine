@@ -1,5 +1,6 @@
 ﻿using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
+using MyEngine.Utils;
 
 namespace MyEngine.Runtime;
 
@@ -12,11 +13,11 @@ internal class HierarchyCommands : IHierarchyCommands
         _componentCollection = componentCollection;
     }
 
-    public void AddChild(EntityId parentId, EntityId childId)
+    public Result<Unit, AddChildError> AddChild(EntityId parentId, EntityId childId)
     {
         if (_componentCollection.TryGetComponent<ParentComponent>(childId, out _))
         {
-            throw new InvalidOperationException("child already has a parent");
+            return Result.Failure<Unit, AddChildError>(AddChildError.ChildAlreadyHasParent);
         }
 
         if (!_componentCollection.TryGetComponent<ChildrenComponent>(parentId, out var childrenComponent))
@@ -24,10 +25,34 @@ internal class HierarchyCommands : IHierarchyCommands
             childrenComponent = new ChildrenComponent();
             _componentCollection.AddComponent(parentId, childrenComponent);
         }
+
+        var validateResult = ValidateCircularReference(parentId, childId);
+        if (validateResult.IsFailure)
+        {
+            return validateResult.MapError(_ => AddChildError.CircularReference);
+        }
+
         childrenComponent.AddChild(childId);
 
         _componentCollection.AddComponent(childId, new ParentComponent(parentId));
 
+        return Result.Success<Unit, AddChildError>(Unit.Value);
+    }
+
+    private Result<Unit, Unit> ValidateCircularReference(EntityId parentId, EntityId childId)
+    {
+        if (!_componentCollection.TryGetComponent<ParentComponent>(parentId, out var parentComponent))
+        {
+            // parent has no parent, so no circular reference found
+            return Result.Success<Unit, Unit>(Unit.Value);
+        }
+
+        if (parentComponent.Parent == childId)
+        {
+            return Result.Failure<Unit, Unit>(Unit.Value);
+        }
+
+        return ValidateCircularReference(parentComponent.Parent, childId);
     }
 
     /// <summary>

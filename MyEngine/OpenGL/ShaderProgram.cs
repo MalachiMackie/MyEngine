@@ -1,50 +1,27 @@
-﻿using Silk.NET.OpenGL;
+﻿using MyEngine.Utils;
+using Silk.NET.OpenGL;
 using System.Numerics;
+
+using CreateShaderProgramError = MyEngine.Utils.OneOf<
+    MyEngine.Runtime.OpenGL.VertexShaderCompilationFailed,
+    MyEngine.Runtime.OpenGL.FragmentShaderCompilationFailed,
+    MyEngine.Runtime.OpenGL.ShaderProgramLinkFailed>;
 
 namespace MyEngine.Runtime.OpenGL;
 
+internal readonly record struct VertexShaderCompilationFailed(string CompilationError);
+internal readonly record struct FragmentShaderCompilationFailed(string CompilationError);
+internal readonly record struct ShaderProgramLinkFailed(string LinkError);
+
 internal class ShaderProgram : IDisposable
 {
-    private GL _gl;
-    private uint _handle;
+    private readonly GL _gl;
+    private readonly uint _handle;
 
-    public ShaderProgram(GL gl, string vertexSource, string fragmentSource)
+    private ShaderProgram(GL gl, uint handle)
     {
         _gl = gl;
-
-        var vertexHandle = LoadShader(ShaderType.VertexShader, vertexSource);
-        var fragmentHandle = LoadShader(ShaderType.FragmentShader, fragmentSource);
-
-        _handle = _gl.CreateProgram();
-        _gl.AttachShader(_handle, vertexHandle);
-        _gl.AttachShader(_handle, fragmentHandle);
-        _gl.LinkProgram(_handle);
-
-        _gl.GetProgram(_handle, ProgramPropertyARB.LinkStatus, out int lStatus);
-        if (lStatus != (int)GLEnum.True)
-        {
-            throw new Exception($"Shader program failed to link: {_gl.GetProgramInfoLog(_handle)}");
-        }
-
-        _gl.DetachShader(_handle, vertexHandle);
-        _gl.DetachShader(_handle, fragmentHandle);
-        _gl.DeleteShader(vertexHandle);
-        _gl.DeleteShader(fragmentHandle);
-    }
-
-    private uint LoadShader(ShaderType shaderType, string source)
-    {
-        var handle = _gl.CreateShader(shaderType);
-        _gl.ShaderSource(handle, source);
-        _gl.CompileShader(handle);
-
-        _gl.GetShader(handle, ShaderParameterName.CompileStatus, out int status);
-        if (status != (int)GLEnum.True)
-        {
-            throw new Exception($"{shaderType} shader failed to compile: {_gl.GetShaderInfoLog(handle)}");
-        }
-
-        return handle;
+        _handle = handle;
     }
 
     public void SetUniform1(string uniformName, int value)
@@ -68,4 +45,61 @@ internal class ShaderProgram : IDisposable
     {
         _gl.DeleteProgram(_handle);
     }
+
+    private static Result<uint, string> LoadShader(GL gl, ShaderType shaderType, string source)
+    {
+        var handle = gl.CreateShader(shaderType);
+        gl.ShaderSource(handle, source);
+        gl.CompileShader(handle);
+
+        gl.GetShader(handle, ShaderParameterName.CompileStatus, out int status);
+        if (status != (int)GLEnum.True)
+        {
+            return Result.Failure<uint, string>($"{shaderType} shader failed to compile: {gl.GetShaderInfoLog(handle)}");
+        }
+
+        return Result.Success<uint, string>(handle);
+    }
+
+    public static Result<ShaderProgram, CreateShaderProgramError> Create(GL gl, string vertexSource, string fragmentSource)
+    {
+
+        var vertexResult = LoadShader(gl, ShaderType.VertexShader, vertexSource)
+            .MapError(err => new CreateShaderProgramError(new VertexShaderCompilationFailed(err)));
+
+        if (!vertexResult.TryGetValue(out var vertexHandle))
+        {
+            return Result.Failure<ShaderProgram, CreateShaderProgramError>(vertexResult.UnwrapError());
+        }
+
+        var fragmentResult = LoadShader(gl, ShaderType.FragmentShader, fragmentSource)
+            .MapError(err => new CreateShaderProgramError(new FragmentShaderCompilationFailed(err)));
+
+        if (!fragmentResult.TryGetValue(out var fragmentHandle))
+        {
+            return Result.Failure<ShaderProgram, CreateShaderProgramError>(fragmentResult.UnwrapError());
+        }
+        
+        var handle = gl.CreateProgram();
+
+        var shader = new ShaderProgram(gl, handle);
+
+        gl.AttachShader(handle, vertexHandle);
+        gl.AttachShader(handle, fragmentHandle);
+        gl.LinkProgram(handle);
+
+        gl.GetProgram(handle, ProgramPropertyARB.LinkStatus, out int lStatus);
+        if (lStatus != (int)GLEnum.True)
+        {
+            return Result.Failure<ShaderProgram, CreateShaderProgramError>(new CreateShaderProgramError(new ShaderProgramLinkFailed(gl.GetProgramInfoLog(handle))));
+        }
+
+        gl.DetachShader(handle, vertexHandle);
+        gl.DetachShader(handle, fragmentHandle);
+        gl.DeleteShader(vertexHandle);
+        gl.DeleteShader(fragmentHandle);
+
+        return Result.Success<ShaderProgram, CreateShaderProgramError>(shader);
+
+    } 
 }

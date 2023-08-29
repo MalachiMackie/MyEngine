@@ -1,14 +1,33 @@
 ﻿using MyEngine.Core.Ecs.Components;
+using MyEngine.Utils;
 
 namespace MyEngine.Core.Ecs.Resources;
 
+public enum AddComponentCommandError
+{
+    DuplicateComponent,
+    EntityDoesNotExist
+}
+
+public enum AddEntityCommandError
+{
+    DuplicateComponent
+}
+
+public enum RemoveEntityCommandError
+{
+    EntityDoesNotExist
+}
+
 public interface ICommands : IResource
 {
-    public EntityId AddEntity(Func<IEntityBuilderTransformStep, IEntityBuilder> entityBuilderFunc);
+    Result<EntityId, AddEntityCommandError> CreateEntity(Func<IEntityBuilderTransformStep, IEntityBuilder> entityBuilderFunc);
 
-    public void AddComponent(EntityId entityId, IComponent component);
+    Result<Unit, AddComponentCommandError> AddComponent(EntityId entityId, IComponent component);
 
-    public void RemoveComponent<T>(EntityId entityId)
+    bool RemoveComponent<T>(EntityId entityId)
         where T : IComponent;
+
+    Result<Unit, RemoveEntityCommandError> RemoveEntity(EntityId brick);
 }
 

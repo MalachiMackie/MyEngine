@@ -2,8 +2,14 @@
 using System.Diagnostics.CodeAnalysis;
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
+using MyEngine.Utils;
 
 namespace MyEngine.Runtime;
+
+internal enum AddComponentError
+{
+    DuplicateComponent    
+}
 
 internal class ComponentCollection
 {
@@ -16,7 +22,7 @@ internal class ComponentCollection
             && components.ContainsKey(entityId);
     }
 
-    public void AddComponent(EntityId entityId, IComponent component)
+    public Result<Unit, AddComponentError> AddComponent(EntityId entityId, IComponent component)
     {
         var type = component.GetType();
         if (!_components.TryGetValue(type, out var components))
@@ -27,13 +33,14 @@ internal class ComponentCollection
 
         if (components.ContainsKey(entityId))
         {
-            throw new InvalidOperationException($"Component has already been added");
+            return Result.Failure<Unit, AddComponentError>(AddComponentError.DuplicateComponent);
         }
 
         components.Add(entityId, component);
+        return Result.Success<Unit, AddComponentError>(Unit.Value);
     }
 
-    public void DeleteComponentsForEntity(EntityId entityId)
+    public void DeleteAllComponentsForEntity(EntityId entityId)
     {
         foreach (var (_, components) in _components)
         {
@@ -41,18 +48,20 @@ internal class ComponentCollection
         }
     }
 
-    public void DeleteComponent(EntityId entityId, Type componentType)
+    public bool DeleteComponent(EntityId entityId, Type componentType)
     {
         if (_components.TryGetValue(componentType, out var entityComponents))
         {
-            entityComponents.Remove(entityId);
+            return entityComponents.Remove(entityId);
         }
+
+        return false;
     }
 
-    public void DeleteComponent<T>(EntityId entityId)
+    public bool DeleteComponent<T>(EntityId entityId)
         where T : IComponent
     {
-        DeleteComponent(entityId, typeof(T));
+        return DeleteComponent(entityId, typeof(T));
     }
 
     public bool TryGetComponent<TComponent>(EntityId entityId, [NotNullWhen(true)] out TComponent? component)

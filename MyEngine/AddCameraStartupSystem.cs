@@ -18,10 +18,15 @@ internal class AddCameraStartupSystem : IStartupSystem
 
     public void Run()
     {
-        var entity = _entityCommands.AddEntity(x => x.WithDefaultTransform()
+        var entityResult = _entityCommands.CreateEntity(x => x.WithDefaultTransform()
             .WithNoDisplay()
             .WithoutPhysics()
             // todo: detect screen aspect ratio
             .WithComponent(new Camera2DComponent(new Vector2(8f, 6f))));
+
+        if (entityResult.TryGetError(out var addEntityCommandError))
+        {
+            Console.WriteLine("Failed to add camera: {0}", addEntityCommandError);
+        }
     }
 }

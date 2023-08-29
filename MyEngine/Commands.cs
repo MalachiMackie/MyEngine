@@ -1,6 +1,8 @@
-﻿using MyEngine.Core.Ecs;
+﻿using System.Diagnostics;
+using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
+using MyEngine.Utils;
 
 namespace MyEngine.Runtime;
 
@@ -15,35 +17,61 @@ internal class Commands : ICommands
         _entities = entities;
     }
 
-    public void AddComponent(EntityId entityId, IComponent component)
+    public Result<Unit, AddComponentCommandError> AddComponent(EntityId entityId, IComponent component)
     {
-        _componentCollection.AddComponent(entityId, component);
+        if (!_entities.Contains(entityId))
+        {
+            return Result.Failure<Unit, AddComponentCommandError>(AddComponentCommandError.EntityDoesNotExist);
+        }
+
+        return _componentCollection.AddComponent(entityId, component)
+            .MapError(err => err switch
+            {
+                AddComponentError.DuplicateComponent => AddComponentCommandError.DuplicateComponent,
+                _ => throw new UnreachableException() 
+            });
     }
 
-    public EntityId AddEntity(Func<IEntityBuilderTransformStep, IEntityBuilder> entityBuilderFunc)
+    public Result<EntityId, AddEntityCommandError> CreateEntity(Func<IEntityBuilderTransformStep, IEntityBuilder> entityBuilderFunc)
     {
         var entityBuilder = EntityBuilder.Create();
         var result = entityBuilderFunc(entityBuilder);
         var components = result.Build();
 
         var entityId = EntityId.Generate();
-        _entities.Add(entityId);
         foreach (var component in components)
         {
-            _componentCollection.AddComponent(entityId, component);
+            if (_componentCollection.AddComponent(entityId, component).TryGetError(out var addComponentError))
+            {
+                _componentCollection.DeleteAllComponentsForEntity(entityId);
+                return addComponentError switch
+                {
+                    AddComponentError.DuplicateComponent => Result.Failure<EntityId, AddEntityCommandError>(AddEntityCommandError.DuplicateComponent),
+                    _ => throw new UnreachableException()
+                };
+            }
         }
 
-        return entityId;
+        _entities.Add(entityId);
+
+        return Result.Success<EntityId, AddEntityCommandError>(entityId);
     }
 
-    public void RemoveComponent<T>(EntityId entityId) where T : IComponent
+    public Result<Unit, RemoveEntityCommandError> RemoveEntity(EntityId entityId)
     {
-        _componentCollection.DeleteComponent<T>(entityId);
+        if (!_entities.Remove(entityId))
+        {
+            return Result.Failure<Unit, RemoveEntityCommandError>(RemoveEntityCommandError.EntityDoesNotExist);
+        }
+
+        // todo: check and remove entity as parent or child
+
+        return Result.Success<Unit, RemoveEntityCommandError>(Unit.Value);
     }
 
-    public void RemoveEntity(EntityId entityId)
+    public bool RemoveComponent<T>(EntityId entityId) where T : IComponent
     {
-        _componentCollection.DeleteComponentsForEntity(entityId);
-        _entities.Remove(entityId);
+        // todo: check and remove entity as parent or child
+        return _componentCollection.DeleteComponent<T>(entityId);
     }
 }

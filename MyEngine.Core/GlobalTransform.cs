@@ -1,7 +1,12 @@
-﻿namespace MyEngine.Core;
+﻿using MyEngine.Utils;
+
+namespace MyEngine.Core;
 
 public class GlobalTransform
 {
+    public record struct GetPositionRotationScaleError(string Error);
+    public record struct PositionRotationScale(Vector3 Position, Quaternion Rotation, Vector3 Scale);
+
     public GlobalTransform(Vector3 position, Quaternion rotation, Vector3 scale)
     {
         ModelMatrix = CreateMatrix(position, rotation, scale);
@@ -14,14 +19,21 @@ public class GlobalTransform
     // rather than trying to decompose it out of the existing matrix (which can fail), we just keep it around to use
     public Vector3 Scale { get; private set; }
 
-    public (Vector3 Position, Quaternion Rotation, Vector3 Scale) GetPositionRotationScale()
+    public Result<PositionRotationScale, GetPositionRotationScaleError> GetPositionRotationScale()
     {
         if (!Matrix4x4.Decompose(ModelMatrix, out var _, out var rotation, out var translation))
         {
-            throw new Exception();
+            var matrix = ModelMatrix;
+            MathHelper.NormalizeMatrix(ref matrix);
+
+            if (!Matrix4x4.Decompose(ModelMatrix, out _, out rotation, out translation))
+            {
+                return Result.Failure<PositionRotationScale, GetPositionRotationScaleError>(new GetPositionRotationScaleError(
+                    "Could not extract Position, Rotation and Scale from Model Matrix. This is likely because the transform has both rotation and non-uniform scaling"));
+            }
         }
 
-        return (translation, rotation, Scale);
+        return Result.Success<PositionRotationScale, GetPositionRotationScaleError>(new (translation, rotation, Scale));
     }
 
 

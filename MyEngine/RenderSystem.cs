@@ -44,7 +44,11 @@ internal class RenderSystem : IRenderSystem
         // todo: this ignores any parent transform
         var cameraTransform = GlobalTransform.FromTransform(cameraComponents.Component2.LocalTransform);
 
-        _renderer.Render(cameraTransform, _spriteQuery.Select(x => x.Component2.GlobalTransform));
+        var renderResult = _renderer.Render(cameraTransform, _spriteQuery.Select(x => x.Component2.GlobalTransform));
+        if (renderResult.TryGetError(out var error))
+        {
+            Console.WriteLine("Failed to render 3d: {0}", error.Error.Error);
+        }
 
         return true;
     }

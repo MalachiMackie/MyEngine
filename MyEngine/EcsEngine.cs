@@ -125,7 +125,11 @@ internal partial class EcsEngine
         Debug.Assert(_resourceContainer.TryGetResource<ResourceRegistrationResource>(out var resourceRegistration));
         while (resourceRegistration.Registrations.TryDequeue(out var resource))
         {
-            _resourceContainer.RegisterResource(resource.Key, resource.Value);
+            if (_resourceContainer.RegisterResource(resource.Key, resource.Value).TryGetError(out var registerResourceError))
+            {
+                Console.WriteLine("Failed to register resource: {0}", registerResourceError);
+                continue;
+            }
 
             foreach (var (systemType, resourceTypes) in _uninstantiatedSystems)
             {
@@ -413,7 +417,12 @@ internal partial class EcsEngine
 
     public partial void RegisterResource<T>(T resource) where T : IResource
     {
-        _resourceContainer.RegisterResource(resource);
+        if (_resourceContainer.RegisterResource(resource).TryGetError(out var error))
+        {
+            Console.WriteLine("Failed to register resource: {0}", error);
+            return;
+        }
+
         foreach (var (systemType, resourceTypes) in _uninstantiatedSystems)
         {
             if (resourceTypes.Contains(typeof(T)))

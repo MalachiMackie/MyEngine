@@ -1,7 +1,14 @@
 ﻿using MyEngine.Core.Ecs.Resources;
+using MyEngine.Utils;
 using System.Diagnostics.CodeAnalysis;
 
 namespace MyEngine.Runtime;
+
+internal enum RegisterResourceError
+{
+    ResourceAlreadyAdded,
+    ResourceDoesNotImplementIResourceInterface
+}
 
 internal class ResourceContainer
 {
@@ -19,24 +26,28 @@ internal class ResourceContainer
         return resource is not null;
     }
 
-    public void RegisterResource<T>(T resource) where T : IResource
+    public Result<Unit, RegisterResourceError> RegisterResource<T>(T resource) where T : IResource
     {
         if (!_resources.TryAdd(typeof(T), resource))
         {
-            throw new InvalidOperationException("Resource has already been added");
+            return Result.Failure<Unit, RegisterResourceError>(RegisterResourceError.ResourceAlreadyAdded);
         }
+
+        return Result.Success<Unit, RegisterResourceError>(Unit.Value);
     }
 
-    public void RegisterResource(Type resourceType, IResource resource)
+    public Result<Unit, RegisterResourceError> RegisterResource(Type resourceType, IResource resource)
     {
         if (!resourceType.IsAssignableTo(typeof(IResource)))
         {
-            throw new InvalidOperationException("Resource must implement IResource");
+            return Result.Failure<Unit, RegisterResourceError>(RegisterResourceError.ResourceDoesNotImplementIResourceInterface);
         }
 
         if (!_resources.TryAdd(resourceType, resource))
         {
-            throw new InvalidOperationException("Resource has already been added");
+            return Result.Failure<Unit, RegisterResourceError>(RegisterResourceError.ResourceAlreadyAdded);
         }
+
+        return Result.Success<Unit, RegisterResourceError>(Unit.Value);
     }
 }

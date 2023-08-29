@@ -77,26 +77,31 @@ public static class MathHelper
         return Vector2.Normalize(v);
     }
 
-    public static Vector2 WithMagnitude(this Vector2 v, float magnitude)
+    public enum Vector2WithMagnitudeError
+    {
+        MagnitudeLessThan0
+    }
+
+    public static Result<Vector2, Vector2WithMagnitudeError> WithMagnitude(this Vector2 v, float magnitude)
     {
         if (magnitude < 0)
         {
-            throw new InvalidOperationException("Cannot set magnitude to less than 0");
+            return Result.Failure<Vector2, Vector2WithMagnitudeError>(Vector2WithMagnitudeError.MagnitudeLessThan0);
         }
 
         if (magnitude < 0.00001f)
         {
             // setting magnitude to zero removes all data 
-            return Vector2.Zero;
+            return Result.Success<Vector2, Vector2WithMagnitudeError>(Vector2.Zero);
         }
 
         if (v.Length() < 0.00001f)
         {
             // if current magnitude is zero, then we just keep it at zero 
-            return Vector2.Zero;
+            return Result.Success<Vector2, Vector2WithMagnitudeError>(Vector2.Zero);
         }
 
-        return v.Normalize() * magnitude;
+        return Result.Success<Vector2, Vector2WithMagnitudeError>(v.Normalize() * magnitude);
     }
 
     // https://gist.github.com/vpenades/9e6248bf8558aa1d802885c2ab984e14 

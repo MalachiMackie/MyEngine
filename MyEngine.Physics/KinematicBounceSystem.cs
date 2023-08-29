@@ -89,7 +89,9 @@ public class KinematicBounceSystem : ISystem
             // assign the rebounded velocities, using the magnitude of the opposite body, as a crude transfer of momentum
             if (aMagnitude >= 0.0001f)
             {
-                kinematicBodyA.Velocity = aReboundedVelocity.WithMagnitude(bReboundMagnitude);
+                aReboundedVelocity.WithMagnitude(bReboundMagnitude).Match(
+                    newVelocity => kinematicBodyA.Velocity = newVelocity,
+                    err => Console.WriteLine("Failed to add set magnitude of vector: {0}", err));
             }
             else
             {
@@ -99,7 +101,9 @@ public class KinematicBounceSystem : ISystem
 
             if (bMagnitude >= 0.0001f)
             {
-                kinematicBodyB.Velocity = bReboundedVelocity.WithMagnitude(aReboundMagnitude);
+                bReboundedVelocity.WithMagnitude(aReboundMagnitude).Match(
+                    newVelocity => kinematicBodyB.Velocity = newVelocity,
+                    err => Console.WriteLine("Failed to add set magnitude of vector: {0}", err));
             }
             else
             {

@@ -9,6 +9,7 @@ using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Utils;
+using System.Diagnostics;
 using System.Numerics;
 
 namespace MyEngine.Physics;
@@ -151,6 +152,19 @@ public class MyPhysics : IResource
     private readonly Dictionary<EntityId, (StaticHandle Handle, TypedIndex ShapeIndex)> _staticHandles = new();
     private readonly Dictionary<EntityId, (BodyHandle Handle, TypedIndex ShapeIndex)> _dynamicHandles = new();
 
+    private NarrowPhase<MyNarrowPhaseCallback> NarrowPhase
+    {
+        get
+        {
+            if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
+            {
+                throw new UnreachableException();
+            }
+
+            return narrowPhase;
+        }
+    }
+
     public MyPhysics()
     {
         _bufferPool = new BufferPool();
@@ -242,14 +256,18 @@ public class MyPhysics : IResource
         _simulation.Shapes.Remove(shape);
     }
 
-    public void AddStaticBody(EntityId entityId, GlobalTransform transform)
+    public readonly record struct AddStaticBodyError(GlobalTransform.GetPositionRotationScaleError Error);
+
+    public Result<Unit, AddStaticBodyError> AddStaticBody(EntityId entityId, GlobalTransform transform)
     {
-        if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
+        var positionRotationScaleResult = transform.GetPositionRotationScale()
+            .MapError(err => new AddStaticBodyError(err));
+        if (!positionRotationScaleResult.TryGetValue(out var positionRotationScale))
         {
-            return;
+            return Result.Failure<Unit, AddStaticBodyError>(positionRotationScaleResult.UnwrapError());
         }
 
-        var (position, rotation, _) = transform.GetPositionRotationScale();
+        var (position, rotation, _) = positionRotationScale;
 
         var shape = _simulation.Shapes.Add(new Box(transform.Scale.X, transform.Scale.Y, transform.Scale.Z));
         var handle = _simulation.Statics.Add(new StaticDescription(position, rotation, shape));
@@ -261,9 +279,11 @@ public class MyPhysics : IResource
             SpringSettings = new SpringSettings(30f, 1f)
         };
 
-        narrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
+        NarrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
 
         _staticHandles[entityId] = (handle, shape);
+
+        return Result.Success<Unit, AddStaticBodyError>(Unit.Value);
     }
 
     private (TypedIndex ShapeIndex, BodyInertia ShapeInertia) AddColliderAsShape(ICollider2D collider2D, Vector3 scale, float mass)
@@ -302,14 +322,18 @@ public class MyPhysics : IResource
         currentVelocity.Linear = velocity.Extend(currentVelocity.Linear.Z);
     }
 
-    public void AddStaticBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider2D)
-    {
-        if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
-        {
-            return;
-        }
+    public readonly record struct AddStaticBody2DError(GlobalTransform.GetPositionRotationScaleError Error);
 
-        var (position, rotation, _) = transform.GetPositionRotationScale();
+    public Result<Unit, AddStaticBody2DError> AddStaticBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider2D)
+    {
+        var positionRotationScaleResult = transform.GetPositionRotationScale()
+            .MapError(err => new AddStaticBody2DError(err));
+
+        if (!positionRotationScaleResult.TryGetValue(out var positionRotationScale))
+        {
+            return Result.Failure<Unit, AddStaticBody2DError>(positionRotationScaleResult.UnwrapError());
+        }
+        var (position, rotation, _) = positionRotationScale;
 
         // todo: don't require mass
         var (shape, _) = AddColliderAsShape(collider2D, transform.Scale, 10f);
@@ -322,10 +346,12 @@ public class MyPhysics : IResource
             SpringSettings = new SpringSettings(30f, 1f)
         };
 
-        narrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
+        NarrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
 
 
         _staticHandles[entityId] = (handle, shape);
+
+        return Result.Success<Unit, AddStaticBody2DError>(Unit.Value);
     }
 
     public void RemoveDynamicBody(EntityId entityId)
@@ -336,14 +362,19 @@ public class MyPhysics : IResource
         _simulation.Shapes.Remove(shape);
     }
 
-    public void AddDynamicBody(EntityId entityId, GlobalTransform transform, float bounciness)
+    public readonly record struct AddDynamicBodyError(GlobalTransform.GetPositionRotationScaleError Error);
+
+    public Result<Unit, AddDynamicBodyError> AddDynamicBody(EntityId entityId, GlobalTransform transform, float bounciness)
     {
-        if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
+        var positionRotationScaleResult = transform.GetPositionRotationScale()
+            .MapError(err => new AddDynamicBodyError(err));
+
+        if (!positionRotationScaleResult.TryGetValue(out var positionRotationScale))
         {
-            return;
+            return Result.Failure<Unit, AddDynamicBodyError>(positionRotationScaleResult.UnwrapError());
         }
 
-        var (position, rotation, _) = transform.GetPositionRotationScale();
+        var (position, rotation, _) = positionRotationScale;
 
         var shape = new Box(transform.Scale.X, transform.Scale.Y, transform.Scale.Z);
         var shapeIndex = _simulation.Shapes.Add(shape);
@@ -361,16 +392,28 @@ public class MyPhysics : IResource
             SpringSettings = new SpringSettings(5f + 25f * (1f - bounciness), 1f - bounciness)
         };
 
-        narrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
+        NarrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
 
         _dynamicHandles.Add(entityId, (handle, shapeIndex));
+
+        return Result.Success<Unit, AddDynamicBodyError>(Unit.Value);
     }
 
-    public void AddKinematicBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider)
+    public readonly record struct AddKinematicbody2DError(GlobalTransform.GetPositionRotationScaleError Error);
+
+    public Result<Unit, AddKinematicbody2DError> AddKinematicBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider)
     {
         var (shapeIndex, _) = AddColliderAsShape(collider, transform.Scale, 10f);
 
-        var (position, rotation, _) = transform.GetPositionRotationScale();
+        var positionRotationScaleResult = transform.GetPositionRotationScale()
+            .MapError(err => new AddKinematicbody2DError(err));
+
+        if (!positionRotationScaleResult.TryGetValue(out var positionRotationScale))
+        {
+            return Result.Failure<Unit, AddKinematicbody2DError>(positionRotationScaleResult.UnwrapError());
+        }
+
+        var (position, rotation, _) = positionRotationScale;
 
         var body = BodyDescription.CreateKinematic(
             new RigidPose(position, rotation),
@@ -381,15 +424,14 @@ public class MyPhysics : IResource
         var handle = _simulation.Bodies.Add(body);
 
         _dynamicHandles.Add(entityId, (handle, shapeIndex));
+
+        return Result.Success<Unit, AddKinematicbody2DError>(Unit.Value);
     }
 
-    public void AddDynamicBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider, float bounciness)
-    {
-        if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
-        {
-            return;
-        }
+    public readonly record struct AddDynamicBody2DError(GlobalTransform.GetPositionRotationScaleError Error);
 
+    public Result<Unit, AddDynamicBody2DError> AddDynamicBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider, float bounciness)
+    {
         var (shapeIndex, inertia) = AddColliderAsShape(collider, transform.Scale, 10f);
         var inverseInertiaTensor = inertia.InverseInertiaTensor;
 
@@ -399,7 +441,15 @@ public class MyPhysics : IResource
 
         inertia.InverseInertiaTensor = inverseInertiaTensor;
 
-        var (position, rotation, _) = transform.GetPositionRotationScale();
+        var positionRotationScaleResult = transform.GetPositionRotationScale()
+            .MapError(err => new AddDynamicBody2DError(err));
+
+        if (!positionRotationScaleResult.TryGetValue(out var positionRotationScale))
+        {
+            return Result.Failure<Unit, AddDynamicBody2DError>(positionRotationScaleResult.UnwrapError());
+        }
+
+        var (position, rotation, _) = positionRotationScale;
 
         var body = BodyDescription.CreateDynamic(
             new RigidPose(position, rotation),
@@ -420,10 +470,11 @@ public class MyPhysics : IResource
             SpringSettings = new SpringSettings(5f + 25f * (1f - bounciness), 1f - bounciness)
         };
 
-        narrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
-
+        NarrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
 
         _dynamicHandles.Add(entityId, (handle, shapeIndex));
+
+        return Result.Success<Unit, AddDynamicBody2DError>(Unit.Value);
     }
 
     public void ApplyImpulse(EntityId entityId, Vector3 impulse)
@@ -451,31 +502,56 @@ public class MyPhysics : IResource
         return (pose.Position, pose.Orientation);
     }
 
-    public void ApplyDynamicPhysicsTransform(EntityId entityId, GlobalTransform transform)
+    public readonly record struct ApplyDynamicPhysicsTransformError(GlobalTransform.GetPositionRotationScaleError Error);
+
+    public Result<Unit, ApplyDynamicPhysicsTransformError> ApplyDynamicPhysicsTransform(EntityId entityId, GlobalTransform transform)
     {
         var (handle, _) = _dynamicHandles[entityId];
         var body = _simulation.Bodies[handle];
 
         body.GetDescription(out var description);
 
-        var (position, rotation, _) = transform.GetPositionRotationScale();
+        var positionRotationScaleResult = transform.GetPositionRotationScale()
+            .MapError(err => new ApplyDynamicPhysicsTransformError(err));
+
+        if (!positionRotationScaleResult.TryGetValue(out var positionRotationScale))
+        {
+            return Result.Failure<Unit, ApplyDynamicPhysicsTransformError>(positionRotationScaleResult.UnwrapError());
+        }
+
+        var (position, rotation, _) = positionRotationScale;
+
 
         description.Pose.Position = position;
         description.Pose.Orientation = rotation;
         body.ApplyDescription(description);
+
+        return Result.Success<Unit, ApplyDynamicPhysicsTransformError>(Unit.Value);
     }
 
-    public void ApplyStaticPhysicsTransform(EntityId entityId, GlobalTransform transform)
+    public readonly record struct ApplyStaticPhysicsTransformError(GlobalTransform.GetPositionRotationScaleError Error);
+
+    public Result<Unit, ApplyStaticPhysicsTransformError> ApplyStaticPhysicsTransform(EntityId entityId, GlobalTransform transform)
     {
         var (handle, _) = _staticHandles[entityId];
         var body = _simulation.Statics[handle];
 
-        var (position, rotation, _) = transform.GetPositionRotationScale();
+        var positionRotationScaleResult = transform.GetPositionRotationScale()
+            .MapError(err => new ApplyStaticPhysicsTransformError(err));
+
+        if (!positionRotationScaleResult.TryGetValue(out var positionRotationScale))
+        {
+            return Result.Failure<Unit, ApplyStaticPhysicsTransformError>(positionRotationScaleResult.UnwrapError());
+        }
+
+        var (position, rotation, _) = positionRotationScale;
 
         body.GetDescription(out var description);
 
         description.Pose.Position = position;
         description.Pose.Orientation = rotation;
         body.ApplyDescription(description);
+
+        return Result.Success<Unit, ApplyStaticPhysicsTransformError>(Unit.Value);
     }
 }

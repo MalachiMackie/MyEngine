@@ -7,6 +7,12 @@ using Silk.NET.Windowing;
 using StbImageSharp;
 using System.Drawing;
 using System.Numerics;
+using System.Runtime.InteropServices;
+using RendererLoadError = MyEngine.Utils.OneOf<
+    MyEngine.Runtime.OpenGL.FragmentShaderCompilationFailed,
+    MyEngine.Runtime.OpenGL.VertexShaderCompilationFailed,
+    MyEngine.Runtime.OpenGL.ShaderProgramLinkFailed
+    >;
 
 namespace MyEngine.Runtime;
 
@@ -49,8 +55,9 @@ internal sealed class Renderer : IDisposable, IResource
         _height = height;
     }
 
-    public unsafe void Load(IWindow window)
+    public unsafe Result<Unit, RendererLoadError> Load(IWindow window)
     {
+        // todo: try catch around all opengl stuff
         _gl = window.CreateOpenGL();
 
         _gl.ClearColor(Color.CornflowerBlue);
@@ -63,7 +70,20 @@ internal sealed class Renderer : IDisposable, IResource
         _vertexArrayObject.VertexArrayAttribute(0, 3, VertexAttribPointerType.Float, false, 5, 0); // location
         _vertexArrayObject.VertexArrayAttribute(1, 2, VertexAttribPointerType.Float, false, 5, 3); // texture coordinate
 
-        _shader = new ShaderProgram(_gl, _vertexCode, _fragmentCode);
+        var shaderResult = ShaderProgram.Create(_gl, _vertexCode, _fragmentCode)
+            .MapError(err =>
+            {
+                return err.Match(
+                    vertexShaderCompilationError => new RendererLoadError(vertexShaderCompilationError),
+                    fragmentShaderCompilationError => new RendererLoadError(fragmentShaderCompilationError),
+                    shaderLinkError => new RendererLoadError(shaderLinkError));
+            });
+        if (!shaderResult.TryGetValue(out var shader))
+        {
+            return Result.Failure<Unit, RendererLoadError>(shaderResult.UnwrapError());
+        }
+
+        _shader = shader;
 
         // unbind everything
         _vertexArrayObject.Unbind();
@@ -82,6 +102,8 @@ internal sealed class Renderer : IDisposable, IResource
 
         _gl.Enable(EnableCap.Blend);
         _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+
+        return Result.Success<Unit, RendererLoadError>(Unit.Value);
     }
 
     public void Resize(Vector2 size)
@@ -118,7 +140,9 @@ internal sealed class Renderer : IDisposable, IResource
 
     } 
 
-    public unsafe void Render(GlobalTransform cameraTransform, IEnumerable<GlobalTransform> transforms)
+    public readonly record struct RenderError(GlobalTransform.GetPositionRotationScaleError Error);
+
+    public unsafe Result<Unit, RenderError> Render(GlobalTransform cameraTransform, IEnumerable<GlobalTransform> transforms)
     {
         _gl.Clear(ClearBufferMask.ColorBufferBit);
 
@@ -128,7 +152,15 @@ internal sealed class Renderer : IDisposable, IResource
 
         _texture.Bind(TextureUnit.Texture0);
 
-        var (cameraPosition, cameraRotation, _) = cameraTransform.GetPositionRotationScale();
+        var positionRotationScaleResult = cameraTransform.GetPositionRotationScale()
+            .MapError(err => new RenderError(err));
+
+        if (!positionRotationScaleResult.TryGetValue(out var positionRotationScale))
+        {
+            return Result.Failure<Unit, RenderError>(positionRotationScaleResult.UnwrapError());
+        }
+
+        var (cameraPosition, cameraRotation, _) = positionRotationScale;
 
         var cameraDirection = cameraRotation.ToEulerAngles();
 
@@ -149,6 +181,7 @@ internal sealed class Renderer : IDisposable, IResource
             _gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null);
         }
 
+        return Result.Success<Unit, RenderError>(Unit.Value);
     }
 
     public static async Task<Renderer> CreateAsync(int width, int height)

@@ -137,11 +137,23 @@ public class PhysicsSystem : ISystem
                     _myPhysics.ApplyAngularImpulse(applyAngularImpulse.entityId, applyAngularImpulse.impulse);
                     break;
                 case PhysicsResource.SetDynamicTransformCommand updateDynamicTransform:
-                    _myPhysics.ApplyDynamicPhysicsTransform(updateDynamicTransform.entityId, updateDynamicTransform.transform);
-                    break;
+                    {
+                        var result = _myPhysics.ApplyDynamicPhysicsTransform(updateDynamicTransform.entityId, updateDynamicTransform.transform);
+                        if (result.TryGetError(out var error))
+                        {
+                            Console.WriteLine("Failed to apply dynamic physics transform: {0}", error.Error.Error);
+                        }
+                        break;
+                    }
                 case PhysicsResource.SetStaticTransformCommand updateStaticTransform:
-                    _myPhysics.ApplyStaticPhysicsTransform(updateStaticTransform.entityId, updateStaticTransform.transform);
-                    break;
+                    {
+                        var result = _myPhysics.ApplyStaticPhysicsTransform(updateStaticTransform.entityId, updateStaticTransform.transform);
+                        if (result.TryGetError(out var error))
+                        {
+                            Console.WriteLine("Failed to set static transform: {0}", error.Error.Error);
+                        }
+                        break;
+                    }
                 case PhysicsResource.UpdateTransformFromPhysicsCommand updateTransformFromPhysics:
                     {
                         var entityTransform = updateTransformFromPhysics.transform;
@@ -151,19 +163,49 @@ public class PhysicsSystem : ISystem
                         break;
                     }
                 case PhysicsResource.AddStaticBodyCommand addStaticBody:
-                    _myPhysics.AddStaticBody(addStaticBody.entityId, addStaticBody.transform);
-                    break;
+                    {
+                        var result = _myPhysics.AddStaticBody(addStaticBody.entityId, addStaticBody.transform);
+                        if (result.TryGetError(out var error))
+                        {
+                            Console.WriteLine("Failed to add static body: {0}", error.Error.Error);
+                        }
+                        break;
+                    }
                 case PhysicsResource.AddStaticBody2DCommand addStaticBody2D:
-                    _myPhysics.AddStaticBody2D(addStaticBody2D.entityId, addStaticBody2D.transform, addStaticBody2D.collider);
-                    break;
+                    {
+                        var result = _myPhysics.AddStaticBody2D(addStaticBody2D.entityId, addStaticBody2D.transform, addStaticBody2D.collider);
+                        if (result.TryGetError(out var error))
+                        {
+                            Console.WriteLine("Failed to add static body 2D: {0}", error.Error.Error);
+                        }
+                        break;
+                    }
                 case PhysicsResource.AddDynamicBodyCommand addDynamicBody:
-                    _myPhysics.AddDynamicBody(addDynamicBody.entityId, addDynamicBody.transform, addDynamicBody.bounciness);
-                    break;
+                    {
+                        var result = _myPhysics.AddDynamicBody(addDynamicBody.entityId, addDynamicBody.transform, addDynamicBody.bounciness);
+                        if (result.TryGetError(out var error))
+                        {
+                            Console.WriteLine("Failed to add dynamic body: {0}", error.Error.Error);
+                        }
+                        break;
+                    }
                 case PhysicsResource.AddDynamicBody2DCommand addDynamicBody2D:
-                    _myPhysics.AddDynamicBody2D(addDynamicBody2D.entityId, addDynamicBody2D.transform, addDynamicBody2D.collider, addDynamicBody2D.bounciness);
-                    break;
+                    {
+                        var result = _myPhysics.AddDynamicBody2D(addDynamicBody2D.entityId, addDynamicBody2D.transform, addDynamicBody2D.collider, addDynamicBody2D.bounciness);
+                        if (result.TryGetError(out var error))
+                        {
+                            Console.WriteLine("Failed to add dynamic body 2D: {0}", error.Error.Error);
+                        }
+                        break;
+                    }
                 case PhysicsResource.AddKinematicBody2DCommand addKinematicBody2D:
-                    _myPhysics.AddKinematicBody2D(addKinematicBody2D.entityId, addKinematicBody2D.transform, addKinematicBody2D.collider);
+                    {
+                        var result = _myPhysics.AddKinematicBody2D(addKinematicBody2D.entityId, addKinematicBody2D.transform, addKinematicBody2D.collider);
+                        if (result.TryGetError(out var error))
+                        {
+                            Console.WriteLine("Failed to add kinematic body 2D: {0}", error.Error.Error);
+                        }
+                    }
                     break;
                 case PhysicsResource.RemoveStaticBodyCommand removeStaticBody:
                     _myPhysics.RemoveStaticBody(removeStaticBody.entityId);
