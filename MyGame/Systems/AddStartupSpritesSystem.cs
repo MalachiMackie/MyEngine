@@ -175,7 +175,6 @@ public class AddStartupSpritesSystem : IStartupSystem
             scale = paddleScale
         }).WithSprite()
         .WithKinematic2DPhysics()
-        .WithoutRebound()
         .WithBox2DCollider(Vector2.One)
         .WithComponent(new PaddleComponent()))
             .MapError(x => new AddPaddleError(x));
@@ -185,16 +184,22 @@ public class AddStartupSpritesSystem : IStartupSystem
             return Result.Failure<Unit, AddPaddleAndBallError>(new AddPaddleAndBallError(paddleIdResult.UnwrapError()));
         }
 
+        Console.WriteLine("PaddleId: {0}", paddleId);
+
+        var worldBallScale = new Vector3(0.25f, 0.25f, 1f);
+
+        var ballScale = new Vector3(worldBallScale.X / paddleScale.X, worldBallScale.Y / paddleScale.Y, worldBallScale.Z / paddleScale.Z);
+
         var ballIdResult = _entityCommands.CreateEntity(x => x.WithTransform(new Transform
         {
-            position = new Vector3(0f, 1f, 0f),
+            position = new Vector3(0f, 2f, 0f),
             rotation = Quaternion.Identity,
-            scale = new Vector3(0.25f / paddleScale.X, 0.25f / paddleScale.Y, 1f / paddleScale.Z)
+            scale = ballScale
         })
             .WithSprite()
             .WithKinematic2DPhysics()
-            .WithRebound()
-            .WithCircle2DCollider(1f)
+            .WithCircle2DCollider(worldBallScale.X * 0.5f)
+            // .WithoutPhysics()
             .WithComponent(new BallComponent())
             .WithComponent(new LogPositionComponent { Name = "Ball" }))
             .MapError(x => new AddBallError(x));
@@ -205,6 +210,8 @@ public class AddStartupSpritesSystem : IStartupSystem
             return Result.Failure<Unit, AddPaddleAndBallError>(new AddPaddleAndBallError(ballIdResult.UnwrapError()));
         }
 
+        Console.WriteLine("BallId: {0}", ballId);
+
         var addChildResult = _hierarchyCommands.AddChild(paddleId, ballId);
         if (addChildResult.TryGetError(out var error))
         {
@@ -212,6 +219,21 @@ public class AddStartupSpritesSystem : IStartupSystem
             _entityCommands.RemoveEntity(ballId).Expect("We checked the success of add ball");
 
             return Result.Failure<Unit, AddPaddleAndBallError>(new AddPaddleAndBallError(new AddBallAsPaddleChildError(error)));
+        }
+
+        if (_entityCommands.AddComponent(ballId, new KinematicBody2DComponent()).TryGetError(out var addKinematicBodyError))
+        {
+            Console.WriteLine(addKinematicBodyError);
+        }
+
+        if (_entityCommands.AddComponent(ballId, new Collider2DComponent(new CircleCollider2D(worldBallScale.X * 0.5f))).TryGetError(out var addColliderError))
+        {
+            Console.WriteLine(addColliderError);
+        }
+
+        if (_entityCommands.AddComponent(ballId, new KinematicReboundComponent()).TryGetError(out var addKinematicReboundError))
+        {
+            Console.WriteLine(addKinematicReboundError);
         }
 
         return Result.Success<Unit, AddPaddleAndBallError>(Unit.Value);

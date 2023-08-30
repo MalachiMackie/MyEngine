@@ -40,9 +40,9 @@ internal partial class EcsEngine
     private ApplyImpulseSystem? _applyImpulseSystem;
     private RotatePlayerSystem? _rotatePlayerSystem;
     private OnCollisionSystem? _onCollisionSystem;
-    private MoveBallSystem? _moveBallSystem;
+    private LaunchBallSystem? _moveBallSystem;
     private KinematicBounceSystem? _kinematicBounceSystem;
-    private BallOutOfBoundsSystem? _ballOutOfBoundsSystem;
+    private ResetBallSystem? _resetBallSystem;
     private LogBallPositionSystem? _logBallPositionSystem;
     private TransformSyncSystem? _transformSyncSystem;
     private MovePaddleSystem? _movePaddleSystem;
@@ -113,7 +113,7 @@ internal partial class EcsEngine
         _rotatePlayerSystem?.Run(dt);
         _onCollisionSystem?.Run(dt);
         _moveBallSystem?.Run(dt);
-        _ballOutOfBoundsSystem?.Run(dt);
+        _resetBallSystem?.Run(dt);
         _logBallPositionSystem?.Run(dt);
         _movePaddleSystem?.Run(dt);
         _colliderDebugDisplaySystem?.Run(dt);
@@ -319,12 +319,13 @@ internal partial class EcsEngine
             }
         });
 
-        _systemInstantiations.Add(typeof(MoveBallSystem), () =>
+        _systemInstantiations.Add(typeof(LaunchBallSystem), () =>
         {
-            if (_resourceContainer.TryGetResource<InputResource>(out var inputResource))
+            if (_resourceContainer.TryGetResource<InputResource>(out var inputResource)
+                && _resourceContainer.TryGetResource<IHierarchyCommands>(out var hierarchyCommands))
             {
-                _moveBallSystem = new MoveBallSystem(GetQuery<BallComponent, KinematicBody2DComponent>(), inputResource);
-                _uninstantiatedSystems.Remove(typeof(MoveBallSystem));
+                _moveBallSystem = new LaunchBallSystem(GetQuery<TransformComponent, BallComponent, KinematicBody2DComponent, ParentComponent>(), inputResource, hierarchyCommands);
+                _uninstantiatedSystems.Remove(typeof(LaunchBallSystem));
             }
         });
 
@@ -352,13 +353,16 @@ internal partial class EcsEngine
             }
         });
 
-        _systemInstantiations.Add(typeof(BallOutOfBoundsSystem), () =>
+        _systemInstantiations.Add(typeof(ResetBallSystem), () =>
         {
-            if (_resourceContainer.TryGetResource<WorldSizeResource>(out var worldSizeResource))
+            if (_resourceContainer.TryGetResource<WorldSizeResource>(out var worldSizeResource)
+                && _resourceContainer.TryGetResource<IHierarchyCommands>(out var hierarchyCommands))
             {
-                _ballOutOfBoundsSystem = new BallOutOfBoundsSystem(GetQuery<TransformComponent, BallComponent, KinematicBody2DComponent>(),
-                    worldSizeResource);
-                _uninstantiatedSystems.Remove(typeof(BallOutOfBoundsSystem));
+                _resetBallSystem = new ResetBallSystem(GetQuery<TransformComponent, BallComponent, KinematicBody2DComponent>(),
+                    worldSizeResource,
+                    GetQuery<PaddleComponent, TransformComponent>(),
+                    hierarchyCommands);
+                _uninstantiatedSystems.Remove(typeof(ResetBallSystem));
             }
         });
 
@@ -422,9 +426,9 @@ internal partial class EcsEngine
         { typeof(ApplyImpulseSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } },
         { typeof(RotatePlayerSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } },
         { typeof(OnCollisionSystem), new [] { typeof(CollisionsResource), typeof(ICommands) } },
-        { typeof(MoveBallSystem), new [] { typeof(InputResource) } },
+        { typeof(LaunchBallSystem), new [] { typeof(InputResource), typeof(IHierarchyCommands) } },
         { typeof(KinematicBounceSystem), new [] { typeof(CollisionsResource) } },
-        { typeof(BallOutOfBoundsSystem), new [] { typeof(WorldSizeResource) } },
+        { typeof(ResetBallSystem), new [] { typeof(WorldSizeResource) } },
         { typeof(LogBallPositionSystem), Array.Empty<Type>() },
         { typeof(TransformSyncSystem), Array.Empty<Type>() },
         { typeof(MovePaddleSystem), new [] { typeof(InputResource) } },

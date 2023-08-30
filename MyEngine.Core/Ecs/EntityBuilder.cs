@@ -54,8 +54,7 @@ public class EntityBuilder :
     IEntityBuilderTransformStep,
     IEntityBuilderDisplayStep,
     IEntityBuilderPhysicsCollider2DStep,
-    IEntityBuilderPhysicsStep,
-    IEntityBuilderKinematicReboundStep
+    IEntityBuilderPhysicsStep
 {
     private EntityBuilder()
     {
@@ -109,7 +108,7 @@ public class EntityBuilder :
         return this;
     }
 
-    public IEntityBuilderKinematicReboundStep WithKinematic2DPhysics()
+    public IEntityBuilderPhysicsCollider2DStep WithKinematic2DPhysics()
     {
         _components.Add(new KinematicBody2DComponent());
         return this;
@@ -136,17 +135,6 @@ public class EntityBuilder :
     public IEntityBuilder WithCircle2DCollider(float radius)
     {
         _components.Add(new Collider2DComponent(new CircleCollider2D(radius)));
-        return this;
-    }
-
-    public IEntityBuilderPhysicsCollider2DStep WithoutRebound()
-    {
-        return this;
-    }
-
-    public IEntityBuilderPhysicsCollider2DStep WithRebound()
-    {
-        _components.Add(new KinematicReboundComponent());
         return this;
     }
 }
