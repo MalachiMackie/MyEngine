@@ -14,5 +14,6 @@ public class CollisionsResource : IResource
 {
     internal List<Collision> _newCollisions = new();
 
+    // todo: components
     public IReadOnlyList<Collision> NewCollisions => _newCollisions;
 }

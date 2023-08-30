@@ -31,11 +31,11 @@ public class MovePaddleSystem : ISystem
         ref var position = ref transformComponent.LocalTransform.position; 
         if (_inputResource.Keyboard.IsKeyDown(MyEngine.Core.Input.MyKey.A))
         {
-            position.X -= 1f * (float)deltaTime;
+            position.X -= 1.5f * (float)deltaTime;
         }
         if (_inputResource.Keyboard.IsKeyDown(MyEngine.Core.Input.MyKey.D))
         {
-            position.X += 1f * (float)deltaTime;
+            position.X += 1.5f * (float)deltaTime;
         }
     }
 }

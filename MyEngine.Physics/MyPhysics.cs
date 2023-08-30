@@ -290,7 +290,6 @@ public class MyPhysics : IResource
         }
     }
 
-    // todo: add system to debug render these
     public IEnumerable<ColliderPosition> GetAllColliderPositions()
     {
         foreach (var (_, (staticHandle, shapeIndex, shapeType)) in _staticHandles)
@@ -536,7 +535,6 @@ public class MyPhysics : IResource
             MaximumRecoveryVelocity = float.MaxValue,
             // full bounce target: 5f, 1f
             // zero bounce target: 30f, 0f
-            // todo: full and zero bounce work well, half bounciness doesnt do half bounce
             SpringSettings = new SpringSettings(5f + 25f * (1f - bounciness), 1f - bounciness)
         };
 

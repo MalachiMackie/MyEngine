@@ -34,10 +34,10 @@ public class AddStartupSpritesSystem : IStartupSystem
     public void Run()
     {
         _resourceRegistrationResource.AddResource(new WorldSizeResource {
-            Bottom = -2.5f,
-            Top = 2.5f,
-            Left = -4.25f,
-            Right = 4.25f
+            Bottom = -3.5f,
+            Top = 3.5f,
+            Left = -4.5f,
+            Right = 4.5f
         });
         _resourceRegistrationResource.AddResource(_brickSizeResource);
 
@@ -97,7 +97,8 @@ public class AddStartupSpritesSystem : IStartupSystem
              var createEntityResult = _entityCommands.CreateEntity(x => x.WithTransform(Transform.Default(position: position.Extend(3.0f), scale: _brickSizeResource.Dimensions.Extend(1f)))
                  .WithSprite()
                  .WithStatic2DPhysics()
-                 .WithBox2DCollider(Vector2.One));
+                 .WithBox2DCollider(Vector2.One)
+                 .WithComponent(new BrickComponent()));
 
             if (createEntityResult.TryGetValue(out var brickId))
             {
@@ -119,23 +120,24 @@ public class AddStartupSpritesSystem : IStartupSystem
 
     private Result<Unit, AddEntityCommandError> AddWalls()
     {
+        // 8 x 6
         var walls = new[]
         {
             new Transform
             {
-                position = new Vector3(-4f, 0f, 0f),
+                position = new Vector3(-3.95f, 0f, 0f),
                 rotation = Quaternion.Identity,
-                scale = new Vector3(0.1f, 4.5f, 1f)
+                scale = new Vector3(0.1f, 6f, 1f)
             },
             new Transform
             {
-                position = new Vector3(4f, 0f, 0f),
+                position = new Vector3(3.95f, 0f, 0f),
                 rotation = Quaternion.Identity,
-                scale = new Vector3(0.1f, 4.5f, 1f)
+                scale = new Vector3(0.1f, 6f, 1f)
             },
             new Transform
             {
-                position = new Vector3(0f, 2.25f, 0f),
+                position = new Vector3(0f, 2.95f, 0f),
                 rotation = Quaternion.Identity,
                 scale = new Vector3(8f, 0.1f, 1f)
             },
