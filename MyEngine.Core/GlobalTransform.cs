@@ -18,6 +18,7 @@ public class GlobalTransform
     // keep scale separately because it doesn't get affected by physics, but we need it in order to make the ModelMatrix.
     // rather than trying to decompose it out of the existing matrix (which can fail), we just keep it around to use
     public Vector3 Scale { get; private set; }
+    public Vector3 Position => ModelMatrix.Translation;
 
     public Result<PositionRotationScale, GetPositionRotationScaleError> GetPositionRotationScale()
     {

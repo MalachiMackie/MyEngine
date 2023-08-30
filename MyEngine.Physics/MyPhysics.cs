@@ -149,8 +149,9 @@ public class MyPhysics : IResource
     private readonly Simulation _simulation;
     private readonly BufferPool _bufferPool;
 
-    private readonly Dictionary<EntityId, (StaticHandle Handle, TypedIndex ShapeIndex)> _staticHandles = new();
-    private readonly Dictionary<EntityId, (BodyHandle Handle, TypedIndex ShapeIndex)> _dynamicHandles = new();
+    // todo: record
+    private readonly Dictionary<EntityId, (StaticHandle Handle, TypedIndex ShapeIndex, ShapeType ShapeType)> _staticHandles = new();
+    private readonly Dictionary<EntityId, (BodyHandle Handle, TypedIndex ShapeIndex, ShapeType ShapeType)> _dynamicHandles = new();
 
     private NarrowPhase<MyNarrowPhaseCallback> NarrowPhase
     {
@@ -244,13 +245,80 @@ public class MyPhysics : IResource
         return _dynamicHandles.Keys;
     }
 
+    public enum RigidBodyType
+    {
+        Static,
+        Dynamic,
+        Kinematic
+    }
+
+    private enum ShapeType
+    {
+        Box2D,
+        Circle2D,
+        Box3D,
+        Sphere3D
+    }
+
+    public readonly record struct ColliderPosition(
+        Vector3 Position,
+        Quaternion Rotation,
+        OneOf<BoxCollider2D, CircleCollider2D> Collider,
+        RigidBodyType RigidBodyType
+        );
+
+    private OneOf<BoxCollider2D, CircleCollider2D> GetColliderShape(TypedIndex shapeIndex, ShapeType shapeType)
+    {
+        switch (shapeType)
+        {
+            case ShapeType.Box3D:
+            case ShapeType.Box2D:
+                {
+                    var shape = _simulation.Shapes.GetShape<Box>(shapeIndex.Index);
+                    return new OneOf<BoxCollider2D, CircleCollider2D>(new BoxCollider2D(new Vector2(shape.Width, shape.Height)));
+                }
+            case ShapeType.Circle2D:
+            case ShapeType.Sphere3D:
+                {
+                    var shape = _simulation.Shapes.GetShape<Sphere>(shapeIndex.Index);
+                    return new OneOf<BoxCollider2D, CircleCollider2D>(new CircleCollider2D(shape.Radius));
+                }
+            default:
+                {
+                    throw new UnreachableException();
+                }
+        }
+    }
+
+    // todo: add system to debug render these
+    public IEnumerable<ColliderPosition> GetAllColliderPositions()
+    {
+        foreach (var (_, (staticHandle, shapeIndex, shapeType)) in _staticHandles)
+        {
+            var staticBody = _simulation.Statics[staticHandle];
+            staticBody.GetDescription(out var description);
+
+            var collider = GetColliderShape(shapeIndex, shapeType);
+            yield return new ColliderPosition(description.Pose.Position, description.Pose.Orientation, collider, RigidBodyType.Static);
+        }
+
+        foreach (var (_, (dynamicHandle, shapeIndex, shapeType)) in _dynamicHandles)
+        {
+            var body = _simulation.Bodies[dynamicHandle];
+            body.GetDescription(out var description);
+
+            var collider = GetColliderShape(shapeIndex, shapeType);
+            yield return new ColliderPosition(description.Pose.Position, description.Pose.Orientation, collider, body.Kinematic ? RigidBodyType.Kinematic : RigidBodyType.Dynamic);
+        }
+    }
+
     public void RemoveStaticBody(EntityId entityId)
     {
         if (!_staticHandles.TryGetValue(entityId, out var handles))
         {
             return;
         }
-        var (handle, shape) = handles;
+        var (handle, shape, _) = handles;
         _staticHandles.Remove(entityId);
         _simulation.Statics.Remove(handle);
         _simulation.Shapes.Remove(shape);
@@ -269,7 +337,9 @@ public class MyPhysics : IResource
 
         var (position, rotation, _) = positionRotationScale;
 
+        // todo: Collider3D
         var shape = _simulation.Shapes.Add(new Box(transform.Scale.X, transform.Scale.Y, transform.Scale.Z));
+        var shapeType = ShapeType.Box3D;
         var handle = _simulation.Statics.Add(new StaticDescription(position, rotation, shape));
 
         var material = new SimpleMaterial
@@ -281,12 +351,12 @@ public class MyPhysics : IResource
 
         NarrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
 
-        _staticHandles[entityId] = (handle, shape);
+        _staticHandles[entityId] = (handle, shape, shapeType);
 
         return Result.Success<Unit, AddStaticBodyError>(Unit.Value);
     }
 
-    private (TypedIndex ShapeIndex, BodyInertia ShapeInertia) AddColliderAsShape(ICollider2D collider2D, Vector3 scale, float mass)
+    private (TypedIndex ShapeIndex, BodyInertia ShapeInertia, ShapeType ShapeType) AddColliderAsShape(ICollider2D collider2D, Vector3 scale, float mass)
     {
         switch (collider2D)
         {
@@ -297,17 +367,16 @@ public class MyPhysics : IResource
 
                     var shapeIndex = _simulation.Shapes.Add(shape);
 
-                    return (shapeIndex, inertia);
+                    return (shapeIndex, inertia, ShapeType.Box2D);
                 }
             case CircleCollider2D circleCollider:
                 {
-                    // todo: how to scale this?
-                    var shape = new Sphere(circleCollider.Radius * scale.X);
+                    var shape = new Sphere(circleCollider.Radius);
                     var inertia = shape.ComputeInertia(mass);
 
                     var shapeIndex = _simulation.Shapes.Add(shape);
 
-                    return (shapeIndex, inertia);
+                    return (shapeIndex, inertia, ShapeType.Circle2D);
                 }
             default:
                 throw new NotImplementedException();
@@ -316,7 +385,7 @@ public class MyPhysics : IResource
 
     public void SetDynamicBody2DVelocity(EntityId entityId, Vector2 velocity)
     {
-        var (bodyHandle, _) = _dynamicHandles[entityId];
+        var (bodyHandle, _, _) = _dynamicHandles[entityId];
         var bodyRef = _simulation.Bodies[bodyHandle];
         ref var currentVelocity = ref bodyRef.Velocity;
         currentVelocity.Linear = velocity.Extend(currentVelocity.Linear.Z);
@@ -336,7 +405,7 @@ public class MyPhysics : IResource
         var (position, rotation, _) = positionRotationScale;
 
         // todo: don't require mass
-        var (shape, _) = AddColliderAsShape(collider2D, transform.Scale, 10f);
+        var (shape, _, shapeType) = AddColliderAsShape(collider2D, transform.Scale, 10f);
         var handle = _simulation.Statics.Add(new StaticDescription(position, rotation, shape));
 
         var material = new SimpleMaterial
@@ -349,14 +418,14 @@ public class MyPhysics : IResource
         NarrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
 
 
-        _staticHandles[entityId] = (handle, shape);
+        _staticHandles[entityId] = (handle, shape, shapeType);
 
         return Result.Success<Unit, AddStaticBody2DError>(Unit.Value);
     }
 
     public void RemoveDynamicBody(EntityId entityId)
     {
-        var (handle, shape) = _dynamicHandles[entityId];
+        var (handle, shape, _) = _dynamicHandles[entityId];
         _dynamicHandles.Remove(entityId);
         _simulation.Bodies.Remove(handle);
         _simulation.Shapes.Remove(shape);
@@ -377,6 +446,7 @@ public class MyPhysics : IResource
         var (position, rotation, _) = positionRotationScale;
 
         var shape = new Box(transform.Scale.X, transform.Scale.Y, transform.Scale.Z);
+        var shapeType = ShapeType.Box3D;
         var shapeIndex = _simulation.Shapes.Add(shape);
         var handle = _simulation.Bodies.Add(BodyDescription.CreateDynamic(
             new RigidPose(position, rotation),
@@ -394,7 +464,7 @@ public class MyPhysics : IResource
 
         NarrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
 
-        _dynamicHandles.Add(entityId, (handle, shapeIndex));
+        _dynamicHandles.Add(entityId, (handle, shapeIndex, shapeType));
 
         return Result.Success<Unit, AddDynamicBodyError>(Unit.Value);
     }
@@ -403,7 +473,7 @@ public class MyPhysics : IResource
 
     public Result<Unit, AddKinematicbody2DError> AddKinematicBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider)
     {
-        var (shapeIndex, _) = AddColliderAsShape(collider, transform.Scale, 10f);
+        var (shapeIndex, _, shapeType) = AddColliderAsShape(collider, transform.Scale, 10f);
 
         var positionRotationScaleResult = transform.GetPositionRotationScale()
             .MapError(err => new AddKinematicbody2DError(err));
@@ -423,7 +493,7 @@ public class MyPhysics : IResource
 
         var handle = _simulation.Bodies.Add(body);
 
-        _dynamicHandles.Add(entityId, (handle, shapeIndex));
+        _dynamicHandles.Add(entityId, (handle, shapeIndex, shapeType));
 
         return Result.Success<Unit, AddKinematicbody2DError>(Unit.Value);
     }
@@ -432,7 +502,7 @@ public class MyPhysics : IResource
 
     public Result<Unit, AddDynamicBody2DError> AddDynamicBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider, float bounciness)
     {
-        var (shapeIndex, inertia) = AddColliderAsShape(collider, transform.Scale, 10f);
+        var (shapeIndex, inertia, shapeType) = AddColliderAsShape(collider, transform.Scale, 10f);
         var inverseInertiaTensor = inertia.InverseInertiaTensor;
 
         // dont allow rotation along X or Y Axis for 2D
@@ -472,14 +542,14 @@ public class MyPhysics : IResource
 
         NarrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
 
-        _dynamicHandles.Add(entityId, (handle, shapeIndex));
+        _dynamicHandles.Add(entityId, (handle, shapeIndex, shapeType));
 
         return Result.Success<Unit, AddDynamicBody2DError>(Unit.Value);
     }
 
     public void ApplyImpulse(EntityId entityId, Vector3 impulse)
     {
-        var (handle, _) = _dynamicHandles[entityId];
+        var (handle, _, _) = _dynamicHandles[entityId];
         var bodyReference = _simulation.Bodies[handle];
         bodyReference.Awake = true;
         bodyReference.ApplyLinearImpulse(impulse);
@@ -487,7 +557,7 @@ public class MyPhysics : IResource
 
     public void ApplyAngularImpulse(EntityId entityId, Vector3 impulse)
     {
-        var (handle, _) = _dynamicHandles[entityId];
+        var (handle, _, _) = _dynamicHandles[entityId];
         var bodyReference = _simulation.Bodies[handle];
         bodyReference.Awake = true;
         bodyReference.ApplyAngularImpulse(impulse);
@@ -495,7 +565,7 @@ public class MyPhysics : IResource
 
     public (Vector3 Position, Quaternion Rotation) GetDynamicPhysicsTransform(EntityId entityId)
     {
-        var (handle, _) = _dynamicHandles[entityId];
+        var (handle, _, _) = _dynamicHandles[entityId];
         var body = _simulation.Bodies[handle];
         var pose = body.Pose;
 
@@ -506,7 +576,7 @@ public class MyPhysics : IResource
 
     public Result<Unit, ApplyDynamicPhysicsTransformError> ApplyDynamicPhysicsTransform(EntityId entityId, GlobalTransform transform)
     {
-        var (handle, _) = _dynamicHandles[entityId];
+        var (handle, _, _) = _dynamicHandles[entityId];
         var body = _simulation.Bodies[handle];
 
         body.GetDescription(out var description);
@@ -533,7 +603,7 @@ public class MyPhysics : IResource
 
     public Result<Unit, ApplyStaticPhysicsTransformError> ApplyStaticPhysicsTransform(EntityId entityId, GlobalTransform transform)
     {
-        var (handle, _) = _staticHandles[entityId];
+        var (handle, _, _) = _staticHandles[entityId];
         var body = _simulation.Statics[handle];
 
         var positionRotationScaleResult = transform.GetPositionRotationScale()

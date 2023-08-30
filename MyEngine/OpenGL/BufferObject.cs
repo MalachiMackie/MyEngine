@@ -2,39 +2,59 @@
 
 namespace MyEngine.Runtime.OpenGL;
 
-internal class BufferObject<TData> : IDisposable
-    where TData : unmanaged
+internal class BufferObject : IDisposable
 {
-    private readonly GL _gl;
-    private readonly uint _handle;
-    private readonly BufferTargetARB _target;
+    protected readonly GL GL;
+    protected readonly uint Handle;
+    protected readonly BufferTargetARB Target;
+    protected readonly BufferUsageARB Usage;
 
-    public unsafe BufferObject(GL gl, TData[] data, BufferTargetARB target, BufferUsageARB usage)
+    protected BufferObject(GL gL, uint handle, BufferTargetARB target, BufferUsageARB usage)
     {
-        _gl = gl;
-        _handle = _gl.GenBuffer();
-        _target = target;
-
-        Bind();
-
-        fixed (TData* ptr = data)
-        {
-            _gl.BufferData(_target, (nuint)(data.Length * sizeof(TData)), ptr, usage);
-        }
+        GL = gL;
+        Handle = handle;
+        Target = target;
+        Usage = usage;
     }
 
     public void Bind()
     {
-        _gl.BindBuffer(_target, _handle);
+        GL.BindBuffer(Target, Handle);
     }
 
     public void Unbind()
     {
-        _gl.BindBuffer(_target, 0);
+        GL.BindBuffer(Target, 0);
     }
 
     public void Dispose()
     {
-        _gl.DeleteBuffer(_handle);
+        GL.DeleteBuffer(Handle);
+    }
+}
+
+internal class BufferObject<TData> : BufferObject
+    where TData : unmanaged
+{
+    private BufferObject(GL gl, uint handle, BufferTargetARB target, BufferUsageARB usage) : base(gl, handle, target, usage)
+    {
+    }
+
+    public unsafe void SetData(TData[] data)
+    {
+        fixed(TData* ptr = data)
+        {
+            GL.BufferData(Target, (nuint)(data.Length * sizeof(TData)), ptr, Usage);
+        }
+    }
+
+    public static BufferObject<TData> CreateAndBind(GL gl, BufferTargetARB target, BufferUsageARB usage)
+    {
+        var handle = gl.GenBuffer();
+        var bufferObject = new BufferObject<TData>(gl, handle, target, usage);
+
+        bufferObject.Bind();
+
+        return bufferObject;
     }
 }

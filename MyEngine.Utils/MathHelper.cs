@@ -72,6 +72,16 @@ public static class MathHelper
         return new Vector3(v, z);
     }
 
+    public static Vector4 Extend(this Vector2 v, float z, float w)
+    {
+        return new Vector4(v, z, w);
+    }
+
+    public static Vector4 Extend(this Vector3 v, float w)
+    {
+        return new Vector4(v, w);
+    }
+
     public static Vector2 Normalize(this Vector2 v)
     {
         return Vector2.Normalize(v);

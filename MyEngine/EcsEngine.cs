@@ -46,6 +46,7 @@ internal partial class EcsEngine
     private LogBallPositionSystem? _logBallPositionSystem;
     private TransformSyncSystem? _transformSyncSystem;
     private MovePaddleSystem? _movePaddleSystem;
+    private ColliderDebugDisplaySystem? _colliderDebugDisplaySystem;
 
     // render systems
     private RenderSystem? _renderSystem;
@@ -65,6 +66,7 @@ internal partial class EcsEngine
         RegisterResource(new PhysicsResource());
         RegisterResource(new MyPhysics());
         RegisterResource(new CollisionsResource());
+        RegisterResource<ILineRenderResource>(new LineRenderResource());
 
         {
             if (_resourceContainer.TryGetResource<ICommands>(out var entityContainer))
@@ -114,6 +116,7 @@ internal partial class EcsEngine
         _ballOutOfBoundsSystem?.Run(dt);
         _logBallPositionSystem?.Run(dt);
         _movePaddleSystem?.Run(dt);
+        _colliderDebugDisplaySystem?.Run(dt);
 
         _transformSyncSystem?.Run(dt);
 
@@ -169,7 +172,8 @@ internal partial class EcsEngine
 
         _systemInstantiations.Add(typeof(RenderSystem), () =>
         {
-            if (_resourceContainer.TryGetResource<Renderer>(out var renderer))
+            if (_resourceContainer.TryGetResource<Renderer>(out var renderer)
+                && _resourceContainer.TryGetResource<ILineRenderResource>(out var lineRenderResource))
             {
                 EntityComponents<SpriteComponent, TransformComponent, OptionalComponent<ParentComponent>>? GetQuery3Components(EntityId entityId)
                 {
@@ -191,7 +195,8 @@ internal partial class EcsEngine
                     renderer,
                     GetQuery<Camera3DComponent, TransformComponent>(),
                     GetQuery<Camera2DComponent, TransformComponent>(),
-                    GetQuery(GetQuery3Components));
+                    GetQuery(GetQuery3Components),
+                    lineRenderResource);
                 _uninstantiatedSystems.Remove(typeof(RenderSystem));
             }
         });
@@ -392,6 +397,16 @@ internal partial class EcsEngine
                 _uninstantiatedSystems.Remove(typeof(MovePaddleSystem));
             }
         });
+
+        _systemInstantiations.Add(typeof(ColliderDebugDisplaySystem), () =>
+        {
+            if (_resourceContainer.TryGetResource<MyPhysics>(out var myPhysics)
+                && _resourceContainer.TryGetResource<ILineRenderResource>(out var lineRenderResource))
+            {
+                _colliderDebugDisplaySystem = new ColliderDebugDisplaySystem(myPhysics, lineRenderResource);
+                _uninstantiatedSystems.Remove(typeof(ColliderDebugDisplaySystem));
+            }
+        });
     }
 
     /// <summary>
@@ -401,7 +416,7 @@ internal partial class EcsEngine
     {
         { typeof(CameraMovementSystem), new [] { typeof(InputResource) } },
         { typeof(InputSystem), new[] { typeof(InputResource), typeof(MyInput) } },
-        { typeof(RenderSystem), new[] { typeof(Renderer) } },
+        { typeof(RenderSystem), new[] { typeof(Renderer), typeof(ILineRenderResource) } },
         { typeof(QuitOnEscapeSystem), new[] { typeof(InputResource), typeof(MyWindow) } },
         { typeof(PhysicsSystem), new[] { typeof(PhysicsResource), typeof(CollisionsResource), typeof(MyPhysics) } },
         { typeof(ApplyImpulseSystem), new[] { typeof(InputResource), typeof(PhysicsResource) } },
@@ -413,6 +428,7 @@ internal partial class EcsEngine
         { typeof(LogBallPositionSystem), Array.Empty<Type>() },
         { typeof(TransformSyncSystem), Array.Empty<Type>() },
         { typeof(MovePaddleSystem), new [] { typeof(InputResource) } },
+        { typeof(ColliderDebugDisplaySystem), new [] { typeof(MyPhysics), typeof(ILineRenderResource) } },
     };
 
     public partial void RegisterResource<T>(T resource) where T : IResource

@@ -1,6 +1,7 @@
 ﻿using MyEngine.Core;
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
+using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 
 namespace MyEngine.Runtime;
@@ -8,6 +9,7 @@ namespace MyEngine.Runtime;
 internal class RenderSystem : IRenderSystem
 {
     private readonly Renderer _renderer;
+    private readonly ILineRenderResource _lineRenderResource;
     private readonly IQuery<Camera3DComponent, TransformComponent> _camera3DQuery;
     private readonly IQuery<Camera2DComponent, TransformComponent> _camera2DQuery;
     private readonly IQuery<SpriteComponent, TransformComponent, OptionalComponent<ParentComponent>> _spriteQuery;
@@ -16,12 +18,14 @@ internal class RenderSystem : IRenderSystem
         Renderer renderer,
         IQuery<Camera3DComponent, TransformComponent> camera3DQuery,
         IQuery<Camera2DComponent, TransformComponent> camera2DQuery,
-        IQuery<SpriteComponent, TransformComponent, OptionalComponent<ParentComponent>> spriteQuery)
+        IQuery<SpriteComponent, TransformComponent, OptionalComponent<ParentComponent>> spriteQuery,
+        ILineRenderResource lineRenderResource)
     {
         _renderer = renderer;
         _camera3DQuery = camera3DQuery;
         _camera2DQuery = camera2DQuery;
         _spriteQuery = spriteQuery;
+        _lineRenderResource = lineRenderResource;
     }
 
     public void Render(double deltaTime)
@@ -65,7 +69,13 @@ internal class RenderSystem : IRenderSystem
         // todo: this ignores any parent components
         var cameraPosition = transformComponent.LocalTransform.position;
 
-        _renderer.RenderOrthographic(cameraPosition, camera.Size, _spriteQuery.Select(x => x.Component2.GlobalTransform));
+        var lines = _lineRenderResource.FlushLines();
+        
+        _renderer.RenderOrthographic(
+            cameraPosition,
+            camera.Size,
+            _spriteQuery.Select(x => x.Component2.GlobalTransform),
+            lines.Select(x => new Renderer.Line(x.Start, x.End)).ToArray());
 
         return true;
     }

@@ -7,11 +7,11 @@ using Silk.NET.Windowing;
 using StbImageSharp;
 using System.Drawing;
 using System.Numerics;
-using System.Runtime.InteropServices;
 using RendererLoadError = MyEngine.Utils.OneOf<
     MyEngine.Runtime.OpenGL.FragmentShaderCompilationFailed,
     MyEngine.Runtime.OpenGL.VertexShaderCompilationFailed,
-    MyEngine.Runtime.OpenGL.ShaderProgramLinkFailed
+    MyEngine.Runtime.OpenGL.ShaderProgramLinkFailed,
+    MyEngine.Runtime.OpenGL.VertexArrayObject.AttachElementBufferError
     >;
 
 namespace MyEngine.Runtime;
@@ -21,9 +21,13 @@ internal sealed class Renderer : IDisposable, IResource
     private GL _gl = null!;
     private BufferObject<float> _vertexBuffer = null!;
     private BufferObject<uint> _elementBuffer = null!;
-    private VertexArrayObject<float, uint> _vertexArrayObject = null!;
+    private VertexArrayObject _vertexArrayObject = null!;
     private TextureObject _texture = null!;
     private ShaderProgram _shader = null!;
+    private ShaderProgram _lineShader = null!;
+
+    private BufferObject<float> _lineVertexBuffer = null!;
+    private VertexArrayObject _lineVertexArray = null!;
 
     private static readonly uint[] Indices =
     {
@@ -42,14 +46,24 @@ internal sealed class Renderer : IDisposable, IResource
 
     private readonly string _vertexCode;
     private readonly string _fragmentCode;
+    private readonly string _lineVertexCode;
+    private readonly string _lineFragmentCode;
 
     private uint _width;
     private uint _height;
 
-    private Renderer(string vertexCode, string fragmentCode, uint width, uint height)
+    private Renderer(
+        string vertexCode,
+        string fragmentCode,
+        string lineVertexCode,
+        string lineFragmentCode,
+        uint width,
+        uint height)
     {
         _vertexCode = vertexCode;
         _fragmentCode = fragmentCode;
+        _lineVertexCode = lineVertexCode;
+        _lineFragmentCode = lineFragmentCode;
 
         _width = width;
         _height = height;
@@ -62,10 +76,17 @@ internal sealed class Renderer : IDisposable, IResource
 
         _gl.ClearColor(Color.CornflowerBlue);
 
-        _vertexBuffer = new BufferObject<float>(_gl, Vertices, BufferTargetARB.ArrayBuffer, BufferUsageARB.StaticDraw);
-        _elementBuffer = new BufferObject<uint>(_gl, Indices, BufferTargetARB.ElementArrayBuffer, BufferUsageARB.StaticDraw);
+        _vertexBuffer = BufferObject<float>.CreateAndBind(_gl, BufferTargetARB.ArrayBuffer, BufferUsageARB.StaticDraw);
+        _vertexBuffer.SetData(Vertices);
 
-        _vertexArrayObject = new VertexArrayObject<float, uint>(_gl, _vertexBuffer, _elementBuffer);
+        _elementBuffer = BufferObject<uint>.CreateAndBind(_gl, BufferTargetARB.ElementArrayBuffer, BufferUsageARB.StaticDraw);
+        _elementBuffer.SetData(Indices);
+
+        _vertexArrayObject = VertexArrayObject.CreateAndBind(_gl, _vertexBuffer);
+        if (_vertexArrayObject.AttachElementBuffer(_elementBuffer).TryGetError(out var attachElementBufferError))
+        {
+            return Result.Failure<Unit, RendererLoadError>(new RendererLoadError(attachElementBufferError));
+        }
 
         _vertexArrayObject.VertexArrayAttribute(0, 3, VertexAttribPointerType.Float, false, 5, 0); // location
         _vertexArrayObject.VertexArrayAttribute(1, 2, VertexAttribPointerType.Float, false, 5, 3); // texture coordinate
@@ -103,6 +124,29 @@ internal sealed class Renderer : IDisposable, IResource
         _gl.Enable(EnableCap.Blend);
         _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
+        _lineVertexBuffer = BufferObject<float>.CreateAndBind(_gl, BufferTargetARB.ArrayBuffer, BufferUsageARB.StaticDraw);
+        
+        _lineVertexArray = VertexArrayObject.CreateAndBind(_gl, _lineVertexBuffer);
+        _lineVertexArray.VertexArrayAttribute(0, 3, VertexAttribPointerType.Float, false, 3, 0); // location
+
+        var lineShaderResult = ShaderProgram.Create(_gl, _lineVertexCode, _lineFragmentCode)
+            .MapError(err =>
+            {
+                return err.Match(
+                    vertexShaderCompilationError => new RendererLoadError(vertexShaderCompilationError),
+                    fragmentShaderCompilationError => new RendererLoadError(fragmentShaderCompilationError),
+                    shaderLinkError => new RendererLoadError(shaderLinkError));
+            });
+        if (!lineShaderResult.TryGetValue(out var lineShader))
+        {
+            return Result.Failure<Unit, RendererLoadError>(lineShaderResult.UnwrapError());
+        }
+
+        _lineShader = lineShader;
+
+        _lineVertexArray.Unbind();
+        _lineVertexBuffer.Unbind();
+
         return Result.Success<Unit, RendererLoadError>(Unit.Value);
     }
 
@@ -113,7 +157,9 @@ internal sealed class Renderer : IDisposable, IResource
         _height = (uint)size.Y;
     }
 
-    public unsafe void RenderOrthographic(Vector3 cameraPosition, Vector2 viewSize, IEnumerable<GlobalTransform> transforms)
+    public readonly record struct Line(Vector3 Start, Vector3 End);
+
+    public unsafe void RenderOrthographic(Vector3 cameraPosition, Vector2 viewSize, IEnumerable<GlobalTransform> transforms, IReadOnlyCollection<Line> lines)
     {
         _gl.Clear(ClearBufferMask.ColorBufferBit);
 
@@ -138,6 +184,19 @@ internal sealed class Renderer : IDisposable, IResource
             _gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null);
         }
 
+        if (lines.Any())
+        {
+            _lineVertexBuffer.Bind();
+            _lineVertexBuffer.SetData(lines.SelectMany(x => new[] { x.Start.X, x.Start.Y, x.Start.Z, x.End.X, x.End.Y, x.End.Z }).ToArray());
+
+            _lineVertexArray.Bind();
+
+            _lineShader.UseProgram();
+            _lineShader.SetUniform1("uView", view);
+            _lineShader.SetUniform1("uProjection", projection);
+
+            _gl.DrawArrays(GLEnum.Lines, 0, (uint)(lines.Count * 2));
+        }
     } 
 
     public readonly record struct RenderError(GlobalTransform.GetPositionRotationScaleError Error);
@@ -187,11 +246,13 @@ internal sealed class Renderer : IDisposable, IResource
     public static async Task<Renderer> CreateAsync(int width, int height)
     {
         var vertexTask = File.ReadAllTextAsync(Path.Join("Shaders", "shader.vert"));
+        var lineVertexTask = File.ReadAllTextAsync(Path.Join("Shaders", "lineShader.vert"));
         var fragmentTask = File.ReadAllTextAsync(Path.Join("Shaders", "shader.frag"));
+        var lineFragmentTask = File.ReadAllTextAsync(Path.Join("Shaders", "lineShader.frag"));
 
-        await Task.WhenAll(vertexTask, fragmentTask);
+        await Task.WhenAll(vertexTask, fragmentTask, lineVertexTask, lineFragmentTask);
 
-        return new Renderer(vertexTask.Result, fragmentTask.Result, (uint)width, (uint)height);
+        return new Renderer(vertexTask.Result, fragmentTask.Result, lineVertexTask.Result, lineFragmentTask.Result, (uint)width, (uint)height);
     }
 
     public void Dispose()
