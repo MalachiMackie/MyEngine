@@ -48,6 +48,7 @@ internal partial class EcsEngine
     private MovePaddleSystem? _movePaddleSystem;
     private ColliderDebugDisplaySystem? _colliderDebugDisplaySystem;
     private BrickCollisionSystem? _brickCollisionSystem;
+    private ToggleColliderDebugDisplaySystem? _toggleColliderDebugDisplaySystem;
 
     // render systems
     private RenderSystem? _renderSystem;
@@ -68,6 +69,7 @@ internal partial class EcsEngine
         RegisterResource(new MyPhysics());
         RegisterResource(new CollisionsResource());
         RegisterResource<ILineRenderResource>(new LineRenderResource());
+        RegisterResource(new DebugColliderDisplayResource());
 
         {
             if (_resourceContainer.TryGetResource<ICommands>(out var entityContainer))
@@ -119,6 +121,7 @@ internal partial class EcsEngine
         _movePaddleSystem?.Run(dt);
         _colliderDebugDisplaySystem?.Run(dt);
         _brickCollisionSystem?.Run(dt);
+        _toggleColliderDebugDisplaySystem?.Run(dt);
 
         _transformSyncSystem?.Run(dt);
 
@@ -391,9 +394,10 @@ internal partial class EcsEngine
         _systemInstantiations.Add(typeof(ColliderDebugDisplaySystem), () =>
         {
             if (_resourceContainer.TryGetResource<MyPhysics>(out var myPhysics)
-                && _resourceContainer.TryGetResource<ILineRenderResource>(out var lineRenderResource))
+                && _resourceContainer.TryGetResource<ILineRenderResource>(out var lineRenderResource)
+                && _resourceContainer.TryGetResource<DebugColliderDisplayResource>(out var debugColliderDisplayResource))
             {
-                _colliderDebugDisplaySystem = new ColliderDebugDisplaySystem(myPhysics, lineRenderResource);
+                _colliderDebugDisplaySystem = new ColliderDebugDisplaySystem(myPhysics, lineRenderResource, debugColliderDisplayResource);
                 _uninstantiatedSystems.Remove(typeof(ColliderDebugDisplaySystem));
             }
         });
@@ -409,6 +413,16 @@ internal partial class EcsEngine
                     GetQuery<BrickComponent>(),
                     commands);
                 _uninstantiatedSystems.Remove(typeof(BrickCollisionSystem));
+            }
+        });
+
+        _systemInstantiations.Add(typeof(ToggleColliderDebugDisplaySystem), () =>
+        {
+            if (_resourceContainer.TryGetResource<InputResource>(out var inputResource)
+                && _resourceContainer.TryGetResource<DebugColliderDisplayResource>(out var debugColliderDisplayResource))
+            {
+                _toggleColliderDebugDisplaySystem = new ToggleColliderDebugDisplaySystem(debugColliderDisplayResource, inputResource);
+                _uninstantiatedSystems.Remove(typeof(ToggleColliderDebugDisplaySystem));
             }
         });
     }
@@ -432,8 +446,9 @@ internal partial class EcsEngine
         { typeof(LogBallPositionSystem), Array.Empty<Type>() },
         { typeof(TransformSyncSystem), Array.Empty<Type>() },
         { typeof(MovePaddleSystem), new [] { typeof(InputResource) } },
-        { typeof(ColliderDebugDisplaySystem), new [] { typeof(MyPhysics), typeof(ILineRenderResource) } },
-        { typeof(BrickCollisionSystem), new [] { typeof(ICommands), typeof(CollisionsResource) } }
+        { typeof(ColliderDebugDisplaySystem), new [] { typeof(MyPhysics), typeof(ILineRenderResource), typeof(DebugColliderDisplayResource) } },
+        { typeof(BrickCollisionSystem), new [] { typeof(ICommands), typeof(CollisionsResource) } },
+        { typeof(ToggleColliderDebugDisplaySystem), new [] { typeof(InputResource), typeof(DebugColliderDisplayResource) } },
     };
 
     public partial void RegisterResource<T>(T resource) where T : IResource

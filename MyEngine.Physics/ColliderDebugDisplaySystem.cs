@@ -10,16 +10,23 @@ namespace MyEngine.Physics;
 public class ColliderDebugDisplaySystem : ISystem
 {
     private readonly MyPhysics _myPhysics;
+    private readonly DebugColliderDisplayResource _debugColliderDisplayResource;
     private readonly ILineRenderResource _lineRenderResource;
 
-    public ColliderDebugDisplaySystem(MyPhysics myPhysics, ILineRenderResource lineRenderResource)
+    public ColliderDebugDisplaySystem(MyPhysics myPhysics, ILineRenderResource lineRenderResource, DebugColliderDisplayResource debugColliderDisplayResource)
     {
         _myPhysics = myPhysics;
         _lineRenderResource = lineRenderResource;
+        _debugColliderDisplayResource = debugColliderDisplayResource;
     }
 
     public void Run(double deltaTime)
     {
+        if (!_debugColliderDisplayResource.DisplayColliders)
+        {
+            return;
+        }
+
         var colliderPositions = _myPhysics.GetAllColliderPositions();
         foreach (var collider in colliderPositions)
         {
