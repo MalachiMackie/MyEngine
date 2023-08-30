@@ -177,27 +177,11 @@ internal partial class EcsEngine
             if (_resourceContainer.TryGetResource<Renderer>(out var renderer)
                 && _resourceContainer.TryGetResource<ILineRenderResource>(out var lineRenderResource))
             {
-                EntityComponents<SpriteComponent, TransformComponent, OptionalComponent<ParentComponent>>? GetQuery3Components(EntityId entityId)
-                {
-                    if (_components.TryGetComponent<SpriteComponent>(entityId, out var component1)
-                        && _components.TryGetComponent<TransformComponent>(entityId, out var component2))
-                    {
-                        return new EntityComponents<SpriteComponent, TransformComponent, OptionalComponent<ParentComponent>>(entityId)
-                        {
-                            Component1 = component1,
-                            Component2 = component2,
-                            Component3 = _components.GetOptionalComponent<ParentComponent>(entityId),
-                        };
-                    }
-
-                    return null;
-                }
-
                 _renderSystem = new RenderSystem(
                     renderer,
                     GetQuery<Camera3DComponent, TransformComponent>(),
                     GetQuery<Camera2DComponent, TransformComponent>(),
-                    GetQuery(GetQuery3Components),
+                    GetQuery<SpriteComponent, TransformComponent>(),
                     lineRenderResource);
                 _uninstantiatedSystems.Remove(typeof(RenderSystem));
             }

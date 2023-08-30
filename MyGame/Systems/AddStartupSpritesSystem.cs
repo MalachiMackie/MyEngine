@@ -6,6 +6,7 @@ using MyEngine.Core.Ecs.Systems;
 using MyEngine.Utils;
 using MyGame.Components;
 using MyGame.Resources;
+using StbImageSharp;
 using System.Numerics;
 
 using AddPaddleAndBallError = MyEngine.Utils.OneOf<
@@ -21,6 +22,7 @@ public class AddStartupSpritesSystem : IStartupSystem
     private readonly ResourceRegistrationResource _resourceRegistrationResource;
     private readonly IHierarchyCommands _hierarchyCommands; 
     private readonly BrickSizeResource _brickSizeResource = new() { Dimensions = new Vector2(0.5f, 0.2f) };
+    private readonly Sprite _sprite;
 
     public AddStartupSpritesSystem(ICommands entityContainerResource,
         ResourceRegistrationResource resourceRegistrationResource,
@@ -29,6 +31,10 @@ public class AddStartupSpritesSystem : IStartupSystem
         _entityCommands = entityContainerResource;
         _resourceRegistrationResource = resourceRegistrationResource;
         _hierarchyCommands = hierarchyCommands;
+
+        var image = File.OpenRead("silk.png");
+        var imageResult = ImageResult.FromStream(image, ColorComponents.RedGreenBlueAlpha);
+        _sprite = new Sprite(new SpriteId(Guid.NewGuid()), new Vector2(imageResult.Width, imageResult.Height), 100, imageResult.Data);
     }
 
     public void Run()
@@ -95,7 +101,7 @@ public class AddStartupSpritesSystem : IStartupSystem
         foreach (var position in brickPositions)
         {
              var createEntityResult = _entityCommands.CreateEntity(x => x.WithTransform(Transform.Default(position: position.Extend(3.0f), scale: _brickSizeResource.Dimensions.Extend(1f)))
-                 .WithSprite()
+                 .WithSprite(_sprite)
                  .WithStatic2DPhysics()
                  .WithBox2DCollider(Vector2.One)
                  .WithComponent(new BrickComponent()));
@@ -148,7 +154,7 @@ public class AddStartupSpritesSystem : IStartupSystem
         foreach (var transform in walls)
         {
             var addWallResult = _entityCommands.CreateEntity(x => x.WithTransform(transform)
-                .WithSprite()
+                .WithSprite(_sprite)
                 .WithStatic2DPhysics()
                 .WithBox2DCollider(Vector2.One));
 
@@ -175,7 +181,7 @@ public class AddStartupSpritesSystem : IStartupSystem
             position = new Vector3(0f, -1.25f, 0f),
             rotation = Quaternion.Identity,
             scale = paddleScale
-        }).WithSprite()
+        }).WithSprite(_sprite)
         .WithKinematic2DPhysics()
         .WithBox2DCollider(Vector2.One)
         .WithComponent(new PaddleComponent()))
@@ -198,7 +204,7 @@ public class AddStartupSpritesSystem : IStartupSystem
             rotation = Quaternion.Identity,
             scale = ballScale
         })
-            .WithSprite()
+            .WithSprite(_sprite)
             .WithKinematic2DPhysics()
             .WithCircle2DCollider(worldBallScale.X * 0.5f)
             // .WithoutPhysics()

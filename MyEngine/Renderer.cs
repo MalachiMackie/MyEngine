@@ -4,14 +4,12 @@ using MyEngine.Runtime.OpenGL;
 using MyEngine.Utils;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
-using StbImageSharp;
 using System.Drawing;
 using System.Numerics;
 using RendererLoadError = MyEngine.Utils.OneOf<
     MyEngine.Runtime.OpenGL.FragmentShaderCompilationFailed,
     MyEngine.Runtime.OpenGL.VertexShaderCompilationFailed,
-    MyEngine.Runtime.OpenGL.ShaderProgramLinkFailed,
-    MyEngine.Runtime.OpenGL.VertexArrayObject.AttachElementBufferError
+    MyEngine.Runtime.OpenGL.ShaderProgramLinkFailed
     >;
 
 namespace MyEngine.Runtime;
@@ -21,13 +19,14 @@ internal sealed class Renderer : IDisposable, IResource
     private GL _gl = null!;
     private BufferObject<float> _vertexBuffer = null!;
     private BufferObject<uint> _elementBuffer = null!;
+    private BufferObject<Matrix4x4> _matrixModelBuffer = null!;
     private VertexArrayObject _vertexArrayObject = null!;
-    private TextureObject _texture = null!;
     private ShaderProgram _shader = null!;
     private ShaderProgram _lineShader = null!;
 
     private BufferObject<float> _lineVertexBuffer = null!;
     private VertexArrayObject _lineVertexArray = null!;
+    private readonly Dictionary<SpriteId, TextureObject> _textures = new();
 
     private static readonly uint[] Indices =
     {
@@ -41,7 +40,7 @@ internal sealed class Renderer : IDisposable, IResource
         0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
         0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
-       -0.5f,  0.5f, 0.0f, 0.0f, 1.0f
+       -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
     };
 
     private readonly string _vertexCode;
@@ -82,14 +81,25 @@ internal sealed class Renderer : IDisposable, IResource
         _elementBuffer = BufferObject<uint>.CreateAndBind(_gl, BufferTargetARB.ElementArrayBuffer, BufferUsageARB.StaticDraw);
         _elementBuffer.SetData(Indices);
 
+        _matrixModelBuffer = BufferObject<Matrix4x4>.CreateAndBind(_gl, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw);
+
         _vertexArrayObject = VertexArrayObject.CreateAndBind(_gl, _vertexBuffer);
-        if (_vertexArrayObject.AttachElementBuffer(_elementBuffer).TryGetError(out var attachElementBufferError))
-        {
-            return Result.Failure<Unit, RendererLoadError>(new RendererLoadError(attachElementBufferError));
-        }
+        _vertexArrayObject.AttachBuffer(_elementBuffer);
 
         _vertexArrayObject.VertexArrayAttribute(0, 3, VertexAttribPointerType.Float, false, 5, 0); // location
         _vertexArrayObject.VertexArrayAttribute(1, 2, VertexAttribPointerType.Float, false, 5, 3); // texture coordinate
+
+        _vertexArrayObject.AttachBuffer(_matrixModelBuffer);
+
+        // model matrix needs 4 attributes, because attributes can only hold 4 values each
+        _vertexArrayObject.VertexArrayAttribute(2, 4, VertexAttribPointerType.Float, false, 16, 0); // model matrix
+        _vertexArrayObject.VertexArrayAttribute(3, 4, VertexAttribPointerType.Float, false, 16, 4); // model matrix
+        _vertexArrayObject.VertexArrayAttribute(4, 4, VertexAttribPointerType.Float, false, 16, 8); // model matrix
+        _vertexArrayObject.VertexArrayAttribute(5, 4, VertexAttribPointerType.Float, false, 16, 12); // model matrix
+        _gl.VertexAttribDivisor(2, 1);
+        _gl.VertexAttribDivisor(3, 1);
+        _gl.VertexAttribDivisor(4, 1);
+        _gl.VertexAttribDivisor(5, 1);
 
         var shaderResult = ShaderProgram.Create(_gl, _vertexCode, _fragmentCode)
             .MapError(err =>
@@ -110,16 +120,6 @@ internal sealed class Renderer : IDisposable, IResource
         _vertexArrayObject.Unbind();
         _vertexBuffer.Unbind();
         _elementBuffer.Unbind();
-
-        var textureBytes = File.ReadAllBytes("silk.png");
-        var imageResult = ImageResult.FromMemory(textureBytes, ColorComponents.RedGreenBlueAlpha);
-
-        _texture = new TextureObject(_gl, imageResult.Data, (uint)imageResult.Width, (uint)imageResult.Height, TextureTarget.Texture2D, TextureUnit.Texture0);
-
-        // unbind texture
-        _texture.Unbind();
-
-        _shader.SetUniform1("uTexture", 0);
 
         _gl.Enable(EnableCap.Blend);
         _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
@@ -158,8 +158,9 @@ internal sealed class Renderer : IDisposable, IResource
     }
 
     public readonly record struct Line(Vector3 Start, Vector3 End);
+    public readonly record struct SpriteRender(Sprite Sprite, GlobalTransform Transform);
 
-    public unsafe void RenderOrthographic(Vector3 cameraPosition, Vector2 viewSize, IEnumerable<GlobalTransform> transforms, IReadOnlyCollection<Line> lines)
+    public unsafe void RenderOrthographic(Vector3 cameraPosition, Vector2 viewSize, IEnumerable<SpriteRender> sprites, IReadOnlyCollection<Line> lines)
     {
         _gl.Clear(ClearBufferMask.ColorBufferBit);
 
@@ -167,21 +168,34 @@ internal sealed class Renderer : IDisposable, IResource
 
         _shader.UseProgram();
 
-        _texture.Bind(TextureUnit.Texture0);
-
         var view = Matrix4x4.CreateLookAt(cameraPosition, cameraPosition - Vector3.UnitZ, Vector3.UnitY);
         var projection = Matrix4x4.CreateOrthographic(viewSize.X, viewSize.Y, 0.1f, 100f);
 
+        // todo: better sprite management. Handle sprites from within the engine, rather than from user code
+        void BindOrAddAndBind(Sprite sprite)
+        {
+            if (!_textures.TryGetValue(sprite.Id, out var textureObject))
+            {
+                textureObject = new TextureObject(_gl, sprite.Data, (uint)sprite.Dimensions.X, (uint)sprite.Dimensions.Y, TextureTarget.Texture2D, TextureUnit.Texture0);
+                _textures[sprite.Id] = textureObject;
+            }
+
+            textureObject.Bind(TextureUnit.Texture0);
+        }
+        
         _shader.SetUniform1("uView", view);
         _shader.SetUniform1("uProjection", projection);
-
-        foreach (var transform in transforms)
+        foreach (var spriteGrouping in sprites.GroupBy(x => x.Sprite))
         {
-            var model = transform.ModelMatrix;
+            BindOrAddAndBind(spriteGrouping.Key);
 
-            _shader.SetUniform1("uModel", model);
+            _matrixModelBuffer.Bind();
+            var transforms = spriteGrouping.Select(x => x.Transform.ModelMatrix).ToArray();
+            _matrixModelBuffer.SetData(transforms);
 
-            _gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null);
+            _vertexArrayObject.Bind();
+
+            _gl.DrawElementsInstanced(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null, (uint)(transforms.Length));
         }
 
         if (lines.Any())
@@ -208,8 +222,6 @@ internal sealed class Renderer : IDisposable, IResource
         _vertexArrayObject.Bind();
 
         _shader.UseProgram();
-
-        _texture.Bind(TextureUnit.Texture0);
 
         var positionRotationScaleResult = cameraTransform.GetPositionRotationScale()
             .MapError(err => new RenderError(err));
@@ -260,6 +272,9 @@ internal sealed class Renderer : IDisposable, IResource
         _vertexBuffer?.Dispose();
         _elementBuffer?.Dispose();
         _vertexArrayObject?.Dispose();
-        _texture?.Dispose();
+        foreach (var texture in _textures.Values)
+        {
+            texture.Dispose();
+        }
     }
 }

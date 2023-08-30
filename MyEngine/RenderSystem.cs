@@ -12,13 +12,13 @@ internal class RenderSystem : IRenderSystem
     private readonly ILineRenderResource _lineRenderResource;
     private readonly IQuery<Camera3DComponent, TransformComponent> _camera3DQuery;
     private readonly IQuery<Camera2DComponent, TransformComponent> _camera2DQuery;
-    private readonly IQuery<SpriteComponent, TransformComponent, OptionalComponent<ParentComponent>> _spriteQuery;
+    private readonly IQuery<SpriteComponent, TransformComponent> _spriteQuery;
 
     public RenderSystem(
         Renderer renderer,
         IQuery<Camera3DComponent, TransformComponent> camera3DQuery,
         IQuery<Camera2DComponent, TransformComponent> camera2DQuery,
-        IQuery<SpriteComponent, TransformComponent, OptionalComponent<ParentComponent>> spriteQuery,
+        IQuery<SpriteComponent, TransformComponent> spriteQuery,
         ILineRenderResource lineRenderResource)
     {
         _renderer = renderer;
@@ -74,7 +74,7 @@ internal class RenderSystem : IRenderSystem
         _renderer.RenderOrthographic(
             cameraPosition,
             camera.Size,
-            _spriteQuery.Select(x => x.Component2.GlobalTransform),
+            _spriteQuery.Select(x => new Renderer.SpriteRender(x.Component1.Sprite, x.Component2.GlobalTransform)),
             lines.Select(x => new Renderer.Line(x.Start, x.End)).ToArray());
 
         return true;

@@ -8,7 +8,6 @@ internal class VertexArrayObject : IDisposable
     private readonly uint _handle;
     private readonly uint _vertexDataTypeSize;
     private readonly GL _gl;
-    private bool _elementBufferAttached;
 
     private VertexArrayObject(GL gl, uint handle, uint vertexDataTypeSize)
     {
@@ -23,22 +22,10 @@ internal class VertexArrayObject : IDisposable
         _gl.VertexAttribPointer(location, count, type, normalized, vertexSize * _vertexDataTypeSize, (void*)(offsetSize * _vertexDataTypeSize));
     }
 
-    public enum AttachElementBufferError {
-        ElementBufferAlreadyAttached
-    }
-
-    public Result<Unit, AttachElementBufferError> AttachElementBuffer<TElementType>(BufferObject<TElementType> elementBuffer)
+    public void AttachBuffer<TElementType>(BufferObject<TElementType> elementBuffer)
         where TElementType : unmanaged
     {
-        if (_elementBufferAttached)
-        {
-            return Result.Failure<Unit, AttachElementBufferError>(AttachElementBufferError.ElementBufferAlreadyAttached);
-        }
-
         elementBuffer.Bind();
-        _elementBufferAttached = true;
-
-        return Result.Success<Unit, AttachElementBufferError>(Unit.Value);
     }
 
     public void Bind()

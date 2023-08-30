@@ -29,7 +29,14 @@ internal class Application : IDisposable
 
     private void OnLoad()
     {
-        _renderer.Load(_window.InnerWindow);
+        var loadResult = _renderer.Load(_window.InnerWindow);
+        if (loadResult.TryGetError(out var error))
+        {
+            error.Match(
+                x => Console.WriteLine("Fragment shader failed to compile: {0}", x.CompilationError),
+                x => Console.WriteLine("Vertex shader failed to compile: {0}", x.CompilationError),
+                x => Console.WriteLine("Shader linking failed: {0}", x.LinkError));
+        }
         var input = new MyInput(_window);
         input.KeyDown += OnKeyDown;
 

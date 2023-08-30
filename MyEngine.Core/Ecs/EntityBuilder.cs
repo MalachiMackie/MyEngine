@@ -13,7 +13,7 @@ public interface IEntityBuilderDisplayStep
 {
     public IEntityBuilderPhysicsStep WithNoDisplay();
 
-    public IEntityBuilderPhysicsStep WithSprite();
+    public IEntityBuilderPhysicsStep WithSprite(Sprite sprite);
 }
 
 public interface IEntityBuilderPhysicsStep
@@ -97,9 +97,9 @@ public class EntityBuilder :
         return this;
     }
 
-    public IEntityBuilderPhysicsStep WithSprite()
+    public IEntityBuilderPhysicsStep WithSprite(Sprite sprite)
     {
-        _components.Add(new SpriteComponent());
+        _components.Add(new SpriteComponent(sprite));
         return this;
     }
 
