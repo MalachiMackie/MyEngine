@@ -1,4 +1,6 @@
-﻿namespace MyEngine.Core.Ecs.Resources;
+﻿using MyEngine.Core.Ecs.Components;
+
+namespace MyEngine.Core.Ecs.Resources;
 
 public class PhysicsResource : IResource
 {
@@ -58,9 +60,9 @@ public class PhysicsResource : IResource
         PhysicsCommands.Enqueue(new SetStaticTransformCommand(entityId, transform));
     }
 
-    internal void UpdateTransformFromPhysics(EntityId entityId, GlobalTransform transform)
+    internal void UpdateTransformFromPhysics(EntityId entityId, TransformComponent transform, GlobalTransform? parentTransform)
     {
-        PhysicsCommands.Enqueue(new UpdateTransformFromPhysicsCommand(entityId, transform));
+        PhysicsCommands.Enqueue(new UpdateTransformFromPhysicsCommand(entityId, transform, parentTransform));
     }
 
     public void ApplyImpulse(EntityId entityId, Vector3 impulse)
@@ -93,7 +95,7 @@ public class PhysicsResource : IResource
     internal record SetDynamicTransformCommand(EntityId entityId, GlobalTransform transform) : IPhysicsCommand;
     internal record SetStaticTransformCommand(EntityId entityId, GlobalTransform transform) : IPhysicsCommand;
     internal record SetKinematicBody2DVelocityCommand(EntityId entityId, Vector2 velocity) : IPhysicsCommand;
-    internal record UpdateTransformFromPhysicsCommand(EntityId entityId, GlobalTransform transform) : IPhysicsCommand;
+    internal record UpdateTransformFromPhysicsCommand(EntityId entityId, TransformComponent transform, GlobalTransform? parentTransform) : IPhysicsCommand;
     internal record ApplyImpulseCommand(EntityId entityId, Vector3 impulse) : IPhysicsCommand;
     internal record ApplyAngularImpulseCommand(EntityId entityId, Vector3 impulse) : IPhysicsCommand;
 }

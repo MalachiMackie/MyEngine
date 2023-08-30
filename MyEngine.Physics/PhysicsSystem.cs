@@ -46,8 +46,6 @@ public class PhysicsSystem : ISystem
         var dynamicTransformsToUpdate = new Dictionary<EntityId, GlobalTransform>();
         var staticTransformsToUpdate = new Dictionary<EntityId, GlobalTransform>();
 
-        var existingGlobalTransforms = new Dictionary<EntityId, GlobalTransform>();
-
         foreach (var components in _staticBodiesQuery)
         {
             var (transform, _, collider) = components;
@@ -70,13 +68,19 @@ public class PhysicsSystem : ISystem
                 _physicsResource.AddDynamicBody2D(components.EntityId, transform.GlobalTransform, collider.Collider, material.Component?.Bounciness ?? 0f);
             }
 
-            transformsToGetUpdatesFor.Add(components.EntityId, new TransformWriteBack(components.EntityId, transform));
+            GlobalTransform? parentTransform = null;
+            if (parent.HasComponent)
+            {
+                parentTransform = _transformAndParentQuery.TryGetForEntity(parent.Component.Parent)!.Component1.GlobalTransform;
+            }
+
+            transformsToGetUpdatesFor.Add(components.EntityId, new TransformWriteBack(components.EntityId, transform, parentTransform));
             dynamicTransformsToUpdate.Add(components.EntityId, transform.GlobalTransform);
         }
 
         foreach (var components in _kinematicBodiesQuery)
         {
-            var (transform, kinematicBody, collider, _) = components;
+            var (transform, kinematicBody, collider, parent) = components;
 
             var globalTransform = transform.GlobalTransform;
             if (!extraDynamicBodies.Remove(components.EntityId))
@@ -89,8 +93,13 @@ public class PhysicsSystem : ISystem
                 _physicsResource.SetKinematicBody2DVelocity(components.EntityId, kinematicBody.Velocity);
                 kinematicBody.Dirty = false;
             }
+            GlobalTransform? parentTransform = null;
+            if (parent.HasComponent)
+            {
+                parentTransform = _transformAndParentQuery.TryGetForEntity(parent.Component.Parent)!.Component1.GlobalTransform;
+            }
 
-            transformsToGetUpdatesFor.Add(components.EntityId, new TransformWriteBack(components.EntityId, transform));
+            transformsToGetUpdatesFor.Add(components.EntityId, new TransformWriteBack(components.EntityId, transform, parentTransform));
             dynamicTransformsToUpdate.Add(components.EntityId, globalTransform);
         }
 
@@ -159,7 +168,41 @@ public class PhysicsSystem : ISystem
                         var entityTransform = updateTransformFromPhysics.transform;
                         var (physicsPosition, physicsRotation) = _myPhysics.GetDynamicPhysicsTransform(updateTransformFromPhysics.entityId);
 
-                        entityTransform.SetComponents(physicsPosition, physicsRotation, entityTransform.Scale);
+                        entityTransform.GlobalTransform.SetComponents(physicsPosition, physicsRotation, entityTransform.GlobalTransform.Scale);
+
+                        Vector3 localTranslation;
+                        Quaternion localRotation;
+
+                        // now immediately sync global transform back to the local transform so that it doesn't immediately get set back by the transform sync system
+                        if (updateTransformFromPhysics.parentTransform is not null)
+                        {
+                            if (!Matrix4x4.Invert(updateTransformFromPhysics.parentTransform.ModelMatrix, out var inverseParent))
+                            {
+                                Console.WriteLine("Failed to write physics transform back to engine transform");
+                                break;
+                            }
+
+                            var localMatrix = entityTransform.GlobalTransform.ModelMatrix * inverseParent;
+
+                            if (!Matrix4x4.Decompose(localMatrix, out _, out localRotation, out localTranslation))
+                            {
+                                Console.WriteLine("Failed to write physics transform back to engine transform");
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            if (!Matrix4x4.Decompose(entityTransform.GlobalTransform.ModelMatrix, out _, out localRotation, out localTranslation))
+                            {
+                                Console.WriteLine("Failed to write physics transform back to engine transform");
+                                break;
+                            }
+                        }
+
+
+                        entityTransform.LocalTransform.position = localTranslation;
+                        entityTransform.LocalTransform.rotation = localRotation;
+
                         break;
                     }
                 case PhysicsResource.AddStaticBodyCommand addStaticBody:
@@ -228,13 +271,13 @@ public class PhysicsSystem : ISystem
         }
     }
 
-    private record struct TransformWriteBack(EntityId EntityId, TransformComponent TransformComponent); 
+    private record struct TransformWriteBack(EntityId EntityId, TransformComponent TransformComponent, GlobalTransform? parentTransform); 
 
     private void UpdateTransformsAfterPhysicsUpdate(IEnumerable<TransformWriteBack> dynamicTransforms)
     {
-        foreach (var (entityId, transformComponent) in dynamicTransforms)
+        foreach (var (entityId, transformComponent, parentTransform) in dynamicTransforms)
         {
-            _physicsResource.UpdateTransformFromPhysics(entityId, transformComponent.GlobalTransform);
+            _physicsResource.UpdateTransformFromPhysics(entityId, transformComponent, parentTransform);
         }
     }
 }

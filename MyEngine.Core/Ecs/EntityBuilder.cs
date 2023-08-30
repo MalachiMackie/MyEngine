@@ -20,25 +20,25 @@ public interface IEntityBuilderPhysicsStep
 {
     public IEntityBuilder WithoutPhysics();
 
-    public IEntityBuilderKinematicReboundStep WithKinematic2DPhysics();
+    public IEntityBuilderPhysicsCollider2DStep WithKinematic2DPhysics();
 
     public IEntityBuilderPhysicsCollider2DStep WithDynamic2DPhysics();
 
     public IEntityBuilderPhysicsCollider2DStep WithStatic2DPhysics();
 } 
 
-public interface IEntityBuilderKinematicReboundStep
-{
-    public IEntityBuilderPhysicsCollider2DStep WithoutRebound();
-
-    public IEntityBuilderPhysicsCollider2DStep WithRebound();
-}
-
 
 public interface IEntityBuilderPhysicsCollider2DStep
 {
     public IEntityBuilder WithBox2DCollider(Vector2 dimensions);
 
+    /// <summary>
+    /// Add a circle collider to the entity.
+    /// 
+    /// Note: radius is in world scale, not relative to its parent
+    /// </summary>
+    /// <param name="radius"></param>
+    /// <returns></returns>
     public IEntityBuilder WithCircle2DCollider(float radius);
 }
 

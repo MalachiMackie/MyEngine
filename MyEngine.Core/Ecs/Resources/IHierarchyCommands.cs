@@ -5,7 +5,7 @@ namespace MyEngine.Core.Ecs;
 
 public interface IHierarchyCommands : IResource
 {
-    public void AddChildInPlace(EntityId parentId, EntityId childId);
+    public Result<Unit, AddChildInPlaceError> AddChildInPlace(EntityId parentId, EntityId childId);
 
     public Result<Unit, AddChildError> AddChild(EntityId parentId, EntityId childId);
 
@@ -16,4 +16,11 @@ public interface IHierarchyCommands : IResource
 public enum AddChildError {
     ChildAlreadyHasParent,
     CircularReference
+}
+
+public enum AddChildInPlaceError
+{
+    ChildAlreadyHasParent,
+    CircularReference,
+    UnableToCalculateRelativeLocalTransform
 }
