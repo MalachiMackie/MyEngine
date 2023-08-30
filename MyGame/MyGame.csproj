@@ -15,4 +15,10 @@
     <ProjectReference Include="..\MyEngine.Utils\MyEngine.Utils.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="White.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

@@ -22,7 +22,8 @@ public class AddStartupSpritesSystem : IStartupSystem
     private readonly ResourceRegistrationResource _resourceRegistrationResource;
     private readonly IHierarchyCommands _hierarchyCommands; 
     private readonly BrickSizeResource _brickSizeResource = new() { Dimensions = new Vector2(0.5f, 0.2f) };
-    private readonly Sprite _sprite;
+    private readonly Sprite _silkLogoSprite;
+    private readonly Sprite _whiteSprite;
 
     public AddStartupSpritesSystem(ICommands entityContainerResource,
         ResourceRegistrationResource resourceRegistrationResource,
@@ -32,9 +33,13 @@ public class AddStartupSpritesSystem : IStartupSystem
         _resourceRegistrationResource = resourceRegistrationResource;
         _hierarchyCommands = hierarchyCommands;
 
-        var image = File.OpenRead("silk.png");
+        using var image = File.OpenRead("silk.png");
         var imageResult = ImageResult.FromStream(image, ColorComponents.RedGreenBlueAlpha);
-        _sprite = new Sprite(new SpriteId(Guid.NewGuid()), new Vector2(imageResult.Width, imageResult.Height), 100, imageResult.Data);
+        _silkLogoSprite = new Sprite(new SpriteId(Guid.NewGuid()), new Vector2(imageResult.Width, imageResult.Height), 100, imageResult.Data);
+
+        using var whiteImage = File.OpenRead("White.png");
+        var whiteImageResult = ImageResult.FromStream(whiteImage, ColorComponents.RedGreenBlueAlpha);
+        _whiteSprite = new Sprite(new SpriteId(Guid.NewGuid()), new Vector2(whiteImageResult.Width, whiteImageResult.Height), 100, whiteImageResult.Data);
     }
 
     public void Run()
@@ -101,7 +106,7 @@ public class AddStartupSpritesSystem : IStartupSystem
         foreach (var position in brickPositions)
         {
              var createEntityResult = _entityCommands.CreateEntity(x => x.WithTransform(Transform.Default(position: position.Extend(3.0f), scale: _brickSizeResource.Dimensions.Extend(1f)))
-                 .WithSprite(_sprite)
+                 .WithSprite(_whiteSprite)
                  .WithStatic2DPhysics()
                  .WithBox2DCollider(Vector2.One)
                  .WithComponent(new BrickComponent()));
@@ -154,7 +159,7 @@ public class AddStartupSpritesSystem : IStartupSystem
         foreach (var transform in walls)
         {
             var addWallResult = _entityCommands.CreateEntity(x => x.WithTransform(transform)
-                .WithSprite(_sprite)
+                .WithSprite(_whiteSprite)
                 .WithStatic2DPhysics()
                 .WithBox2DCollider(Vector2.One));
 
@@ -181,7 +186,7 @@ public class AddStartupSpritesSystem : IStartupSystem
             position = new Vector3(0f, -1.25f, 0f),
             rotation = Quaternion.Identity,
             scale = paddleScale
-        }).WithSprite(_sprite)
+        }).WithSprite(_whiteSprite)
         .WithKinematic2DPhysics()
         .WithBox2DCollider(Vector2.One)
         .WithComponent(new PaddleComponent()))
@@ -204,7 +209,7 @@ public class AddStartupSpritesSystem : IStartupSystem
             rotation = Quaternion.Identity,
             scale = ballScale
         })
-            .WithSprite(_sprite)
+            .WithSprite(_silkLogoSprite)
             .WithKinematic2DPhysics()
             .WithCircle2DCollider(worldBallScale.X * 0.5f)
             // .WithoutPhysics()
