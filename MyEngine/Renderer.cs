@@ -34,6 +34,7 @@ internal sealed class Renderer : IDisposable, IResource
         1, 2, 3
     };
 
+    // todo: have these dynamic based on Sprite.PixelsPerUnit
     private static readonly float[] Vertices =
     {
         //X    Y      Z     aTextCoords
