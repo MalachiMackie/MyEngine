@@ -1,7 +1,6 @@
-﻿using MyEngine.Core.Ecs.Resources;
-using MyEngine.Utils;
+﻿using MyEngine.Utils;
 
-namespace MyEngine.Core.Ecs;
+namespace MyEngine.Core.Ecs.Resources;
 
 public interface IHierarchyCommands : IResource
 {
@@ -13,7 +12,8 @@ public interface IHierarchyCommands : IResource
 
 }
 
-public enum AddChildError {
+public enum AddChildError
+{
     ChildAlreadyHasParent,
     CircularReference
 }

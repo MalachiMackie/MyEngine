@@ -1,7 +1,7 @@
 ﻿using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
-using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
+using MyEngine.Input;
 using MyGame.Components;
 
 namespace MyGame.Systems;
@@ -29,11 +29,11 @@ public class MovePaddleSystem : ISystem
         var (transformComponent, _) = paddleComponents;
 
         ref var position = ref transformComponent.LocalTransform.position; 
-        if (_inputResource.Keyboard.IsKeyDown(MyEngine.Core.Input.MyKey.A))
+        if (_inputResource.Keyboard.IsKeyDown(MyKey.A))
         {
             position.X -= 1.5f * (float)deltaTime;
         }
-        if (_inputResource.Keyboard.IsKeyDown(MyEngine.Core.Input.MyKey.D))
+        if (_inputResource.Keyboard.IsKeyDown(MyKey.D))
         {
             position.X += 1.5f * (float)deltaTime;
         }

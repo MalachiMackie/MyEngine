@@ -1,9 +1,9 @@
 ﻿using System.Numerics;
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
-using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
-using MyEngine.Core.Input;
+using MyEngine.Input;
+using MyEngine.Rendering;
 using MyEngine.Utils;
 
 namespace MyGame.Systems;

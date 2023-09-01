@@ -1,13 +1,19 @@
-﻿using MyEngine.Runtime;
-
-// https://github.com/dotnet/Silk.NET/blob/main/examples/CSharp/OpenGL%20Tutorials/Tutorial%201.2%20-%20Hello%20quad/Program.cs 
+﻿using MyEngine.Core;
+using MyEngine.Runtime;
+using MyGame;
 
 internal class Program
 {
-    private static async Task Main(string[] args)
+    private static void Main(string[] args)
     {
-        using var application = await Application.CreateAsync();
 
-        application.Run();
+        var appEntrypoint = new AppEntrypoint();
+        var appBuilder = new AppBuilder();
+
+        appEntrypoint.BuildApp(appBuilder);
+
+        var ecsEngine = new EcsEngine(appBuilder);
+
+        ecsEngine.Run();
     }
 }

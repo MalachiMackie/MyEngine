@@ -1,5 +1,4 @@
-﻿using MyEngine.Core.Ecs;
-using MyEngine.Core.Ecs.Components;
+﻿using MyEngine.Core.Ecs.Components;
 
 namespace MyGame.Components;
 

@@ -1,5 +1,6 @@
-﻿using MyEngine.Core.Ecs.Resources;
-using MyEngine.Core.Ecs.Systems;
+﻿using MyEngine.Core.Ecs.Systems;
+using MyEngine.Input;
+using MyEngine.Physics;
 
 namespace MyGame.Systems;
 public class ToggleColliderDebugDisplaySystem : ISystem
@@ -15,7 +16,7 @@ public class ToggleColliderDebugDisplaySystem : ISystem
 
     public void Run(double deltaTime)
     {
-        if (_inputResource.Keyboard.IsKeyPressed(MyEngine.Core.Input.MyKey.F1))
+        if (_inputResource.Keyboard.IsKeyPressed(MyKey.F1))
         {
             _debugColliderDisplayResource.DisplayColliders = !_debugColliderDisplayResource.DisplayColliders;
         }

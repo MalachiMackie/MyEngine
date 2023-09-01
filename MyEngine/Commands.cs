@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using MyEngine.Core;
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
@@ -32,13 +33,10 @@ internal class Commands : ICommands
             });
     }
 
-    public Result<EntityId, AddEntityCommandError> CreateEntity(Func<IEntityBuilderTransformStep, IEntityBuilder> entityBuilderFunc)
+    public Result<EntityId, AddEntityCommandError> CreateEntity(Transform transform, params IComponent[] components)
     {
-        var entityBuilder = EntityBuilder.Create();
-        var result = entityBuilderFunc(entityBuilder);
-        var components = result.Build();
-
         var entityId = EntityId.Generate();
+        _componentCollection.AddComponent(entityId, new TransformComponent(transform));
         foreach (var component in components)
         {
             if (_componentCollection.AddComponent(entityId, component).TryGetError(out var addComponentError))

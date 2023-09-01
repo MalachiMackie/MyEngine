@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using MyEngine.Core.Ecs.Resources;
+﻿using MyEngine.Core.Ecs.Resources;
 
 namespace MyGame.Resources;
 

@@ -1,7 +1,7 @@
 ﻿using MyEngine.Core.Ecs;
-using MyEngine.Core.Ecs.Components;
-using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
+using MyEngine.Input;
+using MyEngine.Physics;
 using MyGame.Components;
 using System.Numerics;
 
@@ -22,7 +22,7 @@ public class ApplyImpulseSystem : ISystem
 
     public void Run(double deltaTime)
     {
-        if (_inputResource.Keyboard.IsKeyPressed(MyEngine.Core.Input.MyKey.T))
+        if (_inputResource.Keyboard.IsKeyPressed(MyKey.T))
         {
             var player = _query.FirstOrDefault();
             if (player is not null)

@@ -6,7 +6,6 @@ using BepuUtilities;
 using BepuUtilities.Memory;
 using MyEngine.Core;
 using MyEngine.Core.Ecs;
-using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Utils;
 using System.Diagnostics;
@@ -208,10 +207,12 @@ public class MyPhysics : IResource
         if (impact.bodyHandleA.HasValue)
         {
             (entityIdA, var _) = _dynamicHandles.FirstOrDefault(y => y.Value.Handle == impact.bodyHandleA.Value);
-        } else if (impact.staticHandleA.HasValue)
+        }
+        else if (impact.staticHandleA.HasValue)
         {
             (entityIdA, var _) = _staticHandles.FirstOrDefault(y => y.Value.Handle == impact.staticHandleA.Value);
-        } else
+        }
+        else
         {
             return null;
         }
@@ -219,10 +220,12 @@ public class MyPhysics : IResource
         if (impact.bodyHandleB.HasValue)
         {
             (entityIdB, var _) = _dynamicHandles.FirstOrDefault(y => y.Value.Handle == impact.bodyHandleB.Value);
-        } else if (impact.staticHandleB.HasValue)
+        }
+        else if (impact.staticHandleB.HasValue)
         {
             (entityIdB, var _) = _staticHandles.FirstOrDefault(y => y.Value.Handle == impact.staticHandleB.Value);
-        } else
+        }
+        else
         {
             return null;
         }
@@ -232,7 +235,7 @@ public class MyPhysics : IResource
             EntityA = entityIdA,
             EntityB = entityIdB,
             Normal = impact.normal
-        };   
+        };
     }
 
     public IEnumerable<EntityId> GetStaticBodies()

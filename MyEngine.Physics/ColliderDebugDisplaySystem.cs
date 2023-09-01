@@ -1,8 +1,7 @@
 ﻿using System.Numerics;
 using MyEngine.Core;
-using MyEngine.Core.Ecs.Components;
-using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
+using MyEngine.Rendering;
 using MyEngine.Utils;
 
 namespace MyEngine.Physics;

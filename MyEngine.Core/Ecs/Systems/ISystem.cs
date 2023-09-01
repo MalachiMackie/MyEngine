@@ -5,7 +5,3 @@ public interface ISystem
     void Run(double deltaTime);
 }
 
-public interface IRenderSystem
-{
-    void Render(double deltaTime);
-}

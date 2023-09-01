@@ -21,7 +21,7 @@ public enum RemoveEntityCommandError
 
 public interface ICommands : IResource
 {
-    Result<EntityId, AddEntityCommandError> CreateEntity(Func<IEntityBuilderTransformStep, IEntityBuilder> entityBuilderFunc);
+    Result<EntityId, AddEntityCommandError> CreateEntity(Transform transform, params IComponent[] components);
 
     Result<Unit, AddComponentCommandError> AddComponent(EntityId entityId, IComponent component);
 

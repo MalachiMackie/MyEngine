@@ -1,8 +1,9 @@
 ﻿using MyEngine.Core;
 using MyEngine.Core.Ecs;
-using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
+using MyEngine.Physics;
+using MyEngine.Rendering;
 using MyEngine.Utils;
 using MyGame.Components;
 using MyGame.Resources;
@@ -105,11 +106,11 @@ public class AddStartupSpritesSystem : IStartupSystem
 
         foreach (var position in brickPositions)
         {
-             var createEntityResult = _entityCommands.CreateEntity(x => x.WithTransform(Transform.Default(position: position.Extend(3.0f), scale: _brickSizeResource.Dimensions.Extend(1f)))
-                 .WithSprite(_whiteSprite)
-                 .WithStatic2DPhysics()
-                 .WithBox2DCollider(Vector2.One)
-                 .WithComponent(new BrickComponent()));
+            var createEntityResult = _entityCommands.CreateEntity(Transform.Default(position: position.Extend(3.0f), scale: _brickSizeResource.Dimensions.Extend(1f)),
+                new SpriteComponent(_whiteSprite),
+                new StaticBody2DComponent(),
+                new Collider2DComponent(new BoxCollider2D(Vector2.One)),
+                new BrickComponent());
 
             if (createEntityResult.TryGetValue(out var brickId))
             {
@@ -158,10 +159,10 @@ public class AddStartupSpritesSystem : IStartupSystem
         
         foreach (var transform in walls)
         {
-            var addWallResult = _entityCommands.CreateEntity(x => x.WithTransform(transform)
-                .WithSprite(_whiteSprite)
-                .WithStatic2DPhysics()
-                .WithBox2DCollider(Vector2.One));
+            var addWallResult = _entityCommands.CreateEntity(transform,
+                new SpriteComponent(_whiteSprite),
+                new StaticBody2DComponent(),
+                new Collider2DComponent(new BoxCollider2D(Vector2.One)));
 
             if (addWallResult.IsFailure)
             {
@@ -181,15 +182,16 @@ public class AddStartupSpritesSystem : IStartupSystem
     private Result<Unit, AddPaddleAndBallError> AddPaddleAndBall()
     {
         var paddleScale = new Vector3(1.5f, 0.15f, 1f);
-        var paddleIdResult = _entityCommands.CreateEntity(x => x.WithTransform(new Transform
-        {
-            position = new Vector3(0f, -1.25f, 0f),
-            rotation = Quaternion.Identity,
-            scale = paddleScale
-        }).WithSprite(_whiteSprite)
-        .WithKinematic2DPhysics()
-        .WithBox2DCollider(Vector2.One)
-        .WithComponent(new PaddleComponent()))
+        var paddleIdResult = _entityCommands.CreateEntity(new Transform
+            {
+                position = new Vector3(0f, -1.25f, 0f),
+                rotation = Quaternion.Identity,
+                scale = paddleScale
+            },
+            new SpriteComponent(_whiteSprite),
+            new KinematicBody2DComponent(),
+            new Collider2DComponent(new BoxCollider2D(Vector2.One)),
+            new PaddleComponent())
             .MapError(x => new AddPaddleError(x));
 
         if (!paddleIdResult.TryGetValue(out var paddleId))
@@ -203,18 +205,18 @@ public class AddStartupSpritesSystem : IStartupSystem
 
         var ballScale = new Vector3(worldBallScale.X / paddleScale.X, worldBallScale.Y / paddleScale.Y, worldBallScale.Z / paddleScale.Z);
 
-        var ballIdResult = _entityCommands.CreateEntity(x => x.WithTransform(new Transform
-        {
-            position = new Vector3(0f, 2f, 0f),
-            rotation = Quaternion.Identity,
-            scale = ballScale
-        })
-            .WithSprite(_silkLogoSprite)
-            .WithKinematic2DPhysics()
-            .WithCircle2DCollider(worldBallScale.X * 0.5f)
-            // .WithoutPhysics()
-            .WithComponent(new BallComponent())
-            .WithComponent(new LogPositionComponent { Name = "Ball" }))
+        var ballIdResult = _entityCommands.CreateEntity(new Transform
+            {
+                position = new Vector3(0f, 2f, 0f),
+                rotation = Quaternion.Identity,
+                scale = ballScale
+            },
+            new SpriteComponent(_silkLogoSprite),
+            new KinematicBody2DComponent(),
+            new Collider2DComponent(new CircleCollider2D(worldBallScale.X * 0.5f)),
+            new BallComponent(),
+            new LogPositionComponent { Name = "Ball" },
+            new KinematicReboundComponent())
             .MapError(x => new AddBallError(x));
 
         if (!ballIdResult.TryGetValue(out var ballId))
@@ -232,21 +234,6 @@ public class AddStartupSpritesSystem : IStartupSystem
             _entityCommands.RemoveEntity(ballId).Expect("We checked the success of add ball");
 
             return Result.Failure<Unit, AddPaddleAndBallError>(new AddPaddleAndBallError(new AddBallAsPaddleChildError(error)));
-        }
-
-        if (_entityCommands.AddComponent(ballId, new KinematicBody2DComponent()).TryGetError(out var addKinematicBodyError))
-        {
-            Console.WriteLine(addKinematicBodyError);
-        }
-
-        if (_entityCommands.AddComponent(ballId, new Collider2DComponent(new CircleCollider2D(worldBallScale.X * 0.5f))).TryGetError(out var addColliderError))
-        {
-            Console.WriteLine(addColliderError);
-        }
-
-        if (_entityCommands.AddComponent(ballId, new KinematicReboundComponent()).TryGetError(out var addKinematicReboundError))
-        {
-            Console.WriteLine(addKinematicReboundError);
         }
 
         return Result.Success<Unit, AddPaddleAndBallError>(Unit.Value);

@@ -1,7 +1,11 @@
-﻿using MyEngine.Core.Ecs;
+﻿using MyEngine.Core;
+using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
+using MyEngine.Input;
 using MyEngine.Physics;
+using MyEngine.Rendering;
+using MyGame;
 using MyGame.Components;
 using MyGame.Resources;
 using MyGame.Systems;
@@ -11,13 +15,7 @@ namespace MyEngine.Runtime;
 
 internal partial class EcsEngine
 {
-    public partial void Update(double dt);
-
-    public partial void Render(double dt);
-
-    public partial void RegisterResource<T>(T resource) where T : IResource;
-
-    public partial void Startup();
+    public partial void Run();
 }
 
 // todo: source generate this
@@ -53,24 +51,44 @@ internal partial class EcsEngine
     // render systems
     private RenderSystem? _renderSystem;
 
-    public EcsEngine()
-    {
-        AddSystemInstantiations();
-    }
-
     // todo: WithoutComponent<T>
 
-    public partial void Startup()
+    private readonly AppBuilder _appBuilder;
+
+    public EcsEngine(AppBuilder appBuilder)
     {
+        _appBuilder = appBuilder;
+        
+    }
+
+    public partial void Run()
+    {
+        AddSystemInstantiations();
+
+        CreateSystemsWithoutResourceDependencies();
+        RegisterAppResources();
+        RunStartupSystems();
+
+        _resourceContainer.TryGetResource<MyWindow>(out var myWindow);
+        myWindow!.Update += Update;
+        myWindow!.Run();
+    }
+
+    private void RegisterAppResources()
+    {
+        // todo: move these to a plugin
         RegisterResource<IHierarchyCommands>(new HierarchyCommands(_components));
         RegisterResource(new ResourceRegistrationResource());
         RegisterResource<ICommands>(new Commands(_components, _entities));
-        RegisterResource(new PhysicsResource());
-        RegisterResource(new MyPhysics());
-        RegisterResource(new CollisionsResource());
-        RegisterResource<ILineRenderResource>(new LineRenderResource());
-        RegisterResource(new DebugColliderDisplayResource());
 
+        foreach (var (resourceType, resource) in _appBuilder.Resources)
+        {
+            RegisterResource(resourceType, resource);
+        }
+    }
+
+    private void RunStartupSystems()
+    {
         {
             if (_resourceContainer.TryGetResource<ICommands>(out var entityContainer))
             {
@@ -86,7 +104,27 @@ internal partial class EcsEngine
                 }
             }
         }
+        {
+            if (_resourceContainer.TryGetResource<MyWindow>(out var myWindow)
+                && _resourceContainer.TryGetResource<Renderer>(out var renderer))
+            {
+                new InitializeRenderingSystem(renderer, myWindow).Run();
+            }
+        }
 
+        {
+            if (_resourceContainer.TryGetResource<MyWindow>(out var myWindow)
+                && _resourceContainer.TryGetResource<MyInput>(out var myInput))
+            {
+
+                new InitializeInputSystem(myWindow, myInput).Run();
+            }
+        }
+
+    }
+
+    private void CreateSystemsWithoutResourceDependencies()
+    {
         foreach (var (systemType, _) in _uninstantiatedSystems
             .Where(x => x.Value.Length == 0)
             .ToArray())
@@ -97,13 +135,7 @@ internal partial class EcsEngine
         }
     }
 
-    public partial void Render(double dt)
-    {
-        _renderSystem?.Render(dt);
-    }
-
-
-    public partial void Update(double dt)
+    public void Update(double dt)
     {
         _inputSystem?.Run(dt);
 
@@ -124,6 +156,8 @@ internal partial class EcsEngine
         _toggleColliderDebugDisplaySystem?.Run(dt);
 
         _transformSyncSystem?.Run(dt);
+
+        _renderSystem?.Run(dt);
 
         AddResources();
     }
@@ -451,9 +485,9 @@ internal partial class EcsEngine
         { typeof(ToggleColliderDebugDisplaySystem), new [] { typeof(InputResource), typeof(DebugColliderDisplayResource) } },
     };
 
-    public partial void RegisterResource<T>(T resource) where T : IResource
+    private void RegisterResource(Type resourceType, IResource resource)
     {
-        if (_resourceContainer.RegisterResource(resource).TryGetError(out var error))
+        if (_resourceContainer.RegisterResource(resourceType, resource).TryGetError(out var error))
         {
             Console.WriteLine("Failed to register resource: {0}", error);
             return;
@@ -461,11 +495,16 @@ internal partial class EcsEngine
 
         foreach (var (systemType, resourceTypes) in _uninstantiatedSystems)
         {
-            if (resourceTypes.Contains(typeof(T)))
+            if (resourceTypes.Contains(resourceType))
             {
                 _systemInstantiations[systemType].Invoke();
             }
         }
+    }
+
+    public void RegisterResource<T>(T resource) where T : IResource
+    {
+        RegisterResource(typeof(T), resource);
     }
 
     private IQuery<T> GetQuery<T>(Func<EntityId, EntityComponents<T>?>? getEntityFunc = null)
