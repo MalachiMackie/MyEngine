@@ -6,8 +6,10 @@ public class InputPlugin : IPlugin
 {
     public AppBuilder Register(AppBuilder builder)
     {
-        return builder.AddStartupSystem<InitializeInputSystem>()
-            .AddSystem<InputSystem>()
+        return builder
+            .AddSystemStage(InputSystemStage.Instance, 1)
+            .AddStartupSystem<InitializeInputSystem>()
+            .AddSystem<InputSystem>(InputSystemStage.Instance)
             .AddResource(new InputResource())
             .AddResource(new MyInput());
     }

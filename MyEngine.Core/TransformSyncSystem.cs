@@ -1,9 +1,8 @@
-﻿using MyEngine.Core;
-using MyEngine.Core.Ecs;
+﻿using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Systems;
 
-namespace MyEngine.Runtime;
+namespace MyEngine.Core;
 
 /// <summary>
 ///  System to sync local Transform changes up to GlobalTransform

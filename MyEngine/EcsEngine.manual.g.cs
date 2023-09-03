@@ -1,4 +1,5 @@
 ﻿#nullable enable
+using MyEngine.Core;
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
@@ -15,101 +16,51 @@ namespace MyEngine.Runtime;
 // todo: source generate this
 internal partial class EcsEngine
 {
-    // resources
-    private readonly ResourceContainer _resourceContainer = new();
-
-    // entities
-    private readonly HashSet<Core.Ecs.EntityId> _entities = new();
-
-    // components
-    private readonly ComponentCollection _components = new();
-
-    // systems
-    private CameraMovementSystem? _cameraMovementSystem;
-    private InputSystem? _inputSystem;
-    private QuitOnEscapeSystem? _quitOnEscapeSystem;
-    private PhysicsSystem? _physicsSystem;
-    private ApplyImpulseSystem? _applyImpulseSystem;
-    private RotatePlayerSystem? _rotatePlayerSystem;
-    private OnCollisionSystem? _onCollisionSystem;
-    private LaunchBallSystem? _moveBallSystem;
-    private KinematicBounceSystem? _kinematicBounceSystem;
-    private ResetBallSystem? _resetBallSystem;
-    private LogBallPositionSystem? _logBallPositionSystem;
-    private TransformSyncSystem? _transformSyncSystem;
-    private MovePaddleSystem? _movePaddleSystem;
-    private ColliderDebugDisplaySystem? _colliderDebugDisplaySystem;
-    private BrickCollisionSystem? _brickCollisionSystem;
-    private ToggleColliderDebugDisplaySystem? _toggleColliderDebugDisplaySystem;
-
-    // render systems
-    private RenderSystem? _renderSystem;
-
-    // todo: WithoutComponent<T>
-
-    private partial void RunStartupSystems()
+    private partial void AddStartupSystemInstantiations()
     {
+        _startupSystemInstantiations.Add(typeof(AddCameraStartupSystem), () =>
         {
-            if (_resourceContainer.TryGetResource<ICommands>(out var entityContainer))
+            if (_resourceContainer.TryGetResource<ICommands>(out var resource1))
             {
-                new AddCameraStartupSystem(entityContainer)
-                    .Run();
-                if (_resourceContainer.TryGetResource<ResourceRegistrationResource>(out var resourceRegistrationResource)
-                    && _resourceContainer.TryGetResource<IHierarchyCommands>(out var hierarchyCommands))
-                {
-                    new AddStartupSpritesSystem(
-                        entityContainer,
-                        resourceRegistrationResource,
-                        hierarchyCommands).Run();
-                }
+                return new AddCameraStartupSystem(resource1);
             }
-        }
+
+            return null;
+        });
+
+        _startupSystemInstantiations.Add(typeof(AddStartupSpritesSystem), () =>
         {
-            if (_resourceContainer.TryGetResource<MyWindow>(out var myWindow)
-                && _resourceContainer.TryGetResource<Renderer>(out var renderer))
+            if (_resourceContainer.TryGetResource<ICommands>(out var resource1)
+                && _resourceContainer.TryGetResource<IHierarchyCommands>(out var resource2)
+                && _resourceContainer.TryGetResource<ResourceRegistrationResource>(out var resource3))
             {
-                new InitializeRenderingSystem(renderer, myWindow).Run();
+                return new AddStartupSpritesSystem(resource1, resource3, resource2);
             }
-        }
 
+            return null;
+        });
+
+        _startupSystemInstantiations.Add(typeof(InitializeInputSystem), () =>
         {
-            if (_resourceContainer.TryGetResource<MyWindow>(out var myWindow)
-                && _resourceContainer.TryGetResource<MyInput>(out var myInput))
+            if (_resourceContainer.TryGetResource<MyWindow>(out var resource1)
+                && _resourceContainer.TryGetResource<MyInput>(out var resource2))
             {
-
-                new InitializeInputSystem(myWindow, myInput).Run();
+                return new InitializeInputSystem(resource1, resource2);
             }
-        }
 
-    }
+            return null;
+        });
 
-    
+        _startupSystemInstantiations.Add(typeof(InitializeRenderingSystem), () =>
+        {
+            if (_resourceContainer.TryGetResource<Renderer>(out var resource1)
+                && _resourceContainer.TryGetResource<MyWindow>(out var resource2))
+            {
+                return new InitializeRenderingSystem(resource1, resource2);
+            }
 
-    public void Update(double dt)
-    {
-        _inputSystem?.Run(dt);
-
-        _physicsSystem?.Run(dt);
-        _kinematicBounceSystem?.Run(dt);
-
-        _cameraMovementSystem?.Run(dt);
-        _quitOnEscapeSystem?.Run(dt);
-        _applyImpulseSystem?.Run(dt);
-        _rotatePlayerSystem?.Run(dt);
-        _onCollisionSystem?.Run(dt);
-        _moveBallSystem?.Run(dt);
-        _resetBallSystem?.Run(dt);
-        _logBallPositionSystem?.Run(dt);
-        _movePaddleSystem?.Run(dt);
-        _colliderDebugDisplaySystem?.Run(dt);
-        _brickCollisionSystem?.Run(dt);
-        _toggleColliderDebugDisplaySystem?.Run(dt);
-
-        _transformSyncSystem?.Run(dt);
-
-        _renderSystem?.Run(dt);
-
-        AddQueuedResources();
+            return null;
+        });
     }
 
     private partial void AddSystemInstantiations()
@@ -118,12 +69,13 @@ internal partial class EcsEngine
         {
             if (_resourceContainer.TryGetResource<InputResource>(out var inputResource))
             {
-                _cameraMovementSystem = new CameraMovementSystem(
+                return new CameraMovementSystem(
                     inputResource,
                     Query.Create<Camera3DComponent, TransformComponent>(_components, _entities),
                     Query.Create<Camera2DComponent, TransformComponent>(_components, _entities));
-                _uninstantiatedSystems.Remove(typeof(CameraMovementSystem));
             }
+
+            return null;
         });
 
         _systemInstantiations.Add(typeof(InputSystem), () =>
@@ -131,9 +83,10 @@ internal partial class EcsEngine
             if (_resourceContainer.TryGetResource<InputResource>(out var inputResource)
                 && _resourceContainer.TryGetResource<MyInput>(out var myInput))
             {
-                _inputSystem = new InputSystem(myInput, inputResource);
-                _uninstantiatedSystems.Remove(typeof(InputSystem));
+                return new InputSystem(myInput, inputResource);
             }
+
+            return null;
         });
 
         _systemInstantiations.Add(typeof(RenderSystem), () =>
@@ -141,14 +94,15 @@ internal partial class EcsEngine
             if (_resourceContainer.TryGetResource<Renderer>(out var renderer)
                 && _resourceContainer.TryGetResource<ILineRenderResource>(out var lineRenderResource))
             {
-                _renderSystem = new RenderSystem(
+                return new RenderSystem(
                     renderer,
                     Query.Create<Camera3DComponent, TransformComponent>(_components, _entities),
                     Query.Create<Camera2DComponent, TransformComponent>(_components, _entities),
                     Query.Create<SpriteComponent, TransformComponent>(_components, _entities),
                     lineRenderResource);
-                _uninstantiatedSystems.Remove(typeof(RenderSystem));
             }
+
+            return null;
         });
 
         _systemInstantiations.Add(typeof(QuitOnEscapeSystem), () =>
@@ -156,9 +110,10 @@ internal partial class EcsEngine
             if (_resourceContainer.TryGetResource<MyWindow>(out var window)
                 && _resourceContainer.TryGetResource<InputResource>(out var inputResource))
             {
-                _quitOnEscapeSystem = new QuitOnEscapeSystem(window, inputResource);
-                _uninstantiatedSystems.Remove(typeof(QuitOnEscapeSystem));
+                return new QuitOnEscapeSystem(window, inputResource);
             }
+
+            return null;
         });
 
         _systemInstantiations.Add(typeof(PhysicsSystem), () =>
@@ -220,7 +175,7 @@ internal partial class EcsEngine
                 && _resourceContainer.TryGetResource<MyPhysics>(out var myPhysics)
                 && _resourceContainer.TryGetResource<CollisionsResource>(out var collisionsResource))
             {
-                _physicsSystem = new PhysicsSystem(
+                return new PhysicsSystem(
                     physicsResource,
                     collisionsResource,
                     myPhysics,
@@ -228,8 +183,9 @@ internal partial class EcsEngine
                     Query.Create(_components, _entities, GetQuery2Components),
                     Query.Create(_components, _entities, GetQuery3Components),
                     Query.Create(_components, _entities, GetQuery4Components));
-                _uninstantiatedSystems.Remove(typeof(PhysicsSystem));
             }
+
+            return null;
         });
 
         _systemInstantiations.Add(typeof(ApplyImpulseSystem), () =>
@@ -237,12 +193,13 @@ internal partial class EcsEngine
             if (_resourceContainer.TryGetResource<InputResource>(out var inputResource)
                 && _resourceContainer.TryGetResource<PhysicsResource>(out var physicsResource))
             {
-                _applyImpulseSystem = new ApplyImpulseSystem(
+                return new ApplyImpulseSystem(
                     physicsResource,
                     inputResource,
                     Query.Create<BallComponent>(_components, _entities));
-                _uninstantiatedSystems.Remove(typeof(ApplyImpulseSystem));
             }
+
+            return null;
         });
 
         _systemInstantiations.Add(typeof(RotatePlayerSystem), () =>
@@ -250,12 +207,13 @@ internal partial class EcsEngine
             if (_resourceContainer.TryGetResource<InputResource>(out var inputResource)
                 && _resourceContainer.TryGetResource<PhysicsResource>(out var physicsResource))
             {
-                _rotatePlayerSystem = new RotatePlayerSystem(
+                return new RotatePlayerSystem(
                     Query.Create<BallComponent>(_components, _entities),
                     physicsResource,
                     inputResource);
-                _uninstantiatedSystems.Remove(typeof(RotatePlayerSystem));
             }
+
+            return null;
         });
 
         _systemInstantiations.Add(typeof(OnCollisionSystem), () =>
@@ -263,10 +221,11 @@ internal partial class EcsEngine
             if (_resourceContainer.TryGetResource<CollisionsResource>(out var collisionsResource)
                 && _resourceContainer.TryGetResource<ICommands>(out var entityContainerResource))
             {
-                _onCollisionSystem = new OnCollisionSystem(
+                return new OnCollisionSystem(
                     collisionsResource);
-                _uninstantiatedSystems.Remove(typeof(OnCollisionSystem));
             }
+
+            return null;
         });
 
         _systemInstantiations.Add(typeof(LaunchBallSystem), () =>
@@ -274,11 +233,12 @@ internal partial class EcsEngine
             if (_resourceContainer.TryGetResource<InputResource>(out var inputResource)
                 && _resourceContainer.TryGetResource<IHierarchyCommands>(out var hierarchyCommands))
             {
-                _moveBallSystem = new LaunchBallSystem(
+                return new LaunchBallSystem(
                     Query.Create<TransformComponent, BallComponent, KinematicBody2DComponent, ParentComponent>(_components, _entities),
                     inputResource, hierarchyCommands);
-                _uninstantiatedSystems.Remove(typeof(LaunchBallSystem));
             }
+
+            return null;
         });
 
         _systemInstantiations.Add(typeof(KinematicBounceSystem), () =>
@@ -299,11 +259,12 @@ internal partial class EcsEngine
                     return null;
                 }
 
-                _kinematicBounceSystem = new KinematicBounceSystem(
+                return new KinematicBounceSystem(
                     Query.Create(_components, _entities, GetComponents),
                     collisionsResource);
-                _uninstantiatedSystems.Remove(typeof(KinematicBounceSystem));
             }
+
+            return null;
         });
 
         _systemInstantiations.Add(typeof(ResetBallSystem), () =>
@@ -311,18 +272,18 @@ internal partial class EcsEngine
             if (_resourceContainer.TryGetResource<WorldSizeResource>(out var worldSizeResource)
                 && _resourceContainer.TryGetResource<IHierarchyCommands>(out var hierarchyCommands))
             {
-                _resetBallSystem = new ResetBallSystem(Query.Create<TransformComponent, BallComponent, KinematicBody2DComponent>(_components, _entities),
+                new ResetBallSystem(Query.Create<TransformComponent, BallComponent, KinematicBody2DComponent>(_components, _entities),
                     worldSizeResource,
                     Query.Create<PaddleComponent, TransformComponent>(_components, _entities),
                     hierarchyCommands);
-                _uninstantiatedSystems.Remove(typeof(ResetBallSystem));
             }
+
+            return null;
         });
 
         _systemInstantiations.Add(typeof(LogBallPositionSystem), () =>
         {
-            _logBallPositionSystem = new LogBallPositionSystem(Query.Create<LogPositionComponent, TransformComponent>(_components, _entities));
-            _uninstantiatedSystems.Remove(typeof(LogBallPositionSystem));
+            return new LogBallPositionSystem(Query.Create<LogPositionComponent, TransformComponent>(_components, _entities));
         });
 
         _systemInstantiations.Add(typeof(TransformSyncSystem), () =>
@@ -342,17 +303,17 @@ internal partial class EcsEngine
                 return null;
             };
 
-            _transformSyncSystem = new TransformSyncSystem(Query.Create(_components, _entities, GetQuery1Components));
-            _uninstantiatedSystems.Remove(typeof(TransformSyncSystem));
+            return new TransformSyncSystem(Query.Create(_components, _entities, GetQuery1Components));
         });
 
         _systemInstantiations.Add(typeof(MovePaddleSystem), () =>
         {
             if (_resourceContainer.TryGetResource<InputResource>(out var inputResource))
             {
-                _movePaddleSystem = new MovePaddleSystem(Query.Create<TransformComponent, PaddleComponent>(_components, _entities), inputResource);
-                _uninstantiatedSystems.Remove(typeof(MovePaddleSystem));
+                return new MovePaddleSystem(Query.Create<TransformComponent, PaddleComponent>(_components, _entities), inputResource);
             }
+
+            return null;
         });
 
         _systemInstantiations.Add(typeof(ColliderDebugDisplaySystem), () =>
@@ -361,9 +322,10 @@ internal partial class EcsEngine
                 && _resourceContainer.TryGetResource<ILineRenderResource>(out var lineRenderResource)
                 && _resourceContainer.TryGetResource<DebugColliderDisplayResource>(out var debugColliderDisplayResource))
             {
-                _colliderDebugDisplaySystem = new ColliderDebugDisplaySystem(myPhysics, lineRenderResource, debugColliderDisplayResource);
-                _uninstantiatedSystems.Remove(typeof(ColliderDebugDisplaySystem));
+                return new ColliderDebugDisplaySystem(myPhysics, lineRenderResource, debugColliderDisplayResource);
             }
+
+            return null;
         });
 
         _systemInstantiations.Add(typeof(BrickCollisionSystem), () =>
@@ -371,13 +333,14 @@ internal partial class EcsEngine
             if (_resourceContainer.TryGetResource<ICommands>(out var commands)
                 && _resourceContainer.TryGetResource<CollisionsResource>(out var collisionsResource))
             {
-                _brickCollisionSystem = new BrickCollisionSystem(
+                return new BrickCollisionSystem(
                     collisionsResource,
                     Query.Create<BallComponent>(_components, _entities),
                     Query.Create<BrickComponent>(_components, _entities),
                     commands);
-                _uninstantiatedSystems.Remove(typeof(BrickCollisionSystem));
             }
+
+            return null;
         });
 
         _systemInstantiations.Add(typeof(ToggleColliderDebugDisplaySystem), () =>
@@ -385,11 +348,50 @@ internal partial class EcsEngine
             if (_resourceContainer.TryGetResource<InputResource>(out var inputResource)
                 && _resourceContainer.TryGetResource<DebugColliderDisplayResource>(out var debugColliderDisplayResource))
             {
-                _toggleColliderDebugDisplaySystem = new ToggleColliderDebugDisplaySystem(debugColliderDisplayResource, inputResource);
-                _uninstantiatedSystems.Remove(typeof(ToggleColliderDebugDisplaySystem));
+                return new ToggleColliderDebugDisplaySystem(debugColliderDisplayResource, inputResource);
             }
+
+            return null;
         });
     }
+
+    private readonly IReadOnlyCollection<Type> _allStartupSystemTypes = new []
+    {
+        typeof(AddStartupSpritesSystem),
+        typeof(AddCameraStartupSystem),
+        typeof(InitializeInputSystem),
+        typeof(InitializeRenderingSystem)
+    };
+
+
+    private readonly IReadOnlyCollection<Type> _allSystemTypes = new []
+    {
+        typeof(CameraMovementSystem),
+        typeof(InputSystem),
+        typeof(RenderSystem),
+        typeof(QuitOnEscapeSystem),
+        typeof(PhysicsSystem),
+        typeof(ApplyImpulseSystem),
+        typeof(RotatePlayerSystem),
+        typeof(OnCollisionSystem),
+        typeof(LaunchBallSystem),
+        typeof(KinematicBounceSystem),
+        typeof(ResetBallSystem),
+        typeof(LogBallPositionSystem),
+        typeof(TransformSyncSystem),
+        typeof(MovePaddleSystem),
+        typeof(ColliderDebugDisplaySystem),
+        typeof(BrickCollisionSystem),
+        typeof(ToggleColliderDebugDisplaySystem),
+    };
+
+    private readonly Dictionary<Type, Type[]> _uninstantiatedStartupSystems = new()
+    {
+        { typeof(AddCameraStartupSystem), new [] { typeof(ICommands) } },
+        { typeof(AddStartupSpritesSystem), new [] { typeof(ICommands), typeof(IHierarchyCommands), typeof(ResourceRegistrationResource) } },
+        { typeof(InitializeInputSystem), new [] { typeof(MyWindow), typeof(MyInput) } },
+        { typeof(InitializeRenderingSystem), new [] { typeof(MyWindow), typeof(Renderer) } }
+    };
 
     /// <summary>
     /// Dictionary of uninstantiated systems, and the list of resource dependencies they have
@@ -414,7 +416,5 @@ internal partial class EcsEngine
         { typeof(BrickCollisionSystem), new [] { typeof(ICommands), typeof(CollisionsResource) } },
         { typeof(ToggleColliderDebugDisplaySystem), new [] { typeof(InputResource), typeof(DebugColliderDisplayResource) } },
     };
-
-    
 }
 #nullable restore

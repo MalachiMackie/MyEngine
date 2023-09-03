@@ -72,7 +72,7 @@ public class MyWindow : IDisposable, IResource
     }
 
     public event Action<double>? Update;
-    private event Action Load;
+    private event Action? Load;
 
     // todo: better encapsulation
     public IWindow? InnerWindow => _window;
