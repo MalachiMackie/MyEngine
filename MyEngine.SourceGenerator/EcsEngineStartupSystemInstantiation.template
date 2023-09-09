@@ -1,0 +1,9 @@
+_startupSystemInstantiations.Add(typeof({template:StartupSystemFullyQualifiedName}), () =>
+{
+    if ({template:ResourceChecks})
+    {
+        return new {template:StartupSystemFullyQualifiedName}({template:StartupSystemParameters});
+    }
+
+    return null;
+});
