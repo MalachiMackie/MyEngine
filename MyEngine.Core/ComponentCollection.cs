@@ -104,7 +104,7 @@ internal class ComponentCollection
     {
         if (TryGetComponent<T>(entityId, out var component))
         {
-            return new EntityComponents<T>(entityId) { Component = component };
+            return new EntityComponents<T>(entityId) { Component1 = component };
         }
 
         return null;

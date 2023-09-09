@@ -6,8 +6,10 @@ using MyGame.Systems;
 
 namespace MyGame;
 
-public class AppEntrypoint : IAppEntrypoint
+[AppEntrypoint]
+public class AppEntrypoint : IAppEntrypoint 
 {
+
     public void BuildApp(AppBuilder builder)
     {
         builder.AddStartupSystem<AddStartupSpritesSystem>()

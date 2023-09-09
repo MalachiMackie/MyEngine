@@ -45,6 +45,8 @@ public class ResetBallSystem : ISystem
         }
     }
 
+
+
     private void ResetBall(EntityId ballId, Transform localTransform, KinematicBody2DComponent kinematicBody2DComponent)
     {
         var paddleComponents = _paddleQuery.FirstOrDefault();

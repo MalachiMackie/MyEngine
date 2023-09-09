@@ -12,7 +12,7 @@ internal partial class EcsEngine
 {
     private sealed record StageSystems(ISystemStage Stage, List<ISystem> Systems);
 
-    private readonly AppBuilder _appBuilder;
+    private readonly AppBuilder _appBuilder = new();
     private readonly ResourceContainer _resourceContainer = new();
     private readonly HashSet<Core.Ecs.EntityId> _entities = new();
     private readonly ComponentCollection _components = new();
@@ -22,9 +22,16 @@ internal partial class EcsEngine
     private readonly Queue<IStartupSystem> _startupSystems = new();
     private StageSystems[] _systems = null!;
 
-    public EcsEngine(AppBuilder appBuilder)
+    private readonly IReadOnlyCollection<Type> _allStartupSystemTypes = GetAllStartupSystemTypes();
+    private readonly IReadOnlyCollection<Type> _allSystemTypes = GetAllSystemTypes();
+    private readonly Dictionary<Type, Type[]> _uninstantiatedStartupSystems = GetUninstantiatedStartupSystems();
+    private readonly Dictionary<Type, Type[]> _uninstantiatedSystems = GetUninstantiatedSystems();
+
+
+    public EcsEngine()
     {
-        _appBuilder = appBuilder;
+        var appEntrypoint = GetAppEntrypoint();
+        appEntrypoint.BuildApp(_appBuilder);
     }
 
     private void Setup()
@@ -131,19 +138,7 @@ internal partial class EcsEngine
         Debug.Assert(_resourceContainer.TryGetResource<ResourceRegistrationResource>(out var resourceRegistration));
         while (resourceRegistration.Registrations.TryDequeue(out var resource))
         {
-            if (_resourceContainer.RegisterResource(resource.Key, resource.Value).TryGetError(out var registerResourceError))
-            {
-                Console.WriteLine("Failed to register resource: {0}", registerResourceError);
-                continue;
-            }
-
-            foreach (var (systemType, resourceTypes) in _uninstantiatedSystems)
-            {
-                if (resourceTypes.Contains(resource.Key))
-                {
-                    _systemInstantiations[systemType].Invoke();
-                }
-            }
+            RegisterResource(resource.Key, resource.Value);
         }
     }
 
@@ -207,4 +202,9 @@ internal partial class EcsEngine
 
     private partial void AddSystemInstantiations();
     private partial void AddStartupSystemInstantiations();
+    private static partial IAppEntrypoint GetAppEntrypoint();
+    private static partial IReadOnlyCollection<Type> GetAllStartupSystemTypes();
+    private static partial IReadOnlyCollection<Type> GetAllSystemTypes();
+    private static partial Dictionary<Type, Type[]> GetUninstantiatedStartupSystems();
+    private static partial Dictionary<Type, Type[]> GetUninstantiatedSystems();
 }

@@ -17,11 +17,11 @@ public class EntityComponents<T> : EntityComponents
     {
     }
 
-    public required T Component { get; init; }
+    public required T Component1 { get; init; }
 
     public static implicit operator T (EntityComponents<T> component)
     {
-        return component.Component;
+        return component.Component1;
     }
 }
 

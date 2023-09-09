@@ -6,13 +6,7 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-
-        var appEntrypoint = new AppEntrypoint();
-        var appBuilder = new AppBuilder();
-
-        appEntrypoint.BuildApp(appBuilder);
-
-        var ecsEngine = new EcsEngine(appBuilder);
+        var ecsEngine = new EcsEngine();
 
         ecsEngine.Run();
     }
