@@ -44,8 +44,5 @@
   <ItemGroup>
       <ProjectReference Include="../MyEngine.SourceGenerator/MyEngine.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Generated\MyEngine.SourceGenerator\MyEngine.SourceGenerator.AppEntrypointInformationRetrievalSourceGenerator\" />
-  </ItemGroup>
 
 </Project>

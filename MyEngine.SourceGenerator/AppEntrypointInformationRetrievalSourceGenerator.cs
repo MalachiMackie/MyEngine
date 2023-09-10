@@ -283,77 +283,8 @@ namespace MyEngine.Runtime
             return fullyQualifiedName;
         }
 
-        private enum MetaComponentType
-        {
-            OptionalComponent
-        }
 
-        private sealed class QueryComponentTypeParameter
-        {
-            public MetaComponentType? MetaComponentType { get; set; }
 
-            public string ComponentTypeName { get; set; }
-        } 
-
-        private sealed class StartupSystemConstructorParameter
-        {
-            public string Name { get; set; }
-        }
-
-        private sealed class SystemConstructorParameter
-        {
-            public string Name { get; set; }
-
-            public bool IsResource { get; set; }
-
-            public IReadOnlyList<QueryComponentTypeParameter> QueryComponentTypeParameters { get; set; }
-        }
-
-        private sealed class StartupSystemConstructor
-        {
-            public static readonly StartupSystemConstructor NoConstructor = new StartupSystemConstructor(Array.Empty<StartupSystemConstructorParameter>());
-            public IReadOnlyCollection<StartupSystemConstructorParameter> Parameters { get; }
-
-            public StartupSystemConstructor(IReadOnlyCollection<StartupSystemConstructorParameter> parameters)
-            {
-                Parameters = parameters;
-            }
-        }
-
-        private sealed class SystemConstructor
-        {
-            public static readonly SystemConstructor NoConstructor = new SystemConstructor(Array.Empty<SystemConstructorParameter>());
-            public IReadOnlyCollection<SystemConstructorParameter> Parameters { get; }
-
-            public SystemConstructor(IReadOnlyCollection<SystemConstructorParameter> parameters)
-            {
-                Parameters = parameters;
-            }
-        }
-
-        private sealed class StartupSystemClass
-        {
-            public string FullyQualifiedName { get; }
-            public StartupSystemConstructor Constructor { get; }
-
-            public StartupSystemClass(string fullyQualifiedName, StartupSystemConstructor constructor)
-            {
-                FullyQualifiedName = fullyQualifiedName;
-                Constructor = constructor;
-            }
-        }
-
-        private sealed class SystemClass
-        {
-            public string FullyQualifiedName { get; }
-            public SystemConstructor Constructor { get; }
-
-            public SystemClass(string fullyQualifiedName, SystemConstructor constructor)
-            {
-                FullyQualifiedName = fullyQualifiedName;
-                Constructor = constructor;
-            }
-        }
 
         private StartupSystemConstructor TryGetStartupSystemConstructor(SemanticModel semanticModel, ClassDeclarationSyntax classNode)
         {
