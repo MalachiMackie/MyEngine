@@ -29,7 +29,7 @@ namespace MyEngine.Runtime
             {template:UninstantiatedStartupSystemsDictionary};
 
         private static partial Dictionary<System.Type, System.Type[]> GetUninstantiatedSystems() =>
-            {template:UninstantiatedSystemsDictionary}
+            {template:UninstantiatedSystemsDictionary};
 	}
 }
 
