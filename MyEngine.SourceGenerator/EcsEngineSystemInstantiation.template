@@ -1,0 +1,10 @@
+_systemInstantiations.Add(typeof({template:SystemFullyQualifiedName}), () =>
+{
+    {template:GetQueryComponentFuncs}
+    if ({template:ResourceChecks})
+    {
+        return new {template:SystemFullyQualifiedName}({template:SystemParameters});
+    }
+
+    return null;
+});

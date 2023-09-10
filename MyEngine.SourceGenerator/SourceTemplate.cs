@@ -47,20 +47,21 @@ namespace MyEngine.SourceGenerator
             var stringBuilder = new StringBuilder();
             var previousPartEnd = 0;
 
-            var instances = _parts.SelectMany(x => x.Instances.Select(y => (y.Position, y.EndPosition, x.Replacement, Indentation: y.IndentationAtPosition)))
+            var instances = _parts.SelectMany(x => x.Instances.Select(y => (x.Name, y.Position, y.EndPosition, x.Replacement, Indentation: y.IndentationAtPosition)))
                 .OrderBy(x => x.Position)
                 .ToArray();
 
-            foreach (var (Position, EndPosition, Replacement, Indentation) in instances)
+            foreach (var (Name, Position, EndPosition, Replacement, Indentation) in instances)
             {
                 stringBuilder.Append(_contents.Substring(previousPartEnd, Position - previousPartEnd));
-                if (Replacement.Contains('\n'))
+                if (Replacement.Contains("\r\n"))
                 {
-                    var lines = Replacement.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    var lines = Replacement.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
                     stringBuilder.Append(lines[0]);
                     foreach (var line in lines.Skip(1))
                     {
-                        stringBuilder.Append(' ', Indentation);
+                        stringBuilder.Append("\r\n");
+                        stringBuilder.Append(' ', Indentation - 1);
                         stringBuilder.Append(line);
                     }
                 }
@@ -77,33 +78,23 @@ namespace MyEngine.SourceGenerator
             return stringBuilder.ToString();
         }
 
-        public static SourceTemplate Load(string fileName)
+        public static SourceTemplate Load(string templateContents)
         {
-            var manifestResourceName = Assembly.GetManifestResourceNames()
-                .First(x => x.EndsWith(fileName));
-
-            var resourceStream = Assembly.GetManifestResourceStream(manifestResourceName);
-            string contents;
-            using (var reader = new StreamReader(resourceStream))
-            {
-                contents = reader.ReadToEnd();
-            }
-
             var templateParts = new List<TemplatePart>();
 
             const string templateStart = "{template:";
-            var templateIndex = contents.IndexOf(templateStart);
+            var templateIndex = templateContents.IndexOf(templateStart);
             while (templateIndex != -1)
             {
-                var endTemplateIndex = contents.IndexOf('}', templateIndex);
-                var templatePart = contents.Substring(templateIndex + templateStart.Length, (endTemplateIndex - templateIndex) - templateStart.Length);
-                if (templatePart.Contains('\n'))
+                var endTemplateIndex = templateContents.IndexOf('}', templateIndex);
+                var templatePart = templateContents.Substring(templateIndex + templateStart.Length, (endTemplateIndex - templateIndex) - templateStart.Length);
+                if (templatePart.Contains("\r\n"))
                 {
                     throw new InvalidOperationException($"Template cannot be across multiple lines");
                 }
 
 
-                var previousNewLine = contents.LastIndexOf('\n', templateIndex, templateIndex - 1);
+                var previousNewLine = templateContents.LastIndexOf("\r\n", templateIndex, templateIndex - 1);
                 int indentationLevel;
                 if (previousNewLine == -1)
                 {
@@ -125,10 +116,26 @@ namespace MyEngine.SourceGenerator
                 }
                 foundTemplatePart.Instances.Add(new TemplatePartInstance { Position = templateIndex, EndPosition = endTemplateIndex, IndentationAtPosition = indentationLevel - 1 });
 
-                templateIndex = contents.IndexOf(templateStart, endTemplateIndex);
+                templateIndex = templateContents.IndexOf(templateStart, endTemplateIndex);
             }
 
-            return new SourceTemplate(contents, templateParts);
+            return new SourceTemplate(templateContents, templateParts);
+
+        }
+
+        public static SourceTemplate LoadFromEmbeddedResource(string fileName)
+        {
+            var manifestResourceName = Assembly.GetManifestResourceNames()
+                .First(x => x.EndsWith(fileName));
+
+            var resourceStream = Assembly.GetManifestResourceStream(manifestResourceName);
+            string contents;
+            using (var reader = new StreamReader(resourceStream))
+            {
+                contents = reader.ReadToEnd();
+            }
+
+            return Load(contents);
         }
     
 

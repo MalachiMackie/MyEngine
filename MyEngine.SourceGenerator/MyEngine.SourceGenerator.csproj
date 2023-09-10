@@ -34,10 +34,16 @@
     <None Remove="EcsEngine.template" />
     <None Remove="EcsEngineStartupSystemInstantiation.template" />
     <None Remove="EcsEngineSystemInstantiation.template" />
+    <None Remove="EcsEngineSystemInstantiationGetComponentFunc.template" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="EcsEngine.template" />
     <EmbeddedResource Include="EcsEngineStartupSystemInstantiation.template" />
+    <EmbeddedResource Include="EcsEngineSystemInstantiationGetComponentFunc.template" />
     <EmbeddedResource Include="EcsEngineSystemInstantiation.template" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="MyEngine.SourceGenerator.Tests"/>
   </ItemGroup>
 </Project>

@@ -1,0 +1,13 @@
+global::MyEngine.Core.Ecs.Components.EntityComponents<{template:QueryTypeParameters}>? GetQuery{template:QueryNumber}Components(global::MyEngine.Core.Ecs.EntityId entityId)
+{
+    if ({template:RequiredComponentChecks})
+    {
+        {template:OptionalComponentVariables}
+        return new global::MyEngine.Core.Ecs.Components.EntityComponents<{template:QueryTypeParameters}>(entityId)
+        {
+            {template:EcsComponentsPropertyAssignments}
+        };
+    }
+
+    return null;
+}
