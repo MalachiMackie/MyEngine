@@ -1,0 +1,8 @@
+namespace {template:Namespace}
+{
+	// todo: use an attribute
+	public static class AppEntrypointInfo
+	{
+		public const string FullyQualifiedName = "{template:FullyQualifiedName}"; 
+	}
+}

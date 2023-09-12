@@ -1,0 +1,10 @@
+﻿namespace {template:Namespace}
+{
+    [global::MyEngine.Core.AppSystemsInfo]
+    public static class AppSystemsInfo
+    {
+        public const string SystemClasses = "{template:SystemClasses}";
+
+        public const string StartupSystemClasses = "{template:StartupSystemClasses}";
+    }
+}

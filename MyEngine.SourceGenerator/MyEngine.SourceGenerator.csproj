@@ -31,10 +31,16 @@
       <None Include="$(PkgNewtonsoft_Json)\lib\netstandard2.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
   <ItemGroup>
+    <None Remove="AppEntrypointInfo.template" />
+    <None Remove="AppSystemsInfo.template" />
     <None Remove="EcsEngine.template" />
     <None Remove="EcsEngineStartupSystemInstantiation.template" />
     <None Remove="EcsEngineSystemInstantiation.template" />
     <None Remove="EcsEngineSystemInstantiationGetComponentFunc.template" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="AppEntrypointInfo.template" />
+    <EmbeddedResource Include="AppSystemsInfo.template" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="EcsEngine.template" />
@@ -44,6 +50,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="MyEngine.SourceGenerator.Tests"/>
+    <InternalsVisibleTo Include="MyEngine.SourceGenerator.Tests" />
   </ItemGroup>
 </Project>
