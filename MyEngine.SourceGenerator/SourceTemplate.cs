@@ -10,6 +10,8 @@ namespace MyEngine.SourceGenerator
 {
     internal class SourceTemplate
     {
+        private const string NewLine = "\r\n";
+
         private static readonly Assembly Assembly = typeof(SourceTemplate).Assembly;
 
         private readonly string _contents;
@@ -54,14 +56,14 @@ namespace MyEngine.SourceGenerator
             foreach (var (Name, Position, EndPosition, Replacement, Indentation) in instances)
             {
                 stringBuilder.Append(_contents.Substring(previousPartEnd, Position - previousPartEnd));
-                if (Replacement.Contains("\r\n"))
+                if (Replacement.Contains(NewLine))
                 {
-                    var lines = Replacement.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                    var lines = Replacement.Split(new[] { NewLine }, StringSplitOptions.RemoveEmptyEntries);
                     stringBuilder.Append(lines[0]);
                     foreach (var line in lines.Skip(1))
                     {
-                        stringBuilder.Append("\r\n");
-                        stringBuilder.Append(' ', Indentation - 1);
+                        stringBuilder.Append(NewLine);
+                        stringBuilder.Append(' ', Indentation);
                         stringBuilder.Append(line);
                     }
                 }
@@ -88,13 +90,13 @@ namespace MyEngine.SourceGenerator
             {
                 var endTemplateIndex = templateContents.IndexOf('}', templateIndex);
                 var templatePart = templateContents.Substring(templateIndex + templateStart.Length, (endTemplateIndex - templateIndex) - templateStart.Length);
-                if (templatePart.Contains("\r\n"))
+                if (templatePart.Contains(NewLine))
                 {
                     throw new InvalidOperationException($"Template cannot be across multiple lines");
                 }
 
 
-                var previousNewLine = templateContents.LastIndexOf("\r\n", templateIndex, templateIndex - 1);
+                var previousNewLine = templateContents.LastIndexOf(NewLine, templateIndex);
                 int indentationLevel;
                 if (previousNewLine == -1)
                 {
@@ -103,7 +105,7 @@ namespace MyEngine.SourceGenerator
                 }
                 else
                 {
-                    indentationLevel = templateIndex - previousNewLine;
+                    indentationLevel = templateIndex - (previousNewLine + NewLine.Length);
                 }
 
 
@@ -114,7 +116,7 @@ namespace MyEngine.SourceGenerator
                     foundTemplatePart = new TemplatePart { Name = templatePart };
                     templateParts.Add(foundTemplatePart);
                 }
-                foundTemplatePart.Instances.Add(new TemplatePartInstance { Position = templateIndex, EndPosition = endTemplateIndex, IndentationAtPosition = indentationLevel - 1 });
+                foundTemplatePart.Instances.Add(new TemplatePartInstance { Position = templateIndex, EndPosition = endTemplateIndex, IndentationAtPosition = indentationLevel });
 
                 templateIndex = templateContents.IndexOf(templateStart, endTemplateIndex);
             }

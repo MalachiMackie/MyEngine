@@ -6,52 +6,51 @@ namespace MyEngine.SourceGenerator
     public class EcsEngineSourceBuilder
     {
         public static (string FileName, string Contents) BuildEcsEngineSource(
-            IReadOnlyCollection<StartupSystemClass> startupSystemClassModels,
-            IReadOnlyCollection<SystemClass> systemClassModels,
+            IReadOnlyCollection<StartupSystemClassDto> startupSystemClassModels,
+            IReadOnlyCollection<SystemClassDto> systemClassModels,
             string appEntrypointFullyQualifiedName)
         {
-var ecsEngineTemplate = SourceTemplate.LoadFromEmbeddedResource("EcsEngine.template");
+            var ecsEngineTemplate = SourceTemplate.LoadFromEmbeddedResource("EcsEngine.template");
 
-
-                var startupSystemInstantiations = startupSystemClassModels.Select(BuildStartupSystemInstantiation);
+            var startupSystemInstantiations = startupSystemClassModels.Select(BuildStartupSystemInstantiation);
             var systemInstantiations = systemClassModels.Select(BuildSystemInstantiation);
 
-                ecsEngineTemplate.SubstitutePart("AppEntrypointName", appEntrypointFullyQualifiedName);
-                ecsEngineTemplate.SubstitutePart("StartupSystemInstantiations", string.Join("\r\n\r\n", startupSystemInstantiations));
-                ecsEngineTemplate.SubstitutePart("SystemInstantiations", string.Join("\r\n\r\n", systemInstantiations));
-                ecsEngineTemplate.SubstitutePart("AllStartupSystemTypesArray", startupSystemClassModels.Count == 0
-                    ? "Array.Empty<Type>()"
-                    : $@"new Type[]
+            ecsEngineTemplate.SubstitutePart("AppEntrypointName", appEntrypointFullyQualifiedName);
+            ecsEngineTemplate.SubstitutePart("StartupSystemInstantiations", string.Join("\r\n\r\n", startupSystemInstantiations));
+            ecsEngineTemplate.SubstitutePart("SystemInstantiations", string.Join("\r\n\r\n", systemInstantiations));
+            ecsEngineTemplate.SubstitutePart("AllStartupSystemTypesArray", startupSystemClassModels.Count == 0
+                ? "Array.Empty<Type>()"
+                : $@"new Type[]
 {{
     {string.Join(",\r\n    ", startupSystemClassModels.Select(x => $"typeof({x.FullyQualifiedName})"))}
 }}");
-                ecsEngineTemplate.SubstitutePart("AllSystemTypesArray", systemClassModels.Count == 0
-                    ? "Array.Empty<Type>()"
-                    : $@"new Type[]
+            ecsEngineTemplate.SubstitutePart("AllSystemTypesArray", systemClassModels.Count == 0
+                ? "Array.Empty<Type>()"
+                : $@"new Type[]
 {{
     {string.Join(",\r\n    ", systemClassModels.Select(x => $"typeof({x.FullyQualifiedName})"))}
 }}");
-                ecsEngineTemplate.SubstitutePart("UninstantiatedStartupSystemsDictionary",
-                    startupSystemClassModels.Count == 0
+            ecsEngineTemplate.SubstitutePart("UninstantiatedStartupSystemsDictionary",
+                startupSystemClassModels.Count == 0
                     ? "new ()"
                     : $@"new ()
 {{
     {string.Join(",\r\n    ", startupSystemClassModels.Select(x => $"{{ typeof({x.FullyQualifiedName}), {(x.Constructor.Parameters.Count == 0 ? "Array.Empty<Type>()" : $"new Type[] {{ {string.Join(", ", x.Constructor.Parameters.Select(y => $"typeof({y.Name})"))} }}")} }}"))}
 }}");
-                ecsEngineTemplate.SubstitutePart("UninstantiatedSystemsDictionary",
-                    systemClassModels.Count == 0
-                    ? "new ()"
-                    : $@"new ()
+            ecsEngineTemplate.SubstitutePart("UninstantiatedSystemsDictionary",
+                systemClassModels.Count == 0
+                ? "new ()"
+                : $@"new ()
 {{
-    {string.Join(",\r\n    ", systemClassModels.Select(x => $"{{ typeof({x.FullyQualifiedName}), {(x.Constructor.Parameters.Count == 0 ? "Array.Empty<Type>()" : $"new Type[] {{ {string.Join(", ", x.Constructor.Parameters.Where(y => y.IsResource).Select(y => $"typeof({y.Name})"))} }}")} }}"))}
+    {string.Join(",\r\n    ", systemClassModels.Select(x => $"{{ typeof({x.FullyQualifiedName}), {(x.Constructor.TotalParameters == 0 ? "Array.Empty<Type>()" : $"new Type[] {{ {string.Join(", ", x.Constructor.ResourceParameters.Select(y => $"typeof({y.Name})"))} }}")} }}"))}
 }}");
 
-                var ecsEngineBody = ecsEngineTemplate.Build();
+            var ecsEngineBody = ecsEngineTemplate.Build();
 
-                return ("EcsEngine.g.cs", ecsEngineBody);
+            return ("EcsEngine.g.cs", ecsEngineBody);
         }
 
-        private static string BuildStartupSystemInstantiation(StartupSystemClass systemClass)
+        public static string BuildStartupSystemInstantiation(StartupSystemClassDto systemClass)
         {
             var template = SourceTemplate.LoadFromEmbeddedResource("EcsEngineStartupSystemInstantiation.template");
             template.SubstitutePart("StartupSystemFullyQualifiedName", systemClass.FullyQualifiedName);
@@ -61,25 +60,25 @@ var ecsEngineTemplate = SourceTemplate.LoadFromEmbeddedResource("EcsEngine.templ
                 .Select(x => (ResourceCheck: $"_resourceContainer.TryGetResource<{x.Parameter.Name}>(out var resource{x.Index + 1})", ParameterName: $"resource{x.Index + 1}"))
                 .ToArray();
 
-            template.SubstitutePart("ResourceChecks", string.Join("\r\n&& ", resourceChecks.Select(x => x.ResourceCheck)));
+            var resourceChecksJoined = resourceChecks.Length == 0 ? "true" : string.Join("\r\n&& ", resourceChecks.Select(x => x.ResourceCheck));
+
+            template.SubstitutePart("ResourceChecks", resourceChecksJoined);
             template.SubstitutePart("StartupSystemParameters", string.Join(", ", resourceChecks.Select(x => x.ParameterName)));
-            
+
             return template.Build();
         }
 
-        private static string BuildSystemInstantiation(SystemClass systemClass)
+        public static string BuildSystemInstantiation(SystemClassDto systemClass)
         {
             var sourceTemplate = SourceTemplate.LoadFromEmbeddedResource("EcsEngineSystemInstantiation.template");
             sourceTemplate.SubstitutePart("SystemFullyQualifiedName", systemClass.FullyQualifiedName);
 
-            var getComponentFuncs = systemClass.Constructor.Parameters
-                .Where(x => !x.IsResource)
-                .Select((x, i) => BuildGetComponentsFunc(x.QueryComponentTypeParameters, i + 1))
+            var getComponentFuncs = systemClass.Constructor.QueryParameters
+                .Select((x, i) => BuildGetComponentsFunc(x.TypeParameters, i + 1))
                 .ToArray();
             sourceTemplate.SubstitutePart("GetQueryComponentFuncs", string.Join("\r\n\r\n", getComponentFuncs));
 
-            var resourceChecks = systemClass.Constructor.Parameters
-                .Where(x => x.IsResource)
+            var resourceChecks = systemClass.Constructor.ResourceParameters
                 .Select((x, i) => (Parameter: x, Index: i))
                 .ToDictionary(x => x.Parameter.Name, x => (ResourceCheck: $"_resourceContainer.TryGetResource<{x.Parameter.Name}>(out var resource{x.Index})", ParameterName: $"resource{x.Index}"));
 
@@ -92,21 +91,23 @@ var ecsEngineTemplate = SourceTemplate.LoadFromEmbeddedResource("EcsEngine.templ
                 sourceTemplate.SubstitutePart("ResourceChecks", "true");
             }
 
-            var queryParameters = systemClass.Constructor.Parameters.Select((x, i) => (Parameter: x, Index: i))
-                .Where(x => !x.Parameter.IsResource)
-                .Select((x, queryIndex) => (QueryCreation: $"global::MyEngine.Runtime.Query.Create(_components, _entities, GetQuery{queryIndex + 1}Components)", x.Index))
-                .ToDictionary(x => x.Index, x => x.QueryCreation);
+            var parameters = new string[systemClass.Constructor.TotalParameters];
+            foreach (var (parameterIndex, queryIndex) in systemClass.Constructor.QueryParameters.Select((x, i) => (x.ParameterIndex, i)))
+            {
+                parameters[parameterIndex] = $"global::MyEngine.Runtime.Query.Create(_components, _entities, GetQuery{queryIndex + 1}Components)";
+            }
 
-            var parameters = systemClass.Constructor.Parameters.Select((x, i) => x.IsResource
-                ? resourceChecks[x.Name].ParameterName
-                : queryParameters[i]);
+            foreach (var (parameterIndex, resourceParameter) in systemClass.Constructor.ResourceParameters.Select(x => (x.ParameterIndex, x.Name)))
+            {
+                parameters[parameterIndex] = resourceChecks[resourceParameter].ParameterName;
+            }
 
             sourceTemplate.SubstitutePart("SystemParameters", string.Join(",\r\n", parameters));
 
             return sourceTemplate.Build();
         }
 
-        private static string BuildGetComponentsFunc(IReadOnlyCollection<QueryComponentTypeParameter> queryParameters, int queryNumber)
+        public static string BuildGetComponentsFunc(IReadOnlyCollection<QueryComponentTypeParameterDto> queryParameters, int queryNumber)
         {
             var template = SourceTemplate.LoadFromEmbeddedResource("EcsEngineSystemInstantiationGetComponentFunc.template");
             var entityComponentsTypeArguments = string.Join(",\r\n",

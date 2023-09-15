@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MyEngine.SourceGenerator
 {
@@ -17,30 +18,59 @@ namespace MyEngine.SourceGenerator
 
     public sealed class SystemConstructor
     {
-        public static readonly SystemConstructor NoConstructor = new SystemConstructor(Array.Empty<SystemConstructorParameter>());
-        public IReadOnlyCollection<SystemConstructorParameter> Parameters { get; }
+        public uint TotalParameters { get; private set; }
+        public Dictionary<uint, SystemConstructorQueryParameter> QueryParameters { get; } = new Dictionary<uint, SystemConstructorQueryParameter>();
+        public Dictionary<uint, SystemConstructorResourceParameter> ResourceParameters { get; } = new Dictionary<uint, SystemConstructorResourceParameter>();
 
-        public SystemConstructor(IReadOnlyCollection<SystemConstructorParameter> parameters)
+        public SystemConstructor()
         {
-            Parameters = parameters;
+        }
+
+        public void AddParameter(SystemConstructorQueryParameter parameter)
+        {
+            QueryParameters[TotalParameters] = parameter;
+            TotalParameters++;
+        } 
+
+        public void AddParameter(SystemConstructorResourceParameter parameter)
+        {
+            ResourceParameters[TotalParameters] = parameter;
+            TotalParameters++;
         }
     }
 
-    public sealed class SystemConstructorParameter
+    public sealed class SystemConstructorQueryParameter
     {
-        public string Name { get; set; }
+        public SystemConstructorQueryParameter(QueryComponentTypeParameter firstTypeParameter, IEnumerable<QueryComponentTypeParameter> restTypeParameters)
+        {
+            TypeParameters = restTypeParameters.Prepend(firstTypeParameter).ToArray();
+        }
 
-        public bool IsResource { get; set; }
+        public IReadOnlyList<QueryComponentTypeParameter> TypeParameters { get; }
+    }
 
-        public IReadOnlyList<QueryComponentTypeParameter> QueryComponentTypeParameters { get; set; }
+    public sealed class SystemConstructorResourceParameter
+    {
+        public SystemConstructorResourceParameter(string name)
+        {
+            Name = name;
+        }
+
+        public string Name { get; }
     }
 
 
     public sealed class QueryComponentTypeParameter
     {
-        public MetaComponentType? MetaComponentType { get; set; }
+        public QueryComponentTypeParameter(string componentTypeName, MetaComponentType? metaComponentType)
+        {
+            ComponentTypeName = componentTypeName;
+            MetaComponentType = metaComponentType;
+        }
 
-        public string ComponentTypeName { get; set; }
+        public MetaComponentType? MetaComponentType { get; }
+
+        public string ComponentTypeName { get; }
     } 
 
     public enum MetaComponentType

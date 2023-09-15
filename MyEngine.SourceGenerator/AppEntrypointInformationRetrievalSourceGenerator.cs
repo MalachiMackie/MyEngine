@@ -56,11 +56,11 @@ namespace MyEngine.SourceGenerator
                 var appEntrypointFullyQualifiedName = appEntrypointInfo.GetMembers().FirstOrDefault(x => x.Name == "FullyQualifiedName") as IFieldSymbol;
 
                 var systemClassModels = appSystemsInfoTypes.Select(x => x.GetMembers().FirstOrDefault(y => y.Name == "SystemClasses") as IFieldSymbol)
-                    .SelectMany(x => JsonConvert.DeserializeObject<SystemClass[]>((x.ConstantValue as string).Replace("\\\"", "\"")))
+                    .SelectMany(x => JsonConvert.DeserializeObject<SystemClassDto[]>((x.ConstantValue as string).Replace("\\\"", "\"")))
                     .ToArray();
 
                 var startupSystemClassModels = appSystemsInfoTypes.Select(x => x.GetMembers().FirstOrDefault(y => y.Name == "StartupSystemClasses") as IFieldSymbol)
-                    .SelectMany(x => JsonConvert.DeserializeObject<StartupSystemClass[]>((x.ConstantValue as string).Replace("\\\"", "\"")))
+                    .SelectMany(x => JsonConvert.DeserializeObject<StartupSystemClassDto[]>((x.ConstantValue as string).Replace("\\\"", "\"")))
                     .ToArray();
 
                 var (ecsEngineFileName, ecsEngineSource) = EcsEngineSourceBuilder.BuildEcsEngineSource(
@@ -83,8 +83,8 @@ namespace MyEngine.SourceGenerator
 
                 var template = SourceTemplate.LoadFromEmbeddedResource("AppSystemsInfo.template");
                 template.SubstitutePart("Namespace", $"{compilation.AssemblyName}.Generated");
-                template.SubstitutePart("SystemClasses", JsonConvert.SerializeObject(systems).Replace("\"", "\\\""));
-                template.SubstitutePart("StartupSystemClasses", JsonConvert.SerializeObject(startupSystems).Replace("\"", "\\\""));
+                template.SubstitutePart("SystemClasses", JsonConvert.SerializeObject(systems.Select(x => new SystemClassDto(x))).Replace("\"", "\\\""));
+                template.SubstitutePart("StartupSystemClasses", JsonConvert.SerializeObject(startupSystems.Select(x => new StartupSystemClassDto(x))).Replace("\"", "\\\""));
 
                 sourceProductionContext.AddSource("AppSystemsInfo.g.cs", template.Build());
             });
@@ -210,7 +210,7 @@ namespace MyEngine.SourceGenerator
             // no constructor means public constructor
             if (constructorDeclarations.Length == 0)
             {
-                return SystemConstructor.NoConstructor;
+                return new SystemConstructor();
             }
 
             var publicConstructors = constructorDeclarations
@@ -223,28 +223,23 @@ namespace MyEngine.SourceGenerator
                 return null;
             }
 
-            foreach (var constructor in publicConstructors)
+            foreach (var constructorNode in publicConstructors)
             {
-                var parameterList = constructor.ChildNodes().OfType<ParameterListSyntax>().First();
+                var parameterList = constructorNode.ChildNodes().OfType<ParameterListSyntax>().First();
                 var isValid = true;
-
-                var constructorParameters = new List<SystemConstructorParameter>();
+                var constructor = new SystemConstructor();
 
                 foreach (var parameter in parameterList.Parameters)
                 {
                     var parameterTypeInfo = semanticModel.GetTypeInfo(parameter.Type);
 
-                    var isResource = DoesTypeInfoImplementInterface(parameterTypeInfo, "MyEngine.Core.Ecs.Resources.IResource");
-                    var isQuery = TryGetQueryParameter(parameterTypeInfo, out var queryParameters);
-
-                    if (isResource)
+                    if (DoesTypeInfoImplementInterface(parameterTypeInfo, "MyEngine.Core.Ecs.Resources.IResource"))
                     {
-                        constructorParameters.Add(new SystemConstructorParameter { IsResource = true, Name = parameterTypeInfo.Type.ToDisplayString() });
+                        constructor.AddParameter(new SystemConstructorResourceParameter(parameterTypeInfo.Type.ToDisplayString()));
                     }
-                    else if (isQuery)
+                    else if (TryGetQueryParameter(parameterTypeInfo, out var queryParameter))
                     {
-                        var namedType = parameterTypeInfo.Type as INamedTypeSymbol;
-                        constructorParameters.Add(new SystemConstructorParameter { Name = namedType.ToDisplayString(), QueryComponentTypeParameters = queryParameters });
+                        constructor.AddParameter(queryParameter);
                     }
                     else
                     {
@@ -254,46 +249,47 @@ namespace MyEngine.SourceGenerator
                 }
                 if (isValid)
                 {
-                    return new SystemConstructor(constructorParameters);
+                    return constructor;
                 }
             }
 
             return null;
         }
 
-        private bool TryGetQueryParameter(TypeInfo parameterTypeInfo, out IReadOnlyList<QueryComponentTypeParameter> queryParameters)
+        private bool TryGetQueryParameter(TypeInfo parameterTypeInfo, out SystemConstructorQueryParameter queryParameter)
         {
             var queryParametersList = new List<QueryComponentTypeParameter>();
-            queryParameters = queryParametersList;
             if (!parameterTypeInfo.Type.ToDisplayString().StartsWith("MyEngine.Core.Ecs.IQuery<"))
             {
+                queryParameter = null;
                 return false;
             }
 
             var namedType = parameterTypeInfo.Type as INamedTypeSymbol;
+            if (namedType.TypeArguments.Length == 0)
+            {
+                queryParameter = null;
+                return false;
+            }
 
-
-            foreach (var argument in namedType.TypeArguments)
+            QueryComponentTypeParameter GetTypeParameter(ITypeSymbol argument)
             {
                 var argumentDisplay = argument.ToDisplayString();
                 const string optionalComponentStart = "MyEngine.Core.Ecs.Components.OptionalComponent<";
                 if (argumentDisplay.StartsWith(optionalComponentStart))
                 {
-                    queryParametersList.Add(new QueryComponentTypeParameter
-                    {
-                        MetaComponentType = MetaComponentType.OptionalComponent,
-                        ComponentTypeName = argumentDisplay.Substring(optionalComponentStart.Length, argumentDisplay.Length - optionalComponentStart.Length - 1)
-                    });
+                    return new QueryComponentTypeParameter(
+                        argumentDisplay.Substring(optionalComponentStart.Length, argumentDisplay.Length - optionalComponentStart.Length - 1),
+                        MetaComponentType.OptionalComponent);
                 }
-                else
-                {
-                    queryParametersList.Add(new QueryComponentTypeParameter()
-                    {
-                        ComponentTypeName = argumentDisplay
-                    });
-                }
+
+                return new QueryComponentTypeParameter(argumentDisplay, metaComponentType: null);
             }
 
+            var firstTypeParameter = GetTypeParameter(namedType.TypeArguments[0]);
+            var restTypeParameter = namedType.TypeArguments.Skip(1).Select(GetTypeParameter);
+
+            queryParameter = new SystemConstructorQueryParameter(firstTypeParameter, restTypeParameter);
             return true;
 
         }
