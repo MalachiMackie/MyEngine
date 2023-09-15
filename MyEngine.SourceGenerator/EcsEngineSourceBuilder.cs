@@ -107,7 +107,7 @@ namespace MyEngine.SourceGenerator
             return sourceTemplate.Build();
         }
 
-        public static string BuildGetComponentsFunc(IReadOnlyCollection<QueryComponentTypeParameterDto> queryParameters, int queryNumber)
+        private static string BuildGetComponentsFunc(IReadOnlyCollection<QueryComponentTypeParameterDto> queryParameters, int queryNumber)
         {
             var template = SourceTemplate.LoadFromEmbeddedResource("EcsEngineSystemInstantiationGetComponentFunc.template");
             var entityComponentsTypeArguments = string.Join(",\r\n",

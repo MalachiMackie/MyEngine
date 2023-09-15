@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace MyEngine.SourceGenerator
 {
@@ -12,7 +11,7 @@ namespace MyEngine.SourceGenerator
 
     public sealed class StartupSystemConstructorDto
     {
-        public IReadOnlyCollection<StartupSystemConstructorParameterDto> Parameters { get; set; }
+        public IReadOnlyCollection<StartupSystemConstructorParameterDto> Parameters { get; set; } = Array.Empty<StartupSystemConstructorParameterDto>();
     }
 
     public sealed class StartupSystemClassDto

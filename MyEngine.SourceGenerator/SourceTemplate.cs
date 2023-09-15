@@ -4,10 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace MyEngine.SourceGenerator
 {
+    // todo: nested templates:  "{fileTemplate:myFileTemplate.template}"
+    // todo: optional templates: "{template:MyTemplate;Optional=true}"
+    // todo: handle tabs and spaces
     internal class SourceTemplate
     {
         private const string NewLine = "\r\n";

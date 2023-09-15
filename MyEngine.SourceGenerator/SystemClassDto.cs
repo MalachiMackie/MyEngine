@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace MyEngine.SourceGenerator
@@ -39,8 +40,8 @@ namespace MyEngine.SourceGenerator
     public sealed class SystemConstructorDto
     {
         public int TotalParameters => QueryParameters.Count + ResourceParameters.Count;
-        public IReadOnlyCollection<SystemConstructorQueryParameterDto> QueryParameters { get; set; }
-        public IReadOnlyCollection<SystemConstructorResourceParameterDto> ResourceParameters { get; set; }
+        public IReadOnlyCollection<SystemConstructorQueryParameterDto> QueryParameters { get; set; } = Array.Empty<SystemConstructorQueryParameterDto>();
+        public IReadOnlyCollection<SystemConstructorResourceParameterDto> ResourceParameters { get; set; } = Array.Empty<SystemConstructorResourceParameterDto>();
     }
 
     public sealed class SystemConstructorQueryParameterDto

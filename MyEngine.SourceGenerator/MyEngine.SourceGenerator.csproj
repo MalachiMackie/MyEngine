@@ -39,14 +39,14 @@
     <None Remove="EcsEngineSystemInstantiationGetComponentFunc.template" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="AppEntrypointInfo.template" />
-    <EmbeddedResource Include="AppSystemsInfo.template" />
+    <EmbeddedResource Include="Templates\AppEntrypointInfo.template" />
+    <EmbeddedResource Include="Templates\AppSystemsInfo.template" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="EcsEngine.template" />
-    <EmbeddedResource Include="EcsEngineStartupSystemInstantiation.template" />
-    <EmbeddedResource Include="EcsEngineSystemInstantiationGetComponentFunc.template" />
-    <EmbeddedResource Include="EcsEngineSystemInstantiation.template" />
+    <EmbeddedResource Include="Templates\EcsEngine.template" />
+    <EmbeddedResource Include="Templates\EcsEngineStartupSystemInstantiation.template" />
+    <EmbeddedResource Include="Templates\EcsEngineSystemInstantiationGetComponentFunc.template" />
+    <EmbeddedResource Include="Templates\EcsEngineSystemInstantiation.template" />
   </ItemGroup>
 
   <ItemGroup>

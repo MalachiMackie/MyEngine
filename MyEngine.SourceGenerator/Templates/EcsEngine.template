@@ -4,8 +4,8 @@
 
 namespace MyEngine.Runtime
 {
-	internal partial class EcsEngine
-	{
+    internal partial class EcsEngine
+    {
         private static partial global::MyEngine.Core.IAppEntrypoint GetAppEntrypoint() => new {template:AppEntrypointName}();
 
         private partial void AddStartupSystemInstantiations()
@@ -30,7 +30,7 @@ namespace MyEngine.Runtime
 
         private static partial Dictionary<System.Type, System.Type[]> GetUninstantiatedSystems() =>
             {template:UninstantiatedSystemsDictionary};
-	}
+    }
 }
 
 #pragma warning restore CS0162 // Unreachable code detected
