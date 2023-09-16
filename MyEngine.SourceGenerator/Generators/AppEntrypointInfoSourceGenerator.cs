@@ -27,7 +27,7 @@ namespace MyEngine.SourceGenerator.Generators
                 .Where(x => _helpers.DoesClassNodeImplementInterface(x.SemanticModel, x.ClassNode, "MyEngine.Core.IAppEntrypoint"))
                 .Where(x => _helpers.DoesClassHaveAccessibleConstructor(x.ClassNode));
 
-            context.RegisterSourceOutput(nodesWithAppEntrypointAttribute, (sourceProductionContext, semanticModelAndClassNode) =>
+            context.RegisterImplementationSourceOutput(nodesWithAppEntrypointAttribute, (sourceProductionContext, semanticModelAndClassNode) =>
             {
                 var classNode = semanticModelAndClassNode.ClassNode;
 
