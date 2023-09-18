@@ -6,16 +6,11 @@ namespace MyEngine.SourceGenerator.Generators
     [Generator]
     internal class AppEntrypointInfoSourceGenerator : IIncrementalGenerator
     {
-        private readonly ISourceGeneratorHelpers _helpers;
+        private readonly SourceGeneratorHelpers _helpers;
 
         public AppEntrypointInfoSourceGenerator()
         {
             _helpers = new SourceGeneratorHelpers();
-        }
-
-        public AppEntrypointInfoSourceGenerator(ISourceGeneratorHelpers helpers)
-        {
-            _helpers = helpers;
         }
 
         public void Initialize(IncrementalGeneratorInitializationContext context)

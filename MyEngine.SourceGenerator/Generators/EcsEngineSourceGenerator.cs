@@ -8,16 +8,11 @@ namespace MyEngine.SourceGenerator.Generators
     [Generator]
     public class EcsEngineSourceGenerator : IIncrementalGenerator
     {
-        private readonly ISourceGeneratorHelpers _helpers;
+        private readonly SourceGeneratorHelpers _helpers;
         
         public EcsEngineSourceGenerator()
         {
             _helpers = new SourceGeneratorHelpers();
-        }
-
-        public EcsEngineSourceGenerator(ISourceGeneratorHelpers helpers)
-        {
-            _helpers = helpers;
         }
 
         public void Initialize(IncrementalGeneratorInitializationContext context)

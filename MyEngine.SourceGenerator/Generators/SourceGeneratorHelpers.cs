@@ -6,22 +6,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace MyEngine.SourceGenerator.Generators
 {
-    public interface ISourceGeneratorHelpers
-    {
-        IEnumerable<ITypeSymbol> GetAllNamespaceTypes(INamespaceSymbol namespaceSymbol);
-
-        string GetFullyQualifiedName(ClassDeclarationSyntax classNode);
-
-        bool IsClassConcreteAndAccessible(SemanticModel semanticModel, ClassDeclarationSyntax classNode);
-
-        bool DoesClassNodeImplementInterface(SemanticModel semanticModel, ClassDeclarationSyntax classNode, string interfaceFullyQualifiedName);
-
-        bool DoesTypeInfoImplementInterface(TypeInfo typeInfo, string interfaceFullyQualifiedName);
-
-        bool DoesClassHaveAccessibleConstructor(ClassDeclarationSyntax classNode);
-    }
-
-    public class SourceGeneratorHelpers : ISourceGeneratorHelpers
+    public class SourceGeneratorHelpers
     {
         public IEnumerable<ITypeSymbol> GetAllNamespaceTypes(INamespaceSymbol namespaceSymbol)
         {
