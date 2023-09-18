@@ -3,7 +3,7 @@ using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
-namespace MyEngine.SourceGenerator.Tests;
+namespace MyEngine.SourceGenerator.Tests.SourceGeneratorTests;
 
 public static class SourceGeneratorTestHelpers
 {
@@ -38,6 +38,7 @@ public static class SourceGeneratorTestHelpers
     public static Task VerifyGeneratorOutput(string source, Assembly referenceAssembly, IIncrementalGenerator generator)
     {
         var driver = GetGeneratorDriver(source, referenceAssembly, generator);
+
         var settings = new VerifySettings();
         settings.UseDirectory("Expectations");
 
