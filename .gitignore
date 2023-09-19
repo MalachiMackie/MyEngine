@@ -2,3 +2,4 @@
 **/obj
 **/bin
 **/Generated
+*.received.cs

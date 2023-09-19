@@ -2,7 +2,10 @@
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 using MyEngine.Rendering;
+using MyEngine.Runtime;
 using System.Diagnostics;
+
+[assembly: EngineRuntimeAssembly]
 
 namespace MyEngine.Runtime;
 

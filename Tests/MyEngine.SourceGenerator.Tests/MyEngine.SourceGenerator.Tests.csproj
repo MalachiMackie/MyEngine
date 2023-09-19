@@ -37,6 +37,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\MyEngine.Core\MyEngine.Core.csproj" />
     <ProjectReference Include="..\..\MyEngine.SourceGenerator\MyEngine.SourceGenerator.csproj" />
+    <ProjectReference Include="..\..\MyEngine\MyEngine.Runtime.csproj" />
   </ItemGroup>
 
 </Project>

@@ -41,6 +41,9 @@ public class AppSystemsInfoGeneratorTests
             }
             """;
 
-        await SourceGeneratorTestHelpers.VerifyGeneratorOutput(source, typeof(ISystem).Assembly, new AppSystemsInfoSourceGenerator());
+        await SourceGeneratorTestHelpers.VerifyGeneratorOutput(source,
+            Array.Empty<KeyValuePair<string, string>>(),
+            new[] { typeof(ISystem).Assembly },
+            new AppSystemsInfoSourceGenerator());
     }
 }

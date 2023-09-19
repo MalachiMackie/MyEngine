@@ -23,26 +23,29 @@ namespace MyEngine.SourceGenerator.Generators
 
             var compilationValue = context.CompilationProvider.Select((x, _) => x);
 
-
             var appSystemsInfoTypes = compilationValue.SelectMany((x, _) => x.References.Select(y => x.GetAssemblyOrModuleSymbol(y)).OfType<IAssemblySymbol>())
                 .SelectMany((x, _) => _helpers.GetAllNamespaceTypes(x.GlobalNamespace))
                 .Where(x => x.GetAttributes().Any(y => y.AttributeClass?.ToDisplayString() == "MyEngine.Core.AppSystemsInfoAttribute"))
                 .Collect();
 
-            var assemblyName = compilationValue.Select((x, _) => x.AssemblyName);
+            var assemblyAttributesProvider = compilationValue.Select((x, _) => x.Assembly.GetAttributes());
 
             // todo: use attribute instead
             var appEntrypointInfoType = compilationValue.Select((x, _) => x.GetTypeByMetadataName("MyEngine.Runtime.AppEntrypointInfo"));
 
-            var allTypes = appSystemsInfoTypes.Combine(assemblyName)
+            var allTypes = appSystemsInfoTypes.Combine(assemblyAttributesProvider)
                 .Combine(appEntrypointInfoType);
 
             context.RegisterImplementationSourceOutput(allTypes, (sourceProductionContext, value) =>
             {
-                var ((appSystemsInfos, assemblyNameValue), appEntrypointInfo) = value;
+                var ((appSystemsInfos, assemblyAttributes), appEntrypointInfo) = value;
 
-                // todo: attribute instead
-                if (assemblyNameValue != "MyEngine.Runtime")
+                if (assemblyAttributes.Length == 0 || assemblyAttributes.All(x => x.AttributeClass.ToDisplayString() != "MyEngine.Runtime.EngineRuntimeAssemblyAttribute"))
+                {
+                    return;
+                }
+
+                if (appEntrypointInfo is null)
                 {
                     return;
                 }

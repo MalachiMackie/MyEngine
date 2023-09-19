@@ -27,7 +27,10 @@ public class AppEntrypointGeneratorTests
 
         var generator = new AppEntrypointInfoSourceGenerator();
 
-        await SourceGeneratorTestHelpers.VerifyGeneratorOutput(source, typeof(AppEntrypointAttribute).Assembly, generator);
+        await SourceGeneratorTestHelpers.VerifyGeneratorOutput(source,
+            Array.Empty<KeyValuePair<string, string>>(),
+            new[] { typeof(AppEntrypointAttribute).Assembly },
+            generator);
     }
 
     [Fact]
@@ -50,7 +53,10 @@ public class AppEntrypointGeneratorTests
 
         var generator = new AppEntrypointInfoSourceGenerator();
 
-        var runResult = SourceGeneratorTestHelpers.GetRunResult(source, typeof(AppEntrypointAttribute).Assembly, generator);
+        var runResult = SourceGeneratorTestHelpers.GetRunResult(source,
+            Array.Empty<KeyValuePair<string, string>>(),
+            new[] { typeof(AppEntrypointAttribute).Assembly },
+            generator);
         runResult.Results.Should().ContainSingle()
             .Which.GeneratedSources.Should().BeEmpty();
     }

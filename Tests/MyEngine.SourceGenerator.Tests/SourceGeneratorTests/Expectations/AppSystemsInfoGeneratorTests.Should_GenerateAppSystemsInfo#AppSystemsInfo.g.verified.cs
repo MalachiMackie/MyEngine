@@ -1,5 +1,5 @@
 ﻿//HintName: AppSystemsInfo.g.cs
-namespace Tests.Generated
+namespace MyEngine.SourceGenerator.Tests.Generated
 {
     [global::MyEngine.Core.AppSystemsInfo]
     public static class AppSystemsInfo
