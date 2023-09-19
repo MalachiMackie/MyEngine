@@ -17,15 +17,12 @@ namespace MyEngine.SourceGenerator.Generators
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            var classNodes = context.SyntaxProvider.CreateSyntaxProvider((x, _) => x is ClassDeclarationSyntax, (x, _) => (x.SemanticModel, ClassNode: x.Node as ClassDeclarationSyntax));
-            var accessibleClassNodes = classNodes
-                .Where(x => _helpers.IsClassConcreteAndAccessible(x.SemanticModel, x.ClassNode!));
-
             var compilationValue = context.CompilationProvider.Select((x, _) => x);
 
-            var appSystemsInfoTypes = compilationValue.SelectMany((x, _) => x.References.Select(y => x.GetAssemblyOrModuleSymbol(y)).OfType<IAssemblySymbol>())
+            var appSystemsInfoValues = compilationValue.SelectMany((x, _) => x.References.Select(y => x.GetAssemblyOrModuleSymbol(y)).OfType<IAssemblySymbol>())
                 .SelectMany((x, _) => _helpers.GetAllNamespaceTypes(x.GlobalNamespace))
                 .Where(x => x.GetAttributes().Any(y => y.AttributeClass?.ToDisplayString() == "MyEngine.Core.AppSystemsInfoAttribute"))
+                .Select((x, _) => GetAppSystemsInfoValues(x))
                 .Collect();
 
             var assemblyAttributesProvider = compilationValue.Select((x, _) => x.Assembly.GetAttributes());
@@ -33,12 +30,12 @@ namespace MyEngine.SourceGenerator.Generators
             // todo: use attribute instead
             var appEntrypointInfoType = compilationValue.Select((x, _) => x.GetTypeByMetadataName("MyEngine.Runtime.AppEntrypointInfo"));
 
-            var allTypes = appSystemsInfoTypes.Combine(assemblyAttributesProvider)
+            var allTypes = appSystemsInfoValues.Combine(assemblyAttributesProvider)
                 .Combine(appEntrypointInfoType);
 
             context.RegisterImplementationSourceOutput(allTypes, (sourceProductionContext, value) =>
             {
-                var ((appSystemsInfos, assemblyAttributes), appEntrypointInfo) = value;
+                var ((appSystemsInfoValues, assemblyAttributes), appEntrypointInfo) = value;
 
                 if (assemblyAttributes.Length == 0 || assemblyAttributes.All(x => x.AttributeClass is null || x.AttributeClass.ToDisplayString() != "MyEngine.Runtime.EngineRuntimeAssemblyAttribute"))
                 {
@@ -54,6 +51,7 @@ namespace MyEngine.SourceGenerator.Generators
                     x.Name == "FullyQualifiedName"
                     && x is IFieldSymbol fieldSymbol
                     && fieldSymbol.HasConstantValue
+                    && fieldSymbol.DeclaredAccessibility == Accessibility.Public
                     && fieldSymbol.ConstantValue is string) is IFieldSymbol appEntrypointFullyQualifiedNameField))
                 {
                     return;
@@ -61,23 +59,14 @@ namespace MyEngine.SourceGenerator.Generators
 
                 var appEntrypointFullyQualifiedName = (string)appEntrypointFullyQualifiedNameField.ConstantValue!;
 
-                var systemClassModels = appSystemsInfos.Select(x => x.GetMembers().FirstOrDefault(y => y.Name == "SystemClasses"))
-                    .Where(x => x is IFieldSymbol)
-                    .Cast<IFieldSymbol>()
-                    .Where(x => x.HasConstantValue)
-                    .Select(x => x.ConstantValue)
-                    .Where(x => x is string)
-                    .Cast<string>()
-                    .SelectMany(x => JsonConvert.DeserializeObject<SystemClassDto[]>(x.Replace("\\\"", "\"")))
+                var systemClassModels = appSystemsInfoValues
+                    .Where(x => x.SystemClasses != null)
+                    .SelectMany(x => x.SystemClasses)
                     .ToArray();
 
-                var startupSystemClassModels = appSystemsInfos.Select(x => x.GetMembers().FirstOrDefault(y => y.Name == "StartupSystemClasses"))
-                    .Where(x => x is IFieldSymbol)
-                    .Cast<IFieldSymbol>()
-                    .Where(x => x.HasConstantValue)
-                    .Select(x => x.ConstantValue)
-                    .Cast<string>()
-                    .SelectMany(x => JsonConvert.DeserializeObject<StartupSystemClassDto[]>(x.Replace("\\\"", "\"")))
+                var startupSystemClassModels = appSystemsInfoValues
+                    .Where(x => x.StartupSystemClasses != null)
+                    .SelectMany(x => x.StartupSystemClasses)
                     .ToArray();
 
                 var (ecsEngineFileName, ecsEngineSource) = EcsEngineSourceBuilder.BuildEcsEngineSource(
@@ -86,6 +75,32 @@ namespace MyEngine.SourceGenerator.Generators
                 sourceProductionContext.AddSource(ecsEngineFileName, ecsEngineSource);
             });
 
+        }
+
+        private (SystemClassDto[]? SystemClasses, StartupSystemClassDto[]? StartupSystemClasses) GetAppSystemsInfoValues(ITypeSymbol appSystemsInfoType)
+        {
+            var publicStringFieldMembers = appSystemsInfoType.GetMembers()
+                .Where(x => x.DeclaredAccessibility == Accessibility.Public)
+                .OfType<IFieldSymbol>()
+                .Where(x => x.HasConstantValue)
+                .Where(x => x.ConstantValue is string);
+
+            var systemClassesMember = publicStringFieldMembers.FirstOrDefault(x => x.GetAttributes()
+                    .Any(y => y.AttributeClass != null
+                            && y.AttributeClass.ToDisplayString() == "MyEngine.Core.SystemClassesAttribute"));
+
+            var startupSystemClassesMember = publicStringFieldMembers.FirstOrDefault(x => x.GetAttributes()
+                    .Any(y => y.AttributeClass != null
+                            && y.AttributeClass.ToDisplayString() == "MyEngine.Core.StartupSystemClassesAttribute"));
+
+            var systemClasses = systemClassesMember is null
+                ? null
+                : JsonConvert.DeserializeObject<SystemClassDto[]>((string)systemClassesMember.ConstantValue!);
+            var startupSystemClasses = startupSystemClassesMember is null
+                ? null
+                : JsonConvert.DeserializeObject<StartupSystemClassDto[]>((string)startupSystemClassesMember.ConstantValue!);
+
+            return (systemClasses, startupSystemClasses);
         }
     }
 

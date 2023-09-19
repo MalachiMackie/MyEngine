@@ -23,9 +23,11 @@ public class EcsEngineSourceGeneratorTests
             [global::MyEngine.Core.AppSystemsInfo]
             public static class AppSystemsInfo
             {
-                public const string SystemClasses = "[{\"FullyQualifiedName\":\"global::MyNamespace.MySystem\",\"Constructor\":{\"TotalParameters\":1,\"QueryParameters\":[],\"ResourceParameters\":[{\"Name\":\"MyNamespace.MyResource\",\"ParameterIndex\":0}]}}]";
+                [global::MyEngine.Core.SystemClasses]
+                public const string SystemClassesWithRandomName = "[{\"FullyQualifiedName\":\"global::MyNamespace.MySystem\",\"Constructor\":{\"TotalParameters\":1,\"QueryParameters\":[],\"ResourceParameters\":[{\"Name\":\"MyNamespace.MyResource\",\"ParameterIndex\":0}]}}]";
 
-                public const string StartupSystemClasses = "[{\"FullyQualifiedName\":\"global::MyNamespace.MyStartupSystem\",\"Constructor\":{\"Parameters\":[{\"Name\":\"MyNamespace.MyResource\"}]}}]";
+                [global::MyEngine.Core.StartupSystemClasses]
+                public const string StartupSystemClassesWithRandomName = "[{\"FullyQualifiedName\":\"global::MyNamespace.MyStartupSystem\",\"Constructor\":{\"Parameters\":[{\"Name\":\"MyNamespace.MyResource\"}]}}]";
             }
         }
         """;
@@ -123,5 +125,71 @@ public class EcsEngineSourceGeneratorTests
                 typeof(AppSystemsInfoAttribute).Assembly,
             },
             new EcsEngineSourceGenerator());
+    }
+
+    [Theory]
+    [InlineData("IntField", "[global::MyEngine.Core.StartupSystemClasses] public const int StartupSystemClasses = 1;")]
+    [InlineData("PrivateField", "[global::MyEngine.Core.StartupSystemClasses] private const string StartupSystemClasses = \"[{\\\"FullyQualifiedName\\\":\\\"global::MyNamespace.MyStartupSystem\\\",\\\"Constructor\\\":{\\\"Parameters\\\":[{\\\"Name\\\":\\\"MyNamespace.MyResource\\\"}]}}]\";")]
+    [InlineData("MissingField", "")]
+    [InlineData("StaticReadonlyField", "[global::MyEngine.Core.StartupSystemClasses] public static readonly string StartupSystemClasses = \"[{\\\"FullyQualifiedName\\\":\\\"global::MyNamespace.MyStartupSystem\\\",\\\"Constructor\\\":{\\\"Parameters\\\":[{\\\"Name\\\":\\\"MyNamespace.MyResource\\\"}]}}]\";")]
+    public async Task Should_NotGenerateStartupSystems_When_StartupSystemClassesIsNotCorrectType(string description, string startupSystemClassesField)
+    {
+        await SourceGeneratorTestHelpers.VerifyGeneratorOutput("[assembly: MyEngine.Runtime.EngineRuntimeAssembly]",
+            new[]
+            {
+                KeyValuePair.Create("AppEntrypointInfo", AppEntrypointInfoReferenceSource),
+                KeyValuePair.Create("AppSystemsInfo", $$$"""
+                    namespace Tests.Generated
+                    {
+                        [global::MyEngine.Core.AppSystemsInfo]
+                        public static class AppSystemsInfo
+                        {
+                            [global::MyEngine.Core.SystemClasses]
+                            public const string SystemClasses = "[{\"FullyQualifiedName\":\"global::MyNamespace.MySystem\",\"Constructor\":{\"TotalParameters\":1,\"QueryParameters\":[],\"ResourceParameters\":[{\"Name\":\"MyNamespace.MyResource\",\"ParameterIndex\":0}]}}]";
+
+                            {{{startupSystemClassesField}}}
+                        }
+                    }
+                """)
+            },
+            new[]
+            {
+                typeof(AppSystemsInfoAttribute).Assembly
+            },
+            new EcsEngineSourceGenerator(),
+            new object[] { description });
+    }
+
+    [Theory]
+    [InlineData("IntField", "[global::MyEngine.Core.SystemClasses] public const int SystemClasses = 1;")]
+    [InlineData("PrivateField", "[global::MyEngine.Core.SystemClasses] private const string SystemClasses = \"[{\\\"FullyQualifiedName\\\":\\\"global::MyNamespace.MySystem\\\",\\\"Constructor\\\":{\\\"TotalParameters\\\":1,\\\"QueryParameters\\\":[],\\\"ResourceParameters\\\":[{\\\"Name\\\":\\\"MyNamespace.MyResource\\\",\\\"ParameterIndex\\\":0}]}}]\";")]
+    [InlineData("MissingField", "")]
+    [InlineData("StaticReadonlyField", "[global::MyEngine.Core.SystemClasses] public static readonly string SystemClasses = \"[{\\\"FullyQualifiedName\\\":\\\"global::MyNamespace.MySystem\\\",\\\"Constructor\\\":{\\\"TotalParameters\\\":1,\\\"QueryParameters\\\":[],\\\"ResourceParameters\\\":[{\\\"Name\\\":\\\"MyNamespace.MyResource\\\",\\\"ParameterIndex\\\":0}]}}]\";")]
+    public async Task Should_NotGenerateSystems_When_SystemClassesIsNotCorrectType(string description, string systemClassesField)
+    {
+        await SourceGeneratorTestHelpers.VerifyGeneratorOutput("[assembly: MyEngine.Runtime.EngineRuntimeAssembly]",
+            new[]
+            {
+                KeyValuePair.Create("AppEntrypointInfo", AppEntrypointInfoReferenceSource),
+                KeyValuePair.Create("AppSystemsInfo", $$$"""
+                    namespace Tests.Generated
+                    {
+                        [global::MyEngine.Core.AppSystemsInfo]
+                        public static class AppSystemsInfo
+                        {
+                            {{{systemClassesField}}}
+
+                            [global::MyEngine.Core.StartupSystemClasses]
+                            public const string StartupSystemClasses = "[{\"FullyQualifiedName\":\"global::MyNamespace.MyStartupSystem\",\"Constructor\":{\"Parameters\":[{\"Name\":\"MyNamespace.MyResource\"}]}}]";
+                        }
+                    }
+                """)
+            },
+            new[]
+            {
+                typeof(AppSystemsInfoAttribute).Assembly
+            },
+            new EcsEngineSourceGenerator(),
+            new object[] { description });
     }
 }

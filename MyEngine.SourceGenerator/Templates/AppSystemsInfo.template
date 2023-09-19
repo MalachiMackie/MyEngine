@@ -3,8 +3,10 @@
     [global::MyEngine.Core.AppSystemsInfo]
     public static class AppSystemsInfo
     {
+        [global::MyEngine.Core.SystemClasses]
         public const string SystemClasses = "{template:SystemClasses}";
 
+        [global::MyEngine.Core.StartupSystemClasses]
         public const string StartupSystemClasses = "{template:StartupSystemClasses}";
     }
 }

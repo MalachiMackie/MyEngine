@@ -64,7 +64,8 @@ public static class SourceGeneratorTestHelpers
     public static Task VerifyGeneratorOutput(string source,
         IEnumerable<KeyValuePair<string, string>> referenceSources,
         IEnumerable<Assembly> referenceAssemblies,
-        IIncrementalGenerator generator)
+        IIncrementalGenerator generator,
+        object[]? parameters = null)
     {
         var driver = GetGeneratorDriver(source, referenceSources, referenceAssemblies, generator);
         var runResult = driver.GetRunResult();
@@ -73,6 +74,10 @@ public static class SourceGeneratorTestHelpers
 
         var settings = new VerifySettings();
         settings.UseDirectory("Expectations");
+        if (parameters != null)
+        {
+            settings.UseParameters(parameters);
+        }
 
         return Verify(driver, settings);
     }
