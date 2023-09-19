@@ -10,6 +10,7 @@
 		<InternalsVisibleTo Include="MyEngine.Runtime" />
 		<InternalsVisibleTo Include="MyEngine.Physics" />
 		<InternalsVisibleTo Include="MyEngine.Core.Tests" />
+		<InternalsVisibleTo Include="MyEngine.SourceGenerator.Tests" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -1,6 +1,5 @@
 ﻿using FluentAssertions;
 using MyEngine.Core;
-using MyEngine.Runtime;
 using MyEngine.SourceGenerator.Generators;
 
 namespace MyEngine.SourceGenerator.Tests.SourceGeneratorTests;
@@ -43,7 +42,6 @@ public class EcsEngineSourceGeneratorTests
             new[]
             {
                 typeof(AppSystemsInfoAttribute).Assembly,
-                typeof(EcsEngine).Assembly
             },
             new EcsEngineSourceGenerator());
     }
@@ -60,7 +58,6 @@ public class EcsEngineSourceGeneratorTests
             new[]
             {
                 typeof(AppSystemsInfoAttribute).Assembly,
-                typeof(EcsEngine).Assembly
             },
             new EcsEngineSourceGenerator());
 
@@ -79,7 +76,6 @@ public class EcsEngineSourceGeneratorTests
             new[]
             {
                 typeof(AppSystemsInfoAttribute).Assembly,
-                typeof(EcsEngine).Assembly
             },
             new EcsEngineSourceGenerator());
 
@@ -98,7 +94,6 @@ public class EcsEngineSourceGeneratorTests
             new[]
             {
                 typeof(AppSystemsInfoAttribute).Assembly,
-                typeof(EcsEngine).Assembly
             },
             new EcsEngineSourceGenerator());
     }
@@ -126,7 +121,6 @@ public class EcsEngineSourceGeneratorTests
             new[]
             {
                 typeof(AppSystemsInfoAttribute).Assembly,
-                typeof(EcsEngine).Assembly
             },
             new EcsEngineSourceGenerator());
     }

@@ -1,6 +1,6 @@
-﻿using MyEngine.Core;
-using MyEngine.Runtime;
-using MyGame;
+﻿using MyEngine.Runtime;
+
+[assembly: EngineRuntimeAssembly]
 
 internal class Program
 {
