@@ -18,7 +18,7 @@ namespace MyEngine.SourceGenerator.Generators
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            var classNodes = context.SyntaxProvider.CreateSyntaxProvider((x, _) => x is ClassDeclarationSyntax, (x, _) => (x.SemanticModel, ClassNode: x.Node as ClassDeclarationSyntax));
+            var classNodes = context.SyntaxProvider.CreateSyntaxProvider((x, _) => x is ClassDeclarationSyntax, (x, _) => (x.SemanticModel, ClassNode: (ClassDeclarationSyntax)x.Node));
 
             var accessibleClassNodes = classNodes
                 .Where(x => _helpers.IsClassConcreteAndAccessible(x.SemanticModel, x.ClassNode));
@@ -29,14 +29,14 @@ namespace MyEngine.SourceGenerator.Generators
                 .Where(x => _helpers.DoesClassNodeImplementInterface(x.SemanticModel, x.ClassNode, "MyEngine.Core.Ecs.Systems.IStartupSystem"))
                 .Select((x, _) => (x.SemanticModel, x.ClassNode, Constructor: TryGetStartupSystemConstructor(x.SemanticModel, x.ClassNode)))
                 .Where(x => x.Constructor != null)
-                .Select((x, _) => new StartupSystemClass(_helpers.GetFullyQualifiedName(x.ClassNode), x.Constructor))
+                .Select((x, _) => new StartupSystemClass(_helpers.GetFullyQualifiedName(x.ClassNode), x.Constructor!))
                 .Collect();
 
             var systemClasses = accessibleClassNodes
                 .Where(x => _helpers.DoesClassNodeImplementInterface(x.SemanticModel, x.ClassNode, "MyEngine.Core.Ecs.Systems.ISystem"))
                 .Select((x, _) => (x.SemanticModel, x.ClassNode, Constructor: TryGetSystemConstructor(x.SemanticModel, x.ClassNode)))
                 .Where(x => x.Constructor != null)
-                .Select((x, _) => new SystemClass(_helpers.GetFullyQualifiedName(x.ClassNode), x.Constructor))
+                .Select((x, _) => new SystemClass(_helpers.GetFullyQualifiedName(x.ClassNode), x.Constructor!))
                 .Collect();
 
             var allSystemsAndCompilation = startupSystemClasses.Combine(systemClasses)
@@ -61,7 +61,7 @@ namespace MyEngine.SourceGenerator.Generators
             });
         }
 
-        private StartupSystemConstructor TryGetStartupSystemConstructor(SemanticModel semanticModel, ClassDeclarationSyntax classNode)
+        private StartupSystemConstructor? TryGetStartupSystemConstructor(SemanticModel semanticModel, ClassDeclarationSyntax classNode)
         {
             var constructorDeclarations = classNode.ChildNodes()
                 .OfType<ConstructorDeclarationSyntax>()
@@ -90,16 +90,19 @@ namespace MyEngine.SourceGenerator.Generators
 
                 var constructorParameters = new List<StartupSystemConstructorParameter>();
 
-                foreach (var parameter in parameterList.Parameters)
+                foreach (var parameter in parameterList.Parameters.Where(x => x.Type != null))
                 {
-                    var parameterTypeInfo = semanticModel.GetTypeInfo(parameter.Type);
+                    if (!(semanticModel.GetTypeInfo(parameter.Type!).Type is INamedTypeSymbol parameterTypeInfo))
+                    {
+                        continue;
+                    }
 
                     var isResource = _helpers.DoesTypeInfoImplementInterface(parameterTypeInfo, "MyEngine.Core.Ecs.Resources.IResource");
                     var isQuery = TryGetQueryParameter(parameterTypeInfo, out var queryParameters);
 
                     if (isResource)
                     {
-                        constructorParameters.Add(new StartupSystemConstructorParameter { Name = parameterTypeInfo.Type.ToDisplayString() });
+                        constructorParameters.Add(new StartupSystemConstructorParameter { Name = parameterTypeInfo.ToDisplayString() });
                     }
                     else if (isQuery)
                     {
@@ -121,7 +124,7 @@ namespace MyEngine.SourceGenerator.Generators
             return null;
         }
 
-        private SystemConstructor TryGetSystemConstructor(SemanticModel semanticModel, ClassDeclarationSyntax classNode)
+        private SystemConstructor? TryGetSystemConstructor(SemanticModel semanticModel, ClassDeclarationSyntax classNode)
         {
             var constructorDeclarations = classNode.ChildNodes()
                 .OfType<ConstructorDeclarationSyntax>()
@@ -149,17 +152,20 @@ namespace MyEngine.SourceGenerator.Generators
                 var isValid = true;
                 var constructor = new SystemConstructor();
 
-                foreach (var parameter in parameterList.Parameters)
+                foreach (var parameter in parameterList.Parameters.Where(x => x.Type != null))
                 {
-                    var parameterTypeInfo = semanticModel.GetTypeInfo(parameter.Type);
+                    if (!(semanticModel.GetTypeInfo(parameter.Type!).Type is INamedTypeSymbol parameterTypeInfo))
+                    {
+                        continue;
+                    }
 
                     if (_helpers.DoesTypeInfoImplementInterface(parameterTypeInfo, "MyEngine.Core.Ecs.Resources.IResource"))
                     {
-                        constructor.AddParameter(new SystemConstructorResourceParameter(parameterTypeInfo.Type.ToDisplayString()));
+                        constructor.AddParameter(new SystemConstructorResourceParameter(parameterTypeInfo.ToDisplayString()));
                     }
                     else if (TryGetQueryParameter(parameterTypeInfo, out var queryParameter))
                     {
-                        constructor.AddParameter(queryParameter);
+                        constructor.AddParameter(queryParameter!);
                     }
                     else
                     {
@@ -176,17 +182,16 @@ namespace MyEngine.SourceGenerator.Generators
             return null;
         }
 
-        private bool TryGetQueryParameter(TypeInfo parameterTypeInfo, out SystemConstructorQueryParameter queryParameter)
+        private bool TryGetQueryParameter(INamedTypeSymbol parameterTypeInfo, out SystemConstructorQueryParameter? queryParameter)
         {
             var queryParametersList = new List<QueryComponentTypeParameter>();
-            if (!parameterTypeInfo.Type.ToDisplayString().StartsWith("MyEngine.Core.Ecs.IQuery<"))
+            if (!parameterTypeInfo.ToDisplayString().StartsWith("MyEngine.Core.Ecs.IQuery<"))
             {
                 queryParameter = null;
                 return false;
             }
 
-            var namedType = parameterTypeInfo.Type as INamedTypeSymbol;
-            if (namedType.TypeArguments.Length == 0)
+            if (parameterTypeInfo.TypeArguments.Length == 0)
             {
                 queryParameter = null;
                 return false;
@@ -206,8 +211,8 @@ namespace MyEngine.SourceGenerator.Generators
                 return new QueryComponentTypeParameter(argumentDisplay, metaComponentType: null);
             }
 
-            var firstTypeParameter = GetTypeParameter(namedType.TypeArguments[0]);
-            var restTypeParameter = namedType.TypeArguments.Skip(1).Select(GetTypeParameter);
+            var firstTypeParameter = GetTypeParameter(parameterTypeInfo.TypeArguments[0]);
+            var restTypeParameter = parameterTypeInfo.TypeArguments.Skip(1).Select(GetTypeParameter);
 
             queryParameter = new SystemConstructorQueryParameter(firstTypeParameter, restTypeParameter);
             return true;

@@ -19,7 +19,7 @@ namespace MyEngine.SourceGenerator.Generators
         {
             var classNodes = context.SyntaxProvider.CreateSyntaxProvider((x, _) => x is ClassDeclarationSyntax, (x, _) => (x.SemanticModel, ClassNode: x.Node as ClassDeclarationSyntax));
             var accessibleClassNodes = classNodes
-                .Where(x => _helpers.IsClassConcreteAndAccessible(x.SemanticModel, x.ClassNode));
+                .Where(x => _helpers.IsClassConcreteAndAccessible(x.SemanticModel, x.ClassNode!));
 
             var compilationValue = context.CompilationProvider.Select((x, _) => x);
 
@@ -40,7 +40,7 @@ namespace MyEngine.SourceGenerator.Generators
             {
                 var ((appSystemsInfos, assemblyAttributes), appEntrypointInfo) = value;
 
-                if (assemblyAttributes.Length == 0 || assemblyAttributes.All(x => x.AttributeClass.ToDisplayString() != "MyEngine.Runtime.EngineRuntimeAssemblyAttribute"))
+                if (assemblyAttributes.Length == 0 || assemblyAttributes.All(x => x.AttributeClass is null || x.AttributeClass.ToDisplayString() != "MyEngine.Runtime.EngineRuntimeAssemblyAttribute"))
                 {
                     return;
                 }
@@ -50,18 +50,38 @@ namespace MyEngine.SourceGenerator.Generators
                     return;
                 }
 
-                var appEntrypointFullyQualifiedName = appEntrypointInfo.GetMembers().FirstOrDefault(x => x.Name == "FullyQualifiedName") as IFieldSymbol;
+                if (!(appEntrypointInfo.GetMembers().FirstOrDefault(x =>
+                    x.Name == "FullyQualifiedName"
+                    && x is IFieldSymbol fieldSymbol
+                    && fieldSymbol.HasConstantValue
+                    && fieldSymbol.ConstantValue is string) is IFieldSymbol appEntrypointFullyQualifiedNameField))
+                {
+                    return;
+                }
 
-                var systemClassModels = appSystemsInfos.Select(x => x.GetMembers().FirstOrDefault(y => y.Name == "SystemClasses") as IFieldSymbol)
-                    .SelectMany(x => JsonConvert.DeserializeObject<SystemClassDto[]>((x.ConstantValue as string).Replace("\\\"", "\"")))
+                var appEntrypointFullyQualifiedName = (string)appEntrypointFullyQualifiedNameField.ConstantValue!;
+
+                var systemClassModels = appSystemsInfos.Select(x => x.GetMembers().FirstOrDefault(y => y.Name == "SystemClasses"))
+                    .Where(x => x is IFieldSymbol)
+                    .Cast<IFieldSymbol>()
+                    .Where(x => x.HasConstantValue)
+                    .Select(x => x.ConstantValue)
+                    .Where(x => x is string)
+                    .Cast<string>()
+                    .SelectMany(x => JsonConvert.DeserializeObject<SystemClassDto[]>(x.Replace("\\\"", "\"")))
                     .ToArray();
 
-                var startupSystemClassModels = appSystemsInfos.Select(x => x.GetMembers().FirstOrDefault(y => y.Name == "StartupSystemClasses") as IFieldSymbol)
-                    .SelectMany(x => JsonConvert.DeserializeObject<StartupSystemClassDto[]>((x.ConstantValue as string).Replace("\\\"", "\"")))
+                var startupSystemClassModels = appSystemsInfos.Select(x => x.GetMembers().FirstOrDefault(y => y.Name == "StartupSystemClasses"))
+                    .Where(x => x is IFieldSymbol)
+                    .Cast<IFieldSymbol>()
+                    .Where(x => x.HasConstantValue)
+                    .Select(x => x.ConstantValue)
+                    .Cast<string>()
+                    .SelectMany(x => JsonConvert.DeserializeObject<StartupSystemClassDto[]>(x.Replace("\\\"", "\"")))
                     .ToArray();
 
                 var (ecsEngineFileName, ecsEngineSource) = EcsEngineSourceBuilder.BuildEcsEngineSource(
-                    startupSystemClassModels, systemClassModels, appEntrypointFullyQualifiedName.ConstantValue.ToString());
+                    startupSystemClassModels, systemClassModels, appEntrypointFullyQualifiedName);
 
                 sourceProductionContext.AddSource(ecsEngineFileName, ecsEngineSource);
             });

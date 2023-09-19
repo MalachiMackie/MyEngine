@@ -6,6 +6,9 @@
     <GetTargetPathDependsOn>
         $(GetTargetPathDependsOn);GetDependencyTargetPaths
     </GetTargetPathDependsOn>
+    <LangVersion>8</LangVersion>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>true</WarningsAsErrors>
 
   </PropertyGroup>
 

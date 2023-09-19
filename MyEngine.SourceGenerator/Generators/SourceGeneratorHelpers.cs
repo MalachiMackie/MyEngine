@@ -37,7 +37,7 @@ namespace MyEngine.SourceGenerator.Generators
             else
             {
                 // we assumed a class declaration syntax's parent is always a namespace
-                throw new Exception($"ClassNode's parent is not a namespace declaration. It was a {classNamespaceNode.GetType().Name}");
+                throw new Exception($"ClassNode's parent is not a namespace declaration. It was a {classNamespaceNode?.GetType().Name}");
             }
 
             var fullyQualifiedName = classNamespace.Length == 0
@@ -86,7 +86,7 @@ namespace MyEngine.SourceGenerator.Generators
             foreach (var type in classNode.BaseList.Types)
             {
                 var typeInfo = semanticModel.GetTypeInfo(type.Type);
-                if (DoesTypeInfoImplementInterface(typeInfo, interfaceFullyQualifiedName))
+                if (typeInfo.Type != null && DoesTypeInfoImplementInterface(typeInfo.Type, interfaceFullyQualifiedName))
                 {
                     return true;
                 }
@@ -95,15 +95,10 @@ namespace MyEngine.SourceGenerator.Generators
             return false;
         }
 
-        public bool DoesTypeInfoImplementInterface(TypeInfo typeInfo, string interfaceFullyQualifiedName)
+        public bool DoesTypeInfoImplementInterface(ITypeSymbol typeInfo, string interfaceFullyQualifiedName)
         {
-            if (typeInfo.Type is null)
-            {
-                return false;
-            }
-
-            return typeInfo.Type.ToDisplayString() == interfaceFullyQualifiedName
-                || typeInfo.Type.AllInterfaces.Any(x => x.ToDisplayString() == interfaceFullyQualifiedName);
+            return typeInfo.ToDisplayString() == interfaceFullyQualifiedName
+                || typeInfo.AllInterfaces.Any(x => x.ToDisplayString() == interfaceFullyQualifiedName);
         }
 
         public bool DoesClassHaveAccessibleConstructor(ClassDeclarationSyntax classNode)
