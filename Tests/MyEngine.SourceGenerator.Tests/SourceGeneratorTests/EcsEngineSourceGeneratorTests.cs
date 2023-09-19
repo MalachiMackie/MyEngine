@@ -10,8 +10,10 @@ public class EcsEngineSourceGeneratorTests
     private const string AppEntrypointInfoReferenceSource = """
         namespace MyEngine.Runtime
         {
+            [global::MyEngine.Core.AppEntrypointInfo]
             public class AppEntrypointInfo
             {
+                [global::MyEngine.Core.AppEntrypointInfoFullyQualifiedName]
                 public const string FullyQualifiedName = "MyAppEntrypoint";
             }
         }

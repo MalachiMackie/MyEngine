@@ -19,45 +19,39 @@ namespace MyEngine.SourceGenerator.Generators
         {
             var compilationValue = context.CompilationProvider.Select((x, _) => x);
 
-            var appSystemsInfoValues = compilationValue.SelectMany((x, _) => x.References.Select(y => x.GetAssemblyOrModuleSymbol(y)).OfType<IAssemblySymbol>())
-                .SelectMany((x, _) => _helpers.GetAllNamespaceTypes(x.GlobalNamespace))
+            var allReferenceTypes = compilationValue.SelectMany((x, _) => x.References.Select(y => x.GetAssemblyOrModuleSymbol(y)).OfType<IAssemblySymbol>())
+                .SelectMany((x, _) => _helpers.GetAllNamespaceTypes(x.GlobalNamespace));
+
+            var appSystemsInfoValues = allReferenceTypes
                 .Where(x => x.GetAttributes().Any(y => y.AttributeClass?.ToDisplayString() == "MyEngine.Core.AppSystemsInfoAttribute"))
                 .Select((x, _) => GetAppSystemsInfoValues(x))
                 .Collect();
 
             var assemblyAttributesProvider = compilationValue.Select((x, _) => x.Assembly.GetAttributes());
 
-            // todo: use attribute instead
-            var appEntrypointInfoType = compilationValue.Select((x, _) => x.GetTypeByMetadataName("MyEngine.Runtime.AppEntrypointInfo"));
+            var appEntrypointFullyQualifiedName = allReferenceTypes
+                .Where(x => x.GetAttributes().Any(y => y.AttributeClass?.ToDisplayString() == "MyEngine.Core.AppEntrypointInfoAttribute"))
+                .Select((x, _) => GetAppEntrypointFullyQualifiedName(x))
+                .Where(x => !string.IsNullOrEmpty(x))
+                .Collect()
+                .Select((x, _) => x.FirstOrDefault());
 
             var allTypes = appSystemsInfoValues.Combine(assemblyAttributesProvider)
-                .Combine(appEntrypointInfoType);
+                .Combine(appEntrypointFullyQualifiedName);
 
             context.RegisterImplementationSourceOutput(allTypes, (sourceProductionContext, value) =>
             {
-                var ((appSystemsInfoValues, assemblyAttributes), appEntrypointInfo) = value;
+                var ((appSystemsInfoValues, assemblyAttributes), appEntrypointFullyQualifiedName) = value;
 
                 if (assemblyAttributes.Length == 0 || assemblyAttributes.All(x => x.AttributeClass is null || x.AttributeClass.ToDisplayString() != "MyEngine.Runtime.EngineRuntimeAssemblyAttribute"))
                 {
                     return;
                 }
 
-                if (appEntrypointInfo is null)
+                if (appEntrypointFullyQualifiedName is null)
                 {
                     return;
                 }
-
-                if (!(appEntrypointInfo.GetMembers().FirstOrDefault(x =>
-                    x.Name == "FullyQualifiedName"
-                    && x is IFieldSymbol fieldSymbol
-                    && fieldSymbol.HasConstantValue
-                    && fieldSymbol.DeclaredAccessibility == Accessibility.Public
-                    && fieldSymbol.ConstantValue is string) is IFieldSymbol appEntrypointFullyQualifiedNameField))
-                {
-                    return;
-                }
-
-                var appEntrypointFullyQualifiedName = (string)appEntrypointFullyQualifiedNameField.ConstantValue!;
 
                 var systemClassModels = appSystemsInfoValues
                     .Where(x => x.SystemClasses != null)
@@ -75,6 +69,18 @@ namespace MyEngine.SourceGenerator.Generators
                 sourceProductionContext.AddSource(ecsEngineFileName, ecsEngineSource);
             });
 
+        }
+
+        private string? GetAppEntrypointFullyQualifiedName(ITypeSymbol appEntrypointInfoTypeSymbol)
+        {
+            return appEntrypointInfoTypeSymbol.GetMembers()
+                .Where(x => x.DeclaredAccessibility == Accessibility.Public)
+                .OfType<IFieldSymbol>()
+                .Where(x => x.HasConstantValue)
+                .Where(x => x.ConstantValue is string)
+                .Where(x => x.GetAttributes().Any(y => y.AttributeClass?.ToDisplayString() == "MyEngine.Core.AppEntrypointInfoFullyQualifiedNameAttribute"))
+                .FirstOrDefault()
+                ?.ConstantValue as string;
         }
 
         private (SystemClassDto[]? SystemClasses, StartupSystemClassDto[]? StartupSystemClasses) GetAppSystemsInfoValues(ITypeSymbol appSystemsInfoType)
