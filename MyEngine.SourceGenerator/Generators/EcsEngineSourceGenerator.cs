@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Newtonsoft.Json;
 
 namespace MyEngine.SourceGenerator.Generators
@@ -23,14 +22,14 @@ namespace MyEngine.SourceGenerator.Generators
                 .SelectMany((x, _) => _helpers.GetAllNamespaceTypes(x.GlobalNamespace));
 
             var appSystemsInfoValues = allReferenceTypes
-                .Where(x => x.GetAttributes().Any(y => y.AttributeClass?.ToDisplayString() == "MyEngine.Core.AppSystemsInfoAttribute"))
+                .Where(x => x.GetAttributes().Any(y => _helpers.DoesAttributeMatch(y, EngineAttribute.AppSystemsInfo)))
                 .Select((x, _) => GetAppSystemsInfoValues(x))
                 .Collect();
 
             var assemblyAttributesProvider = compilationValue.Select((x, _) => x.Assembly.GetAttributes());
 
             var appEntrypointFullyQualifiedName = allReferenceTypes
-                .Where(x => x.GetAttributes().Any(y => y.AttributeClass?.ToDisplayString() == "MyEngine.Core.AppEntrypointInfoAttribute"))
+                .Where(x => x.GetAttributes().Any(y => _helpers.DoesAttributeMatch(y, EngineAttribute.AppEntrypointInfo)))
                 .Select((x, _) => GetAppEntrypointFullyQualifiedName(x))
                 .Where(x => !string.IsNullOrEmpty(x))
                 .Collect()
@@ -43,7 +42,7 @@ namespace MyEngine.SourceGenerator.Generators
             {
                 var ((appSystemsInfoValues, assemblyAttributes), appEntrypointFullyQualifiedName) = value;
 
-                if (assemblyAttributes.Length == 0 || assemblyAttributes.All(x => x.AttributeClass is null || x.AttributeClass.ToDisplayString() != "MyEngine.Runtime.EngineRuntimeAssemblyAttribute"))
+                if (assemblyAttributes.Length == 0 || assemblyAttributes.All(x => !_helpers.DoesAttributeMatch(x, EngineAttribute.EngineRuntimeAssembly)))
                 {
                     return;
                 }
@@ -78,7 +77,7 @@ namespace MyEngine.SourceGenerator.Generators
                 .OfType<IFieldSymbol>()
                 .Where(x => x.HasConstantValue)
                 .Where(x => x.ConstantValue is string)
-                .Where(x => x.GetAttributes().Any(y => y.AttributeClass?.ToDisplayString() == "MyEngine.Core.AppEntrypointInfoFullyQualifiedNameAttribute"))
+                .Where(x => x.GetAttributes().Any(y => _helpers.DoesAttributeMatch(y, EngineAttribute.AppEntrypointInfoFullyQualifiedName)))
                 .FirstOrDefault()
                 ?.ConstantValue as string;
         }
@@ -92,12 +91,10 @@ namespace MyEngine.SourceGenerator.Generators
                 .Where(x => x.ConstantValue is string);
 
             var systemClassesMember = publicStringFieldMembers.FirstOrDefault(x => x.GetAttributes()
-                    .Any(y => y.AttributeClass != null
-                            && y.AttributeClass.ToDisplayString() == "MyEngine.Core.SystemClassesAttribute"));
+                    .Any(y => _helpers.DoesAttributeMatch(y, EngineAttribute.SystemClasses)));
 
             var startupSystemClassesMember = publicStringFieldMembers.FirstOrDefault(x => x.GetAttributes()
-                    .Any(y => y.AttributeClass != null
-                            && y.AttributeClass.ToDisplayString() == "MyEngine.Core.StartupSystemClassesAttribute"));
+                    .Any(y => _helpers.DoesAttributeMatch(y, EngineAttribute.StartupSystemClasses)));
 
             var systemClasses = systemClassesMember is null
                 ? null

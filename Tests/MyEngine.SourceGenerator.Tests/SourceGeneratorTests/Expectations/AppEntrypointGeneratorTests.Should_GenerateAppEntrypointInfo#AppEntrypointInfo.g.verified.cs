@@ -1,5 +1,5 @@
 ﻿//HintName: AppEntrypointInfo.g.cs
-namespace MyEngine.Runtime
+namespace MyEngine.SourceGenerator.Tests.Generated
 {
 	[global::MyEngine.Core.AppEntrypointInfo]
 	public static class AppEntrypointInfo

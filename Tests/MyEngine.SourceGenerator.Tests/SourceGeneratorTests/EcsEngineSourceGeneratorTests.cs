@@ -37,7 +37,7 @@ public class EcsEngineSourceGeneratorTests
     [Fact]
     public async Task Should_GenerateEcsEngine()
     {
-        await SourceGeneratorTestHelpers.VerifyGeneratorOutput("[assembly: MyEngine.Runtime.EngineRuntimeAssembly]",
+        await SourceGeneratorTestHelpers.VerifyGeneratorOutput("[assembly: MyEngine.Core.EngineRuntimeAssembly]",
             new[]
             {
                 KeyValuePair.Create("AppSystemsInfo", AppSystemsInfoReferenceSource),
@@ -72,7 +72,7 @@ public class EcsEngineSourceGeneratorTests
     [Fact]
     public void Should_GenerateEcsEngine_When_NoAppEntrypointIsFound()
     {
-        var runResult = SourceGeneratorTestHelpers.GetRunResult("[assembly: MyEngine.Runtime.EngineRuntimeAssembly]",
+        var runResult = SourceGeneratorTestHelpers.GetRunResult("[assembly: MyEngine.Core.EngineRuntimeAssembly]",
             new[]
             {
                 KeyValuePair.Create("AppSystemsInfo", AppSystemsInfoReferenceSource),
@@ -90,7 +90,7 @@ public class EcsEngineSourceGeneratorTests
     [Fact]
     public async Task Should_GenerateEcsEngine_When_NoAppSystemsInfoIsFound()
     {
-        await SourceGeneratorTestHelpers.VerifyGeneratorOutput("[assembly: MyEngine.Runtime.EngineRuntimeAssembly]",
+        await SourceGeneratorTestHelpers.VerifyGeneratorOutput("[assembly: MyEngine.Core.EngineRuntimeAssembly]",
             new[]
             {
                 KeyValuePair.Create("AppEntrypointInfo", AppEntrypointInfoReferenceSource)
@@ -105,7 +105,7 @@ public class EcsEngineSourceGeneratorTests
     [Fact]
     public async Task Should_GenerateEmptyEcsEngine_When_AppSystemsInfoIsEmpty()
     {
-        await SourceGeneratorTestHelpers.VerifyGeneratorOutput("[assembly: MyEngine.Runtime.EngineRuntimeAssembly]",
+        await SourceGeneratorTestHelpers.VerifyGeneratorOutput("[assembly: MyEngine.Core.EngineRuntimeAssembly]",
             new[]
             {
                 KeyValuePair.Create("AppEntrypointInfo", AppEntrypointInfoReferenceSource),
@@ -136,7 +136,7 @@ public class EcsEngineSourceGeneratorTests
     [InlineData("StaticReadonlyField", "[global::MyEngine.Core.StartupSystemClasses] public static readonly string StartupSystemClasses = \"[{\\\"FullyQualifiedName\\\":\\\"global::MyNamespace.MyStartupSystem\\\",\\\"Constructor\\\":{\\\"Parameters\\\":[{\\\"Name\\\":\\\"MyNamespace.MyResource\\\"}]}}]\";")]
     public async Task Should_NotGenerateStartupSystems_When_StartupSystemClassesIsNotCorrectType(string description, string startupSystemClassesField)
     {
-        await SourceGeneratorTestHelpers.VerifyGeneratorOutput("[assembly: MyEngine.Runtime.EngineRuntimeAssembly]",
+        await SourceGeneratorTestHelpers.VerifyGeneratorOutput("[assembly: MyEngine.Core.EngineRuntimeAssembly]",
             new[]
             {
                 KeyValuePair.Create("AppEntrypointInfo", AppEntrypointInfoReferenceSource),
@@ -169,7 +169,7 @@ public class EcsEngineSourceGeneratorTests
     [InlineData("StaticReadonlyField", "[global::MyEngine.Core.SystemClasses] public static readonly string SystemClasses = \"[{\\\"FullyQualifiedName\\\":\\\"global::MyNamespace.MySystem\\\",\\\"Constructor\\\":{\\\"TotalParameters\\\":1,\\\"QueryParameters\\\":[],\\\"ResourceParameters\\\":[{\\\"Name\\\":\\\"MyNamespace.MyResource\\\",\\\"ParameterIndex\\\":0}]}}]\";")]
     public async Task Should_NotGenerateSystems_When_SystemClassesIsNotCorrectType(string description, string systemClassesField)
     {
-        await SourceGeneratorTestHelpers.VerifyGeneratorOutput("[assembly: MyEngine.Runtime.EngineRuntimeAssembly]",
+        await SourceGeneratorTestHelpers.VerifyGeneratorOutput("[assembly: MyEngine.Core.EngineRuntimeAssembly]",
             new[]
             {
                 KeyValuePair.Create("AppEntrypointInfo", AppEntrypointInfoReferenceSource),

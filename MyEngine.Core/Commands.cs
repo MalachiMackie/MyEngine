@@ -1,11 +1,10 @@
 ﻿using System.Diagnostics;
-using MyEngine.Core;
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Utils;
 
-namespace MyEngine.Runtime;
+namespace MyEngine.Core;
 
 internal class Commands : ICommands
 {
@@ -29,7 +28,7 @@ internal class Commands : ICommands
             .MapError(err => err switch
             {
                 AddComponentError.DuplicateComponent => AddComponentCommandError.DuplicateComponent,
-                _ => throw new UnreachableException() 
+                _ => throw new UnreachableException()
             });
     }
 

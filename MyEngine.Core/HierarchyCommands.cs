@@ -1,11 +1,9 @@
-﻿using System.Numerics;
-using MyEngine.Core;
-using MyEngine.Core.Ecs;
+﻿using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Utils;
 
-namespace MyEngine.Runtime;
+namespace MyEngine.Core;
 
 internal class HierarchyCommands : IHierarchyCommands
 {

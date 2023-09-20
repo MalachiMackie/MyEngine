@@ -1,9 +1,9 @@
 namespace {template:Namespace}
 {
-	[global::MyEngine.Core.AppEntrypointInfo]
+	{template:AppEntrypointInfoAttribute}
 	public static class AppEntrypointInfo
 	{
-		[global::MyEngine.Core.AppEntrypointInfoFullyQualifiedName]
+		{template:FullyQualifiedNameAttribute}
 		public const string FullyQualifiedName = "{template:FullyQualifiedName}"; 
 	}
 }

@@ -15,7 +15,8 @@ namespace MyEngine.SourceGenerator.Generators
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            var nodesWithAppEntrypointAttribute = context.SyntaxProvider.ForAttributeWithMetadataName("MyEngine.Core.AppEntrypointAttribute",
+            var nodesWithAppEntrypointAttribute = context.SyntaxProvider.ForAttributeWithMetadataName(
+                SourceGeneratorHelpers.AttributeNames[EngineAttribute.AppEntrypoint].FullyQualifiedName,
                 (syntaxNode, _) => true,
                 (generatorAttributeSyntaxContext, _) => (generatorAttributeSyntaxContext.SemanticModel, ClassNode: generatorAttributeSyntaxContext.TargetNode))
                 .Where(x => x.ClassNode is ClassDeclarationSyntax)
@@ -29,9 +30,10 @@ namespace MyEngine.SourceGenerator.Generators
                 var classNode = semanticModelAndClassNode.ClassNode;
 
                 var template = SourceTemplate.LoadFromEmbeddedResource("AppEntrypointInfo.template");
-                // todo: dont use MyEngine namespace, keep in user namespace and put an attribute on it instead
-                template.SubstitutePart("Namespace", "MyEngine.Runtime");
-                template.SubstitutePart("FullyQualifiedName", _helpers.GetFullyQualifiedName(classNode));
+                template.SubstitutePart("AppEntrypointInfoAttribute", SourceGeneratorHelpers.AttributeNames[EngineAttribute.AppEntrypointInfo].CodeUsage);
+                template.SubstitutePart("Namespace", $"{semanticModelAndClassNode.SemanticModel.Compilation.AssemblyName}.Generated");
+                template.SubstitutePart("FullyQualifiedNameAttribute", SourceGeneratorHelpers.AttributeNames[EngineAttribute.AppEntrypointInfoFullyQualifiedName].CodeUsage);
+                template.SubstitutePart("FullyQualifiedName", _helpers.GetFullyQualifiedName(semanticModelAndClassNode.SemanticModel, classNode));
 
                 sourceProductionContext.AddSource("AppEntrypointInfo.g.cs", template.Build());
             });

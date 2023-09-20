@@ -4,11 +4,11 @@ using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Utils;
 
-namespace MyEngine.Runtime;
+namespace MyEngine.Core;
 
 internal enum AddComponentError
 {
-    DuplicateComponent    
+    DuplicateComponent
 }
 
 internal class ComponentCollection

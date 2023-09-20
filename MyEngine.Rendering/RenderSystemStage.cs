@@ -1,4 +1,6 @@
-﻿namespace MyEngine.Core;
+﻿using MyEngine.Core;
+
+namespace MyEngine.Rendering;
 
 public class RenderSystemStage : ISystemStage
 {

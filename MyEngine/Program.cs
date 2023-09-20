@@ -1,4 +1,5 @@
-﻿using MyEngine.Runtime;
+﻿using MyEngine.Core;
+using MyEngine.Runtime;
 
 [assembly: EngineRuntimeAssembly]
 

@@ -29,14 +29,14 @@ namespace MyEngine.SourceGenerator.Generators
                 .Where(x => _helpers.DoesClassNodeImplementInterface(x.SemanticModel, x.ClassNode, "MyEngine.Core.Ecs.Systems.IStartupSystem"))
                 .Select((x, _) => (x.SemanticModel, x.ClassNode, Constructor: TryGetStartupSystemConstructor(x.SemanticModel, x.ClassNode)))
                 .Where(x => x.Constructor != null)
-                .Select((x, _) => new StartupSystemClass(_helpers.GetFullyQualifiedName(x.ClassNode), x.Constructor!))
+                .Select((x, _) => new StartupSystemClass(_helpers.GetFullyQualifiedName(x.SemanticModel, x.ClassNode), x.Constructor!))
                 .Collect();
 
             var systemClasses = accessibleClassNodes
                 .Where(x => _helpers.DoesClassNodeImplementInterface(x.SemanticModel, x.ClassNode, "MyEngine.Core.Ecs.Systems.ISystem"))
                 .Select((x, _) => (x.SemanticModel, x.ClassNode, Constructor: TryGetSystemConstructor(x.SemanticModel, x.ClassNode)))
                 .Where(x => x.Constructor != null)
-                .Select((x, _) => new SystemClass(_helpers.GetFullyQualifiedName(x.ClassNode), x.Constructor!))
+                .Select((x, _) => new SystemClass(_helpers.GetFullyQualifiedName(x.SemanticModel, x.ClassNode), x.Constructor!))
                 .Collect();
 
             var allSystemsAndCompilation = startupSystemClasses.Combine(systemClasses)
@@ -46,7 +46,7 @@ namespace MyEngine.SourceGenerator.Generators
             {
                 var ((startupSystems, systems), compilation) = classesAndCompilation;
 
-                // todo: assembly attribute instead
+                // todo: app/plugin assembly attribute instead
                 if (compilation.AssemblyName == "MyEngine.Runtime")
                 {
                     return;
@@ -56,6 +56,9 @@ namespace MyEngine.SourceGenerator.Generators
                 template.SubstitutePart("Namespace", $"{compilation.AssemblyName}.Generated");
                 template.SubstitutePart("SystemClasses", JsonConvert.SerializeObject(systems.Select(x => new SystemClassDto(x))).Replace("\"", "\\\""));
                 template.SubstitutePart("StartupSystemClasses", JsonConvert.SerializeObject(startupSystems.Select(x => new StartupSystemClassDto(x))).Replace("\"", "\\\""));
+                template.SubstitutePart("AppSystemsInfoAttribute", SourceGeneratorHelpers.AttributeNames[EngineAttribute.AppSystemsInfo].CodeUsage);
+                template.SubstitutePart("SystemClassesAttribute", SourceGeneratorHelpers.AttributeNames[EngineAttribute.SystemClasses].CodeUsage);
+                template.SubstitutePart("StartupSystemClassesAttribute", SourceGeneratorHelpers.AttributeNames[EngineAttribute.StartupSystemClasses].CodeUsage);
 
                 sourceProductionContext.AddSource("AppSystemsInfo.g.cs", template.Build());
             });

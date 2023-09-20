@@ -20,8 +20,17 @@ namespace MyEngine.SourceGenerator.Generators
             return types;
         }
 
-        public string GetFullyQualifiedName(ClassDeclarationSyntax classNode)
+        public string GetFullyQualifiedName(SemanticModel semanticModel, ClassDeclarationSyntax classNode)
         {
+            var symbol = semanticModel.GetDeclaredSymbol(classNode);
+            if (symbol is null)
+            {
+                throw new Exception("Could not get class symbol");
+            }
+
+            // todo: handle overridden root namespace
+            return $"global::{symbol.ContainingNamespace.ToDisplayString()}.{symbol.Name}";
+
             // todo: figure out if there's a better way to do this
             var className = classNode.Identifier.ToString();
             var classNamespaceNode = classNode.Parent;
@@ -60,6 +69,7 @@ namespace MyEngine.SourceGenerator.Generators
 
             if (!childTokens.Any(x => x.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.PublicKeyword)))
             {
+                // todo: dont check for static assembly names
                 if (childTokens.Any(x => x.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.InternalKeyword))
                     && (semanticModel.Compilation.AssemblyName == "MyEngine.Core"
                     || semanticModel.Compilation.AssemblyName == "MyEngine.Input"))
@@ -138,5 +148,42 @@ namespace MyEngine.SourceGenerator.Generators
             // found a public empty constructor 
             return true;
         }
+
+        private const string CoreNamespace = "MyEngine.Core";
+
+        public static readonly Dictionary<EngineAttribute, EngineAttributeInfo> AttributeNames = new[]
+        {
+            new EngineAttributeInfo(EngineAttribute.AppEntrypointInfoFullyQualifiedName, $"{CoreNamespace}.AppEntrypointInfoFullyQualifiedNameAttribute", $"[global::{CoreNamespace}.AppEntrypointInfoFullyQualifiedName]"),
+            new EngineAttributeInfo(EngineAttribute.AppEntrypoint, $"{CoreNamespace}.AppEntrypointAttribute", $"[global::{CoreNamespace}.AppEntrypoint]"),
+            new EngineAttributeInfo(EngineAttribute.AppEntrypointInfo, $"{CoreNamespace}.AppEntrypointInfoAttribute", $"[global::{CoreNamespace}.AppEntrypointInfo]"),
+            new EngineAttributeInfo(EngineAttribute.AppSystemsInfo, $"{CoreNamespace}.AppSystemsInfoAttribute", $"[global::{CoreNamespace}.AppSystemsInfo]"),
+            new EngineAttributeInfo(EngineAttribute.EngineRuntimeAssembly, $"{CoreNamespace}.EngineRuntimeAssemblyAttribute", $"[global::{CoreNamespace}.EngineRuntimeAssembly]"),
+            new EngineAttributeInfo(EngineAttribute.SystemClasses, $"{CoreNamespace}.SystemClassesAttribute", $"[global::{CoreNamespace}.SystemClasses]"),
+            new EngineAttributeInfo(EngineAttribute.StartupSystemClasses, $"{CoreNamespace}.StartupSystemClassesAttribute", $"[global::{CoreNamespace}.StartupSystemClasses]"),
+        }.ToDictionary(x => x.Attribute);
+
+        public bool DoesAttributeMatch(AttributeData attributeData, EngineAttribute expectedAttribute)
+        {
+            if (attributeData.AttributeClass is null)
+            {
+                return false;
+            }
+
+            return attributeData.AttributeClass.ToDisplayString() == AttributeNames[expectedAttribute].FullyQualifiedName;
+        }
+    }
+
+    public class EngineAttributeInfo
+    {
+        public EngineAttributeInfo(EngineAttribute attribute, string fullyQualifiedName, string codeUsage)
+        {
+            Attribute = attribute;
+            FullyQualifiedName = fullyQualifiedName;
+            CodeUsage = codeUsage;
+        }
+
+        public EngineAttribute Attribute { get; }
+        public string FullyQualifiedName { get; }
+        public string CodeUsage { get; }
     }
 }
