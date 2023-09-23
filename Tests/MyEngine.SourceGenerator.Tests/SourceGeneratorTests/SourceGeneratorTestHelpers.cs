@@ -15,11 +15,9 @@ public static class SourceGeneratorTestHelpers
         MetadataReference.CreateFromFile(Path.Combine(SystemDllsDirectory, "System.Private.CoreLib.dll")),
     };
 
-    private static GeneratorDriver GetGeneratorDriver(
-        string source,
+    public static Compilation CreateCompilation(string source,
         IEnumerable<KeyValuePair<string, string>> referenceSources,
-        IEnumerable<Assembly> referenceAssemblies,
-        IIncrementalGenerator generator)
+        IEnumerable<Assembly> referenceAssemblies)
     {
         var referenceAssemblyReferences = referenceAssemblies.Select(x => MetadataReference.CreateFromFile(x.Location));
 
@@ -46,7 +44,7 @@ public static class SourceGeneratorTestHelpers
         var compilationOptions = new CSharpCompilationOptions(
             OutputKind.DynamicallyLinkedLibrary);
 
-        CSharpCompilation compilation = CSharpCompilation.Create(
+        var compilation = CSharpCompilation.Create(
             assemblyName: "MyEngine.SourceGenerator.Tests",
             syntaxTrees: new[] { syntaxTree },
             references: SystemReferences
@@ -54,9 +52,21 @@ public static class SourceGeneratorTestHelpers
                 .Concat(referenceAssemblyReferences),
             compilationOptions);
 
+
         var diagnostics = compilation.GetDiagnostics();
 
         diagnostics.Should().NotContain(x => x.Severity == DiagnosticSeverity.Error);
+
+        return compilation;
+    }
+
+    private static GeneratorDriver GetGeneratorDriver(
+        string source,
+        IEnumerable<KeyValuePair<string, string>> referenceSources,
+        IEnumerable<Assembly> referenceAssemblies,
+        IIncrementalGenerator generator)
+    {
+        var compilation = CreateCompilation(source, referenceSources, referenceAssemblies);
 
         return CSharpGeneratorDriver.Create(generator).RunGenerators(compilation);
     }

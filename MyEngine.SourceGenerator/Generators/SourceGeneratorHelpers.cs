@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -10,6 +10,7 @@ namespace MyEngine.SourceGenerator.Generators
     {
         public IEnumerable<ITypeSymbol> GetAllNamespaceTypes(INamespaceSymbol namespaceSymbol)
         {
+            // todo: nested types
             var types = new List<ITypeSymbol>(namespaceSymbol.GetTypeMembers());
 
             foreach (var childNamespace in namespaceSymbol.GetNamespaceMembers())
@@ -22,68 +23,49 @@ namespace MyEngine.SourceGenerator.Generators
 
         public string GetFullyQualifiedName(SemanticModel semanticModel, ClassDeclarationSyntax classNode)
         {
-            var symbol = semanticModel.GetDeclaredSymbol(classNode);
-            if (symbol is null)
-            {
-                throw new Exception("Could not get class symbol");
-            }
+            // symbol will not be null, as null is only returned when node is not a declaration
+            var symbol = semanticModel.GetDeclaredSymbol(classNode)!;
+
+            // todo: nested types
 
             // todo: handle overridden root namespace
             return $"global::{symbol.ContainingNamespace.ToDisplayString()}.{symbol.Name}";
+        }
 
-            // todo: figure out if there's a better way to do this
-            var className = classNode.Identifier.ToString();
-            var classNamespaceNode = classNode.Parent;
-            string classNamespace;
-            if (classNamespaceNode is NamespaceDeclarationSyntax namespaceDeclaration)
-            {
-                classNamespace = $"global::{namespaceDeclaration.Name}";
-            }
-            else if (classNamespaceNode is FileScopedNamespaceDeclarationSyntax fileScopedNamespaceDeclarationSyntax)
-            {
-                classNamespace = $"global::{fileScopedNamespaceDeclarationSyntax.Name}";
-            }
-            else
-            {
-                // we assumed a class declaration syntax's parent is always a namespace
-                throw new Exception($"ClassNode's parent is not a namespace declaration. It was a {classNamespaceNode?.GetType().Name}");
-            }
-
-            var fullyQualifiedName = classNamespace.Length == 0
-                ? className
-                : $"{classNamespace}.{className}";
-
-            return fullyQualifiedName;
+        public bool DoesAssemblyGiveEngineRuntimeAccessToInternals(IAssemblySymbol assembly)
+        {
+            return assembly.GetAttributes()
+                .Where(x => x.AttributeClass != null)
+                .Where(x => x.AttributeClass!.ToDisplayString() == typeof(InternalsVisibleToAttribute).FullName)
+                .Where(x => x.ConstructorArguments.Length == 1
+                    && x.ConstructorArguments[0].Value is string str
+                    && str == "MyEngine.Runtime")
+                .Any();
         }
 
         public bool IsClassConcreteAndAccessible(SemanticModel semanticModel, ClassDeclarationSyntax classNode)
         {
-            var childTokens = classNode.ChildTokens().ToArray();
-            if (childTokens.Any(x => x.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.AbstractKeyword)))
-            {
-                // class is abstract, so can't be constructed
+            var classSymbol = (INamedTypeSymbol)semanticModel.GetDeclaredSymbol(classNode)!;
 
-                // todo: error
+            if (classSymbol.IsAbstract)
+            {
                 return false;
             }
 
-            if (!childTokens.Any(x => x.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.PublicKeyword)))
+            if (classSymbol.DeclaredAccessibility == Accessibility.Public)
             {
-                // todo: dont check for static assembly names
-                if (childTokens.Any(x => x.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.InternalKeyword))
-                    && (semanticModel.Compilation.AssemblyName == "MyEngine.Core"
-                    || semanticModel.Compilation.AssemblyName == "MyEngine.Input"))
-                {
-                    // this is one of our projects, and the system is internal, so we can access it from the runtime
-                    return true;
-                }
-                // class is not public, so can't be accessed
-
-                // todo: error
-                return false;
+                return true;
             }
 
-            return true;
+            // NotApplicable when no accessibility is declared, so internal is the default for classes
+            if (classSymbol.DeclaredAccessibility == Accessibility.Internal ||  classSymbol.DeclaredAccessibility == Accessibility.NotApplicable)
+            {
+                var assembly = classSymbol.ContainingAssembly;
+
+                return DoesAssemblyGiveEngineRuntimeAccessToInternals(assembly);
+            }
+
+            return false;
         }
 
         public bool DoesClassNodeImplementInterface(SemanticModel semanticModel, ClassDeclarationSyntax classNode, string interfaceFullyQualifiedName)
