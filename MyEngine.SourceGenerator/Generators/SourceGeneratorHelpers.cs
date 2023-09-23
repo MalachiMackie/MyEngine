@@ -82,7 +82,7 @@ namespace MyEngine.SourceGenerator.Generators
                 || typeInfo.AllInterfaces.Any(x => x.ToDisplayString() == interfaceFullyQualifiedName);
         }
 
-        public bool DoesClassHaveAccessibleConstructor(ClassDeclarationSyntax classNode)
+        public bool DoesClassHaveAccessibleEmptyConstructor(ClassDeclarationSyntax classNode)
         {
             var constructorDeclarations = classNode.ChildNodes()
                 .OfType<ConstructorDeclarationSyntax>()
