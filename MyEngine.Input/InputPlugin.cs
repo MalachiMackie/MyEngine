@@ -10,7 +10,6 @@ public class InputPlugin : IPlugin
             .AddSystemStage(InputSystemStage.Instance, 1)
             .AddStartupSystem<InitializeInputSystem>()
             .AddSystem<InputSystem>(InputSystemStage.Instance)
-            .AddResource(new InputResource())
-            .AddResource(new MyInput());
+            .AddResource(new InputResource());
     }
 }

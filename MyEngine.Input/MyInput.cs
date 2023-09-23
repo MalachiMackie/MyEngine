@@ -6,15 +6,11 @@ namespace MyEngine.Input;
 
 public class MyInput : IResource
 {
-    private IInputContext? _context;
-    private IKeyboard? _primaryKeyboard;
-    internal IMouse? Mouse;
+    private IInputContext _context;
+    private IKeyboard _primaryKeyboard;
+    internal IMouse Mouse;
 
-    public MyInput()
-    {
-    }
-
-    public void Initialize(IInputContext context)
+    internal MyInput(IInputContext context)
     {
         _context = context;
 

@@ -24,7 +24,7 @@ public class MyWindow : IDisposable, IResource
         Width = width;
         Height = height;
 
-        Load += () => load.Invoke(_glWindow.CreateOpenGL(), this);
+        Load += (myWindow) => load.Invoke(_glWindow.CreateOpenGL(), myWindow);
         _glWindow.Load += OnLoad;
         _glWindow.Update += dt => Update?.Invoke(dt);
         _glWindow.Resize += OnResize;
@@ -58,7 +58,7 @@ public class MyWindow : IDisposable, IResource
 
     private void OnLoad()
     {
-        Load?.Invoke();
+        Load?.Invoke(this);
         _isLoaded = true;
     }
 
@@ -71,11 +71,11 @@ public class MyWindow : IDisposable, IResource
 
     private bool _isLoaded;
 
-    internal void AddLoadAction(Action onLoad)
+    internal void AddLoadAction(Action<MyWindow> onLoad)
     {
         if (_isLoaded)
         {
-            onLoad();
+            onLoad(this);
         }
 
         Load += onLoad;
@@ -83,8 +83,8 @@ public class MyWindow : IDisposable, IResource
 
     public event Action<double>? Update;
     public event Action<Vector2D<int>>? Resize;
-    private event Action? Load;
+    private event Action<MyWindow>? Load;
 
     // todo: better encapsulation
-    public IWindow? GlWindow => _glWindow;
+    internal IWindow GlWindow => _glWindow;
 }
