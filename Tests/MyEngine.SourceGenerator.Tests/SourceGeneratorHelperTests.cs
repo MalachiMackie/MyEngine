@@ -142,7 +142,285 @@ public class SourceGeneratorHelperTests
         result.Should().BeTrue();
 
     }
+
+    [Theory]
+    [ClassData(typeof(TypeSymbolImplementingInterface))]
+    public void DoesTypeSymbolImplementInterface_Should_ReturnTrue_When_ItDoes(string source, string symbolName, string interfaceName)
+    {
+        var compilation = SourceGeneratorTestHelpers.CreateCompilation(
+            source,
+            Array.Empty<KeyValuePair<string, string>>(),
+            Array.Empty<Assembly>());
+
+        var syntaxTree = compilation.SyntaxTrees.Single();
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+
+        var symbol = syntaxTree.GetRoot()
+            .DescendantNodesAndSelf()
+            .OfType<BaseTypeDeclarationSyntax>()
+            .Select(x => semanticModel.GetDeclaredSymbol(x)!)
+            .First(x => x.Name == symbolName);
+
+        var result = _helper.DoesTypeSymbolImplementInterface(symbol, interfaceName);
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public void DoesTypeSymbolImplementInterface_Should_ReturnFalse()
+    {
+        var source = """
+            public class MyClass
+            {
+            }
+
+            public interface MyInterface
+            {
+            }
+            """;
+
+        var compilation = SourceGeneratorTestHelpers.CreateCompilation(
+            source,
+            Array.Empty<KeyValuePair<string, string>>(),
+            Array.Empty<Assembly>());
+
+        var syntaxTree = compilation.SyntaxTrees.Single();
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+
+        var symbol = syntaxTree.GetRoot()
+            .DescendantNodesAndSelf()
+            .OfType<BaseTypeDeclarationSyntax>()
+            .Select(x => semanticModel.GetDeclaredSymbol(x)!)
+            .First(x => x.Name == "MyClass");
+
+        var result = _helper.DoesTypeSymbolImplementInterface(symbol, "MyInterface");
+        result.Should().BeFalse();
+
+    }
+
+    [Theory]
+    [ClassData(typeof(ClassImplementingInterface))]
+    public void DoesClassNodeImplementInterface_Should_ReturnTrue_When_ItDoes(string source, string interfaceFullyQualifiedName)
+    {
+        var compilation = SourceGeneratorTestHelpers.CreateCompilation(
+            source,
+            Array.Empty<KeyValuePair<string, string>>(),
+            Array.Empty<Assembly>());
+
+        var syntaxTree = compilation.SyntaxTrees.Single();
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+
+        var classNode = syntaxTree.GetRoot()
+            .DescendantNodesAndSelf()
+            .OfType<ClassDeclarationSyntax>()
+            .First();
+
+        var result = _helper.DoesClassNodeImplementInterface(semanticModel, classNode, interfaceFullyQualifiedName);
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public void DoesClassNodeImplementInterface_Should_ReturnFalse_When_ThereIsNoBaseList()
+    {
+        var source = """
+            public interface MyInterface
+            {
+            }
+
+            public class MyClass
+            {
+            }
+            """;
+
+        var compilation = SourceGeneratorTestHelpers.CreateCompilation(
+                    source,
+                    Array.Empty<KeyValuePair<string, string>>(),
+                    Array.Empty<Assembly>());
+
+        var syntaxTree = compilation.SyntaxTrees.Single();
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+
+        var classNode = syntaxTree.GetRoot()
+            .DescendantNodesAndSelf()
+            .OfType<ClassDeclarationSyntax>()
+            .First();
+
+        var result = _helper.DoesClassNodeImplementInterface(semanticModel, classNode, "MyInterface");
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public void DoesClassNodeImplementInterface_Should_ReturnFalse_When_NoBasesImplementInterface()
+    {
+        var source = """
+            public interface MyInterface
+            {
+            }
+            public interface OtherInterface
+            {
+            }
+            public class MyClass : OtherInterface
+            {
+            }
+            """;
+
+        var compilation = SourceGeneratorTestHelpers.CreateCompilation(
+                    source,
+                    Array.Empty<KeyValuePair<string, string>>(),
+                    Array.Empty<Assembly>());
+
+        var syntaxTree = compilation.SyntaxTrees.Single();
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+
+        var classNode = syntaxTree.GetRoot()
+            .DescendantNodesAndSelf()
+            .OfType<ClassDeclarationSyntax>()
+            .First();
+
+        var result = _helper.DoesClassNodeImplementInterface(semanticModel, classNode, "MyInterface");
+        result.Should().BeFalse();
+    }
 }
+
+public class ClassImplementingInterface : IEnumerable<object[]>
+{
+    public IEnumerator<object[]> GetEnumerator()
+    {
+        yield return new object[]
+        {
+            """
+            public interface MyInterface
+            {
+            }
+
+            public class MyClass : MyInterface
+            {
+            }
+            """,
+            "MyInterface"
+        };
+
+        yield return new object[]
+        {
+            """
+            public interface OtherInterface
+            {
+            }
+
+            public interface MyInterface
+            {
+            }
+
+            public class MyClass : OtherInterface, MyInterface
+            {
+            }
+            """,
+            "MyInterface"
+        };
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
+}
+
+public class TypeSymbolImplementingInterface : IEnumerable<object[]>
+{
+    public IEnumerator<object[]> GetEnumerator()
+    {
+        var interfaceSource = """
+            namespace InterfaceNamespace
+            {
+                public interface MyInterface
+                {
+                }
+            }
+
+            """;
+
+        var interfaceFullyQualifiedName = "InterfaceNamespace.MyInterface";
+        yield return new object[]
+        {
+            $$"""
+            {{interfaceSource}}
+            namespace MyNamespace
+            {
+                public class MyClass : {{interfaceFullyQualifiedName}}
+                {
+                }
+            }
+            """,
+            "MyClass",
+            interfaceFullyQualifiedName
+        };
+
+        yield return new object[]
+        {
+            $$"""
+            {{interfaceSource}}
+            namespace MyNamespace
+            {
+                public class MyParentClass : {{interfaceFullyQualifiedName}}
+                {
+                }
+
+                public class MyClass : MyParentClass
+                {
+                }
+            }
+            """,
+            "MyClass",
+            interfaceFullyQualifiedName
+        };
+
+        yield return new object[]
+        {
+            $$"""
+            {{interfaceSource}}
+            namespace MyNamespace
+            {
+                public interface ChildInterface : {{interfaceFullyQualifiedName}}
+                {
+                }
+
+                public class MyClass : ChildInterface
+                {
+                }
+            }
+            """,
+            "MyClass",
+            interfaceFullyQualifiedName
+        };
+
+        yield return new object[]
+        {
+            $$"""
+            {{interfaceSource}}
+            namespace MyNamespace
+            {
+                public interface ChildInterface : {{interfaceFullyQualifiedName}}
+                {
+                }
+            }
+            """,
+            "ChildInterface",
+            interfaceFullyQualifiedName
+        };
+
+        yield return new object[]
+        {
+            interfaceSource,
+            "MyInterface",
+            interfaceFullyQualifiedName
+        };
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
+}
+
 
 public class InternalClassesWithInternalsVisibleTo : IEnumerable<object[]>
 {

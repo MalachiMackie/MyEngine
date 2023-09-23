@@ -104,7 +104,7 @@ namespace MyEngine.SourceGenerator.Generators
                         continue;
                     }
 
-                    var isResource = _helpers.DoesTypeInfoImplementInterface(parameterTypeInfo, "MyEngine.Core.Ecs.Resources.IResource");
+                    var isResource = _helpers.DoesTypeSymbolImplementInterface(parameterTypeInfo, "MyEngine.Core.Ecs.Resources.IResource");
                     var isQuery = TryGetQueryParameter(parameterTypeInfo, out var queryParameters);
 
                     if (isResource)
@@ -166,7 +166,7 @@ namespace MyEngine.SourceGenerator.Generators
                         continue;
                     }
 
-                    if (_helpers.DoesTypeInfoImplementInterface(parameterTypeInfo, "MyEngine.Core.Ecs.Resources.IResource"))
+                    if (_helpers.DoesTypeSymbolImplementInterface(parameterTypeInfo, "MyEngine.Core.Ecs.Resources.IResource"))
                     {
                         constructor.AddParameter(new SystemConstructorResourceParameter(parameterTypeInfo.ToDisplayString()));
                     }

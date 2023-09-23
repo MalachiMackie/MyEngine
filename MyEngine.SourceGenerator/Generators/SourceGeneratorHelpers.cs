@@ -67,7 +67,7 @@ namespace MyEngine.SourceGenerator.Generators
             foreach (var type in classNode.BaseList.Types)
             {
                 var typeInfo = semanticModel.GetTypeInfo(type.Type);
-                if (typeInfo.Type != null && DoesTypeInfoImplementInterface(typeInfo.Type, interfaceFullyQualifiedName))
+                if (typeInfo.Type != null && DoesTypeSymbolImplementInterface(typeInfo.Type, interfaceFullyQualifiedName))
                 {
                     return true;
                 }
@@ -76,7 +76,7 @@ namespace MyEngine.SourceGenerator.Generators
             return false;
         }
 
-        public bool DoesTypeInfoImplementInterface(ITypeSymbol typeInfo, string interfaceFullyQualifiedName)
+        public bool DoesTypeSymbolImplementInterface(ITypeSymbol typeInfo, string interfaceFullyQualifiedName)
         {
             return typeInfo.ToDisplayString() == interfaceFullyQualifiedName
                 || typeInfo.AllInterfaces.Any(x => x.ToDisplayString() == interfaceFullyQualifiedName);
