@@ -6,23 +6,24 @@ namespace MyEngine.Input;
 
 public class MyInput : IResource
 {
-    private IInputContext _context;
-    private IKeyboard _primaryKeyboard;
-    internal IMouse Mouse;
+    internal IInputContext GlInputContext { get; }
+    internal IMouse Mouse { get; }
+
+    private readonly IKeyboard _primaryKeyboard;
 
     internal MyInput(IInputContext context)
     {
-        _context = context;
+        GlInputContext = context;
 
-        foreach (var keyboard in _context.Keyboards)
+        foreach (var keyboard in GlInputContext.Keyboards)
         {
             keyboard.KeyDown += OnKeyDown;
         }
-        Mouse = _context.Mice[0];
+        Mouse = GlInputContext.Mice[0];
 
         Mouse.MouseMove += OnMouseMove;
 
-        _primaryKeyboard = _context.Keyboards[0];
+        _primaryKeyboard = GlInputContext.Keyboards[0];
 
     }
 

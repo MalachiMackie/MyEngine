@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MyEngine.Assets\MyEngine.Assets.csproj" />
     <ProjectReference Include="..\MyEngine.Core\MyEngine.Core.csproj" />
+    <ProjectReference Include="..\MyEngine.ImGui\MyEngine.ImGui.csproj" />
     <ProjectReference Include="..\MyEngine.Input\MyEngine.Input.csproj" />
     <ProjectReference Include="..\MyEngine.Physics\MyEngine.Physics.csproj" />
     <ProjectReference Include="..\MyEngine.Rendering\MyEngine.Rendering.csproj" />

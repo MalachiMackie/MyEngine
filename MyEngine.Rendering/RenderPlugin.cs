@@ -2,6 +2,7 @@
 using MyEngine.Core;
 
 [assembly: InternalsVisibleTo("MyEngine.Input")]
+[assembly: InternalsVisibleTo("MyEngine.ImGui")]
 
 namespace MyEngine.Rendering;
 

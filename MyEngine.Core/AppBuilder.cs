@@ -92,10 +92,15 @@ public class AppBuilder
         return this;
     }
 
-    public AppBuilder AddPlugin<T>(T plugin)
-        where T : IPlugin
+    public AppBuilder AddPlugin(IPlugin plugin)
     {
-        return plugin.Register(this);
+        var returnedAppBuilder = plugin.Register(this);
+        if (!ReferenceEquals(returnedAppBuilder, this))
+        {
+            throw new InvalidOperationException("Plugins must return the same instance of app builder");
+        }
+
+        return returnedAppBuilder;
     }
 
     private readonly Dictionary<ISystemStage, Queue<Type>> _systemTypesWithoutStages = new();

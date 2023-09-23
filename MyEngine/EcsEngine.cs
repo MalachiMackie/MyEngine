@@ -90,7 +90,6 @@ internal partial class EcsEngine
 
     private void RegisterAppResources()
     {
-        // todo: move these to a plugin
         RegisterResource<IHierarchyCommands>(new HierarchyCommands(_components));
         RegisterResource(new ResourceRegistrationResource());
         RegisterResource<ICommands>(new Commands(_components, _entities));
@@ -132,6 +131,11 @@ internal partial class EcsEngine
         {
             startupSystem.Run();
             AddQueuedResources();
+        }
+
+        if (_uninstantiatedStartupSystems.Count > 0)
+        {
+            Console.WriteLine("Did not run StartupSystems because their required resources weren't added: {0}", string.Join("; ", _uninstantiatedStartupSystems.Select(x => x.Key.Name)));
         }
     }
 

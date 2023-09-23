@@ -1,4 +1,7 @@
-﻿using MyEngine.Core;
+﻿using System.Runtime.CompilerServices;
+using MyEngine.Core;
+
+[assembly: InternalsVisibleTo("MyEngine.ImGui")]
 
 namespace MyEngine.Input;
 

@@ -1,5 +1,6 @@
 ﻿namespace MyEngine.Core.Ecs.Resources;
 
+// todo: should be resourceCommands
 public class ResourceRegistrationResource : IResource
 {
     internal Queue<KeyValuePair<Type, IResource>> Registrations { get; } = new(); 

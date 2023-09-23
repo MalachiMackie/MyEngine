@@ -7,11 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Silk.NET.OpenGL.Extensions.ImGui" Version="2.17.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\MyEngine.Core\MyEngine.Core.csproj" />
+    <ProjectReference Include="..\MyEngine.Input\MyEngine.Input.csproj" />
+    <ProjectReference Include="..\MyEngine.Rendering\MyEngine.Rendering.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="../MyEngine.SourceGenerator/MyEngine.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
-
 </Project>
