@@ -19,7 +19,7 @@ public class InitializeInputSystem : IStartupSystem
     {
         _myWindow.AddLoadAction(() =>
         {
-            _myInput.Initialize(_myWindow.InnerWindow!.CreateInput());
+            _myInput.Initialize(_myWindow.GlWindow!.CreateInput());
         });
     }
 }

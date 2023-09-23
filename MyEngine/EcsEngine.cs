@@ -118,7 +118,10 @@ internal partial class EcsEngine
 
     private void StartUpdate()
     {
-        _resourceContainer.TryGetResource<MyWindow>(out var myWindow);
+        if (!_resourceContainer.TryGetResource<MyWindow>(out var myWindow))
+        {
+            throw new InvalidOperationException("Cannot start engine without a window");
+        }
         myWindow!.Update += Update;
         myWindow!.Run();
     }

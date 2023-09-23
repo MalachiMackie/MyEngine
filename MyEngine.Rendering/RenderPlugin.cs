@@ -1,4 +1,7 @@
-﻿using MyEngine.Core;
+﻿using System.Runtime.CompilerServices;
+using MyEngine.Core;
+
+[assembly: InternalsVisibleTo("MyEngine.Input")]
 
 namespace MyEngine.Rendering;
 
@@ -18,11 +21,11 @@ public class RenderPlugin : IPlugin
     public AppBuilder Register(AppBuilder builder)
     {
         return builder
+            .AddResource(new InitialWindowProps(_windowTitle, _width, _height))
+            .AddStartupSystem<InitializeRenderingSystem>()
             .AddSystemStage(RenderSystemStage.Instance, 5)
-            .AddResource(new Renderer(_width, _height))
-            .AddResource(new MyWindow(_windowTitle, _width, _height))
             .AddResource<ILineRenderResource>(new LineRenderResource())
             .AddSystem<RenderSystem>(RenderSystemStage.Instance)
-            .AddStartupSystem<InitializeRenderingSystem>();
+            ;
     }
 }

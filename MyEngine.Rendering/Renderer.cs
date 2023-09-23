@@ -18,16 +18,38 @@ namespace MyEngine.Rendering;
 
 public sealed class Renderer : IDisposable, IResource
 {
-    private GL _gl = null!;
-    private BufferObject<float> _vertexBuffer = null!;
-    private BufferObject<uint> _elementBuffer = null!;
-    private BufferObject<Matrix4x4> _matrixModelBuffer = null!;
-    private VertexArrayObject _vertexArrayObject = null!;
-    private ShaderProgram _shader = null!;
-    private ShaderProgram _lineShader = null!;
+    private Renderer(GL openGL,
+        BufferObject<float> vertexBuffer,
+        BufferObject<uint> elementBuffer,
+        BufferObject<Matrix4x4> matrixModelBuffer,
+        VertexArrayObject vertexArrayObject,
+        ShaderProgram shader,
+        ShaderProgram lineShader,
+        BufferObject<float> lineVertexBuffer,
+        VertexArrayObject lineVertexArray)
+    {
+        OpenGL = openGL;
 
-    private BufferObject<float> _lineVertexBuffer = null!;
-    private VertexArrayObject _lineVertexArray = null!;
+        _vertexBuffer = vertexBuffer;
+        _elementBuffer = elementBuffer;
+        _matrixModelBuffer = matrixModelBuffer;
+        _vertexArrayObject = vertexArrayObject;
+        _shader = shader;
+        _lineShader = lineShader;
+        _lineVertexBuffer = lineVertexBuffer;
+        _lineVertexArray = lineVertexArray;
+    }
+
+    internal GL OpenGL { get; }
+    private readonly BufferObject<float> _vertexBuffer;
+    private readonly BufferObject<uint> _elementBuffer;
+    private readonly BufferObject<Matrix4x4> _matrixModelBuffer;
+    private readonly VertexArrayObject _vertexArrayObject;
+    private readonly ShaderProgram _shader;
+    private readonly ShaderProgram _lineShader;
+
+    private readonly BufferObject<float> _lineVertexBuffer;
+    private readonly VertexArrayObject _lineVertexArray;
     private readonly Dictionary<AssetId, TextureObject> _textures = new();
 
     private static readonly uint[] Indices =
@@ -46,61 +68,47 @@ public sealed class Renderer : IDisposable, IResource
        -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
     };
 
-    private readonly string _vertexCode;
-    private readonly string _fragmentCode;
-    private readonly string _lineVertexCode;
-    private readonly string _lineFragmentCode;
-
     private uint _width;
     private uint _height;
 
-    public Renderer(
-        uint width,
-        uint height)
-    {
-        _vertexCode = File.ReadAllText(Path.Join("Shaders", "shader.vert"));
-        _lineVertexCode = File.ReadAllText(Path.Join("Shaders", "lineShader.vert"));
-        _fragmentCode = File.ReadAllText(Path.Join("Shaders", "shader.frag"));
-        _lineFragmentCode = File.ReadAllText(Path.Join("Shaders", "lineShader.frag"));
-
-        _width = width;
-        _height = height;
-    }
-
-    internal unsafe Result<Unit, RendererLoadError> Load(GL openGL)
+    internal static unsafe Result<Renderer, RendererLoadError> Create(GL openGL)
     {
         // todo: try catch around all opengl stuff
-        _gl = openGL;
+        openGL.ClearColor(Color.CornflowerBlue);
 
-        _gl.ClearColor(Color.CornflowerBlue);
+        var vertexBuffer = BufferObject<float>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.StaticDraw);
+        vertexBuffer.SetData(Vertices);
 
-        _vertexBuffer = BufferObject<float>.CreateAndBind(_gl, BufferTargetARB.ArrayBuffer, BufferUsageARB.StaticDraw);
-        _vertexBuffer.SetData(Vertices);
+        var elementBuffer = BufferObject<uint>.CreateAndBind(openGL, BufferTargetARB.ElementArrayBuffer, BufferUsageARB.StaticDraw);
+        elementBuffer.SetData(Indices);
 
-        _elementBuffer = BufferObject<uint>.CreateAndBind(_gl, BufferTargetARB.ElementArrayBuffer, BufferUsageARB.StaticDraw);
-        _elementBuffer.SetData(Indices);
+        var matrixModelBuffer = BufferObject<Matrix4x4>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw);
 
-        _matrixModelBuffer = BufferObject<Matrix4x4>.CreateAndBind(_gl, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw);
+        var vertexArrayObject = VertexArrayObject.CreateAndBind(openGL, vertexBuffer);
+        vertexArrayObject.AttachBuffer(elementBuffer);
 
-        _vertexArrayObject = VertexArrayObject.CreateAndBind(_gl, _vertexBuffer);
-        _vertexArrayObject.AttachBuffer(_elementBuffer);
+        vertexArrayObject.VertexArrayAttribute(0, 3, VertexAttribPointerType.Float, false, 5, 0); // location
+        vertexArrayObject.VertexArrayAttribute(1, 2, VertexAttribPointerType.Float, false, 5, 3); // texture coordinate
 
-        _vertexArrayObject.VertexArrayAttribute(0, 3, VertexAttribPointerType.Float, false, 5, 0); // location
-        _vertexArrayObject.VertexArrayAttribute(1, 2, VertexAttribPointerType.Float, false, 5, 3); // texture coordinate
-
-        _vertexArrayObject.AttachBuffer(_matrixModelBuffer);
+        vertexArrayObject.AttachBuffer(matrixModelBuffer);
 
         // model matrix needs 4 attributes, because attributes can only hold 4 values each
-        _vertexArrayObject.VertexArrayAttribute(2, 4, VertexAttribPointerType.Float, false, 16, 0); // model matrix
-        _vertexArrayObject.VertexArrayAttribute(3, 4, VertexAttribPointerType.Float, false, 16, 4); // model matrix
-        _vertexArrayObject.VertexArrayAttribute(4, 4, VertexAttribPointerType.Float, false, 16, 8); // model matrix
-        _vertexArrayObject.VertexArrayAttribute(5, 4, VertexAttribPointerType.Float, false, 16, 12); // model matrix
-        _gl.VertexAttribDivisor(2, 1);
-        _gl.VertexAttribDivisor(3, 1);
-        _gl.VertexAttribDivisor(4, 1);
-        _gl.VertexAttribDivisor(5, 1);
+        vertexArrayObject.VertexArrayAttribute(2, 4, VertexAttribPointerType.Float, false, 16, 0); // model matrix
+        vertexArrayObject.VertexArrayAttribute(3, 4, VertexAttribPointerType.Float, false, 16, 4); // model matrix
+        vertexArrayObject.VertexArrayAttribute(4, 4, VertexAttribPointerType.Float, false, 16, 8); // model matrix
+        vertexArrayObject.VertexArrayAttribute(5, 4, VertexAttribPointerType.Float, false, 16, 12); // model matrix
+        openGL.VertexAttribDivisor(2, 1);
+        openGL.VertexAttribDivisor(3, 1);
+        openGL.VertexAttribDivisor(4, 1);
+        openGL.VertexAttribDivisor(5, 1);
 
-        var shaderResult = ShaderProgram.Create(_gl, _vertexCode, _fragmentCode)
+        // todo: custom shaders
+        var vertexCode = File.ReadAllText(Path.Join("Shaders", "shader.vert"));
+        var lineVertexCode = File.ReadAllText(Path.Join("Shaders", "lineShader.vert"));
+        var fragmentCode = File.ReadAllText(Path.Join("Shaders", "shader.frag"));
+        var lineFragmentCode = File.ReadAllText(Path.Join("Shaders", "lineShader.frag"));
+
+        var shaderResult = ShaderProgram.Create(openGL, vertexCode, fragmentCode)
             .MapError(err =>
             {
                 return err.Match(
@@ -110,25 +118,23 @@ public sealed class Renderer : IDisposable, IResource
             });
         if (!shaderResult.TryGetValue(out var shader))
         {
-            return Result.Failure<Unit, RendererLoadError>(shaderResult.UnwrapError());
+            return Result.Failure<Renderer, RendererLoadError>(shaderResult.UnwrapError());
         }
 
-        _shader = shader;
-
         // unbind everything
-        _vertexArrayObject.Unbind();
-        _vertexBuffer.Unbind();
-        _elementBuffer.Unbind();
+        vertexArrayObject.Unbind();
+        vertexBuffer.Unbind();
+        elementBuffer.Unbind();
 
-        _gl.Enable(EnableCap.Blend);
-        _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+        openGL.Enable(EnableCap.Blend);
+        openGL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
-        _lineVertexBuffer = BufferObject<float>.CreateAndBind(_gl, BufferTargetARB.ArrayBuffer, BufferUsageARB.StaticDraw);
+        var lineVertexBuffer = BufferObject<float>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.StaticDraw);
 
-        _lineVertexArray = VertexArrayObject.CreateAndBind(_gl, _lineVertexBuffer);
-        _lineVertexArray.VertexArrayAttribute(0, 3, VertexAttribPointerType.Float, false, 3, 0); // location
+        var lineVertexArray = VertexArrayObject.CreateAndBind(openGL, lineVertexBuffer);
+        lineVertexArray.VertexArrayAttribute(0, 3, VertexAttribPointerType.Float, false, 3, 0); // location
 
-        var lineShaderResult = ShaderProgram.Create(_gl, _lineVertexCode, _lineFragmentCode)
+        var lineShaderResult = ShaderProgram.Create(openGL, lineVertexCode, lineFragmentCode)
             .MapError(err =>
             {
                 return err.Match(
@@ -138,20 +144,28 @@ public sealed class Renderer : IDisposable, IResource
             });
         if (!lineShaderResult.TryGetValue(out var lineShader))
         {
-            return Result.Failure<Unit, RendererLoadError>(lineShaderResult.UnwrapError());
+            return Result.Failure<Renderer, RendererLoadError>(lineShaderResult.UnwrapError());
         }
 
-        _lineShader = lineShader;
+        lineVertexArray.Unbind();
+        lineVertexBuffer.Unbind();
 
-        _lineVertexArray.Unbind();
-        _lineVertexBuffer.Unbind();
+        var renderer = new Renderer(openGL,
+            vertexBuffer,
+            elementBuffer,
+            matrixModelBuffer,
+            vertexArrayObject,
+            shader,
+            lineShader,
+            lineVertexBuffer,
+            lineVertexArray);
 
-        return Result.Success<Unit, RendererLoadError>(Unit.Value);
+        return Result.Success<Renderer, RendererLoadError>(renderer);
     }
 
     public void Resize(Vector2D<int> size)
     {
-        _gl.Viewport(0, 0, (uint)size.X, (uint)size.Y);
+        OpenGL.Viewport(0, 0, (uint)size.X, (uint)size.Y);
         _width = (uint)size.X;
         _height = (uint)size.Y;
     }
@@ -161,7 +175,7 @@ public sealed class Renderer : IDisposable, IResource
 
     public unsafe void RenderOrthographic(Vector3 cameraPosition, Vector2 viewSize, IEnumerable<SpriteRender> sprites, IReadOnlyCollection<Line> lines)
     {
-        _gl.Clear(ClearBufferMask.ColorBufferBit);
+        OpenGL.Clear(ClearBufferMask.ColorBufferBit);
 
         _vertexArrayObject.Bind();
 
@@ -175,7 +189,7 @@ public sealed class Renderer : IDisposable, IResource
         {
             if (!_textures.TryGetValue(sprite.Id, out var textureObject))
             {
-                textureObject = new TextureObject(_gl, sprite.Data, (uint)sprite.Dimensions.X, (uint)sprite.Dimensions.Y, TextureTarget.Texture2D, TextureUnit.Texture0);
+                textureObject = new TextureObject(OpenGL, sprite.Data, (uint)sprite.Dimensions.X, (uint)sprite.Dimensions.Y, TextureTarget.Texture2D, TextureUnit.Texture0);
                 _textures[sprite.Id] = textureObject;
             }
 
@@ -194,7 +208,7 @@ public sealed class Renderer : IDisposable, IResource
 
             _vertexArrayObject.Bind();
 
-            _gl.DrawElementsInstanced(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null, (uint)transforms.Length);
+            OpenGL.DrawElementsInstanced(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null, (uint)transforms.Length);
         }
 
         if (lines.Any())
@@ -208,7 +222,7 @@ public sealed class Renderer : IDisposable, IResource
             _lineShader.SetUniform1("uView", view);
             _lineShader.SetUniform1("uProjection", projection);
 
-            _gl.DrawArrays(GLEnum.Lines, 0, (uint)(lines.Count * 2));
+            OpenGL.DrawArrays(GLEnum.Lines, 0, (uint)(lines.Count * 2));
         }
     }
 
@@ -216,7 +230,7 @@ public sealed class Renderer : IDisposable, IResource
 
     public unsafe Result<Unit, RenderError> Render(GlobalTransform cameraTransform, IEnumerable<GlobalTransform> transforms)
     {
-        _gl.Clear(ClearBufferMask.ColorBufferBit);
+        OpenGL.Clear(ClearBufferMask.ColorBufferBit);
 
         _vertexArrayObject.Bind();
 
@@ -248,7 +262,7 @@ public sealed class Renderer : IDisposable, IResource
 
             _shader.SetUniform1("uModel", model);
 
-            _gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null);
+            OpenGL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null);
         }
 
         return Result.Success<Unit, RenderError>(Unit.Value);

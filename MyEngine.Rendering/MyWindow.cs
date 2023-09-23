@@ -7,50 +7,53 @@ namespace MyEngine.Rendering;
 
 public class MyWindow : IDisposable, IResource
 {
-    private IWindow? _window;
-    private readonly string _appTitle;
-    private readonly uint _width;
-    private readonly uint _height;
+    private readonly IWindow _glWindow;
 
-    public MyWindow(string appTitle,
+    public string Title { get; }
+    public uint Width { get; private set; }
+    public uint Height { get; private set; }
+
+    private MyWindow(string appTitle,
         uint width,
-        uint height)
+        uint height,
+        IWindow window,
+        Action<GL, MyWindow> load)
     {
-        _appTitle = appTitle;
-        _width = width;
-        _height = height;
+        Title = appTitle;
+        _glWindow = window;
+        Width = width;
+        Height = height;
+
+        Load += () => load.Invoke(_glWindow.CreateOpenGL(), this);
+        _glWindow.Load += OnLoad;
+        _glWindow.Update += dt => Update?.Invoke(dt);
+        _glWindow.Resize += OnResize;
     }
 
-    public void Initialize(
-        Action<GL> load,
-        Action<Vector2D<int>> resize)
+    public static MyWindow Create(string appTitle, uint width, uint height, Action<GL, MyWindow> load)
     {
-        _window = Window.Create(WindowOptions.Default with
+        var glWindow = Window.Create(WindowOptions.Default with
         {
-            Title = _appTitle,
-            Size = new Vector2D<int>((int)_width, (int)_height)
+            Title = appTitle,
+            Size = new Vector2D<int>((int)width, (int)height)
         });
 
-        Load += () => load?.Invoke(_window.CreateOpenGL());
-
-        _window.Load += OnLoad;
-        _window.Update += dt => Update?.Invoke(dt);
-        _window.Resize += resize;
+        return new MyWindow(appTitle, width, height, glWindow, load);
     }
 
     public void Dispose()
     {
-        _window?.Dispose();
+        _glWindow?.Dispose();
     }
 
     public void Run()
     {
-        _window?.Run();
+        _glWindow?.Run();
     }
 
     public void Close()
     {
-        _window?.Close();
+        _glWindow?.Close();
     }
 
     private void OnLoad()
@@ -59,9 +62,16 @@ public class MyWindow : IDisposable, IResource
         _isLoaded = true;
     }
 
-    private bool _isLoaded; 
+    private void OnResize(Vector2D<int> newSize)
+    {
+        Width = (uint)newSize.X;
+        Height = (uint)newSize.Y;
+        Resize?.Invoke(newSize);
+    }
 
-    public void AddLoadAction(Action onLoad)
+    private bool _isLoaded;
+
+    internal void AddLoadAction(Action onLoad)
     {
         if (_isLoaded)
         {
@@ -72,8 +82,9 @@ public class MyWindow : IDisposable, IResource
     }
 
     public event Action<double>? Update;
+    public event Action<Vector2D<int>>? Resize;
     private event Action? Load;
 
     // todo: better encapsulation
-    public IWindow? InnerWindow => _window;
+    public IWindow? GlWindow => _glWindow;
 }
