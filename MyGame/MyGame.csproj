@@ -7,10 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="StbImageSharp" Version="2.27.13" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <ProjectReference Include="..\MyEngine.Assets\MyEngine.Assets.csproj" />
     <ProjectReference Include="..\MyEngine.Core\MyEngine.Core.csproj" />
     <ProjectReference Include="..\MyEngine.Input\MyEngine.Input.csproj" />
     <ProjectReference Include="..\MyEngine.Physics\MyEngine.Physics.csproj" />

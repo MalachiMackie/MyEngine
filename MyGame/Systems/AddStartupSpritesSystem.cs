@@ -1,4 +1,5 @@
-﻿using MyEngine.Core;
+﻿using MyEngine.Assets;
+using MyEngine.Core;
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
@@ -7,7 +8,7 @@ using MyEngine.Rendering;
 using MyEngine.Utils;
 using MyGame.Components;
 using MyGame.Resources;
-using StbImageSharp;
+using System.Diagnostics;
 using System.Numerics;
 
 using AddPaddleAndBallError = MyEngine.Utils.OneOf<
@@ -17,34 +18,92 @@ using AddPaddleAndBallError = MyEngine.Utils.OneOf<
 
 namespace MyGame.Systems;
 
-public class AddStartupSpritesSystem : IStartupSystem
+public class AddStartupSpritesSystem : ISystem
 {
     private readonly ICommands _entityCommands;
     private readonly ResourceRegistrationResource _resourceRegistrationResource;
-    private readonly IHierarchyCommands _hierarchyCommands; 
+    private readonly IHierarchyCommands _hierarchyCommands;
+    private readonly SpriteAssetIdsResource _spriteAssetIds;
     private readonly BrickSizeResource _brickSizeResource = new() { Dimensions = new Vector2(0.5f, 0.2f) };
-    private readonly Sprite _silkLogoSprite;
-    private readonly Sprite _whiteSprite;
+    private readonly AssetCollection _assetCollection;
 
     public AddStartupSpritesSystem(ICommands entityContainerResource,
         ResourceRegistrationResource resourceRegistrationResource,
-        IHierarchyCommands hierarchyCommands)
+        IHierarchyCommands hierarchyCommands,
+        SpriteAssetIdsResource spriteAssetIds,
+        AssetCollection assetCollection)
     {
         _entityCommands = entityContainerResource;
         _resourceRegistrationResource = resourceRegistrationResource;
         _hierarchyCommands = hierarchyCommands;
-
-        using var image = File.OpenRead("silk.png");
-        var imageResult = ImageResult.FromStream(image, ColorComponents.RedGreenBlueAlpha);
-        _silkLogoSprite = new Sprite(new SpriteId(Guid.NewGuid()), new Vector2(imageResult.Width, imageResult.Height), 100, imageResult.Data);
-
-        using var whiteImage = File.OpenRead("White.png");
-        var whiteImageResult = ImageResult.FromStream(whiteImage, ColorComponents.RedGreenBlueAlpha);
-        _whiteSprite = new Sprite(new SpriteId(Guid.NewGuid()), new Vector2(whiteImageResult.Width, whiteImageResult.Height), 100, whiteImageResult.Data);
+        _spriteAssetIds = spriteAssetIds;
+        _assetCollection = assetCollection;
     }
 
-    public void Run()
+    private bool _loadingFailed = false;
+    private bool _loadingSucceeded = false;
+
+    public void Run(double _)
     {
+        if (_loadingFailed || _loadingSucceeded)
+        {
+            return;
+        }
+
+        var tuple = (_assetCollection.TryGetAsset<Sprite>(_spriteAssetIds.SilkSpriteId),
+            _assetCollection.TryGetAsset<Sprite>(_spriteAssetIds.WhiteSpriteId));
+
+        Sprite silkSprite;
+        Sprite whiteSprite;
+
+        switch (tuple)
+        {
+            case ({ IsSuccess: true } silkSpriteResult, { IsSuccess: true } whiteSpriteResult):
+                {
+                    _loadingSucceeded = true;
+                    silkSprite = silkSpriteResult.Unwrap();
+                    whiteSprite = whiteSpriteResult.Unwrap();
+                    break;
+                }
+            case ({ IsFailure: true } failure, { IsSuccess: true }):
+                {
+                    var err = failure.UnwrapError();
+                    if (err == AssetCollection.GetAssetError.IncorrectAssetType)
+                    {
+                        Console.WriteLine("Failed to load asset");
+                        _loadingFailed = true;
+                    }
+                    return;
+                }
+            case ({ IsSuccess: true }, { IsFailure: true } failure):
+                {
+                    var err = failure.UnwrapError();
+                    if (err == AssetCollection.GetAssetError.IncorrectAssetType)
+                    {
+                        Console.WriteLine("Failed to load asset");
+                        _loadingFailed = true;
+                    }
+                    return;
+                }
+            // both failed
+            case ({ IsFailure: true } failureA, { IsFailure: true } failureB):
+                {
+                    var errA = failureA.UnwrapError();
+                    var errB = failureB.UnwrapError();
+                    if (errA == AssetCollection.GetAssetError.IncorrectAssetType
+                        || errB == AssetCollection.GetAssetError.IncorrectAssetType)
+                    {
+                        Console.WriteLine("Failed to load asset");
+                        _loadingFailed = true;
+                    }
+                    return;
+                }
+            default:
+                {
+                    throw new UnreachableException();
+                }
+        }
+
         _resourceRegistrationResource.AddResource(new WorldSizeResource {
             Bottom = -3.5f,
             Top = 3.5f,
@@ -53,13 +112,13 @@ public class AddStartupSpritesSystem : IStartupSystem
         });
         _resourceRegistrationResource.AddResource(_brickSizeResource);
 
-        if (AddWalls().TryGetError(out var addWallsError))
+        if (AddWalls(whiteSprite).TryGetError(out var addWallsError))
         {
             Console.WriteLine("Failed to add wall: {0}", addWallsError);
             return;
         }
 
-        if (AddPaddleAndBall().TryGetError(out var addPaddleAndBallError))
+        if (AddPaddleAndBall(whiteSprite, silkSprite).TryGetError(out var addPaddleAndBallError))
         {
             addPaddleAndBallError.Match(
                 addPaddleError => Console.WriteLine("Failed to add paddle: {0}", addPaddleError.Error),
@@ -68,7 +127,7 @@ public class AddStartupSpritesSystem : IStartupSystem
             return;
         }
 
-        if (AddBricks().TryGetError(out var addBricksError))
+        if (AddBricks(whiteSprite).TryGetError(out var addBricksError))
         {
             Console.WriteLine("Failed to add brick: {0}", addBricksError);
         }
@@ -81,7 +140,7 @@ public class AddStartupSpritesSystem : IStartupSystem
         return Origin + new Vector2(x * _brickSizeResource.Dimensions.X, y * _brickSizeResource.Dimensions.Y);
     }
 
-    private Result<Unit, AddEntityCommandError> AddBricks()
+    private Result<Unit, AddEntityCommandError> AddBricks(Sprite whiteSprite)
     {
         var brickPositions = new[]
         {
@@ -107,7 +166,7 @@ public class AddStartupSpritesSystem : IStartupSystem
         foreach (var position in brickPositions)
         {
             var createEntityResult = _entityCommands.CreateEntity(Transform.Default(position: position.Extend(3.0f), scale: _brickSizeResource.Dimensions.Extend(1f)),
-                new SpriteComponent(_whiteSprite),
+                new SpriteComponent(whiteSprite),
                 new StaticBody2DComponent(),
                 new Collider2DComponent(new BoxCollider2D(Vector2.One)),
                 new BrickComponent());
@@ -130,7 +189,7 @@ public class AddStartupSpritesSystem : IStartupSystem
         return Result.Success<Unit, AddEntityCommandError>(Unit.Value);
     }
 
-    private Result<Unit, AddEntityCommandError> AddWalls()
+    private Result<Unit, AddEntityCommandError> AddWalls(Sprite whiteSprite)
     {
         // 8 x 6
         var walls = new[]
@@ -160,7 +219,7 @@ public class AddStartupSpritesSystem : IStartupSystem
         foreach (var transform in walls)
         {
             var addWallResult = _entityCommands.CreateEntity(transform,
-                new SpriteComponent(_whiteSprite),
+                new SpriteComponent(whiteSprite),
                 new StaticBody2DComponent(),
                 new Collider2DComponent(new BoxCollider2D(Vector2.One)));
 
@@ -179,7 +238,7 @@ public class AddStartupSpritesSystem : IStartupSystem
     }
 
 
-    private Result<Unit, AddPaddleAndBallError> AddPaddleAndBall()
+    private Result<Unit, AddPaddleAndBallError> AddPaddleAndBall(Sprite whiteSprite, Sprite silkLogoSprite)
     {
         var paddleScale = new Vector3(1.5f, 0.15f, 1f);
         var paddleIdResult = _entityCommands.CreateEntity(new Transform
@@ -188,7 +247,7 @@ public class AddStartupSpritesSystem : IStartupSystem
                 rotation = Quaternion.Identity,
                 scale = paddleScale
             },
-            new SpriteComponent(_whiteSprite),
+            new SpriteComponent(whiteSprite),
             new KinematicBody2DComponent(),
             new Collider2DComponent(new BoxCollider2D(Vector2.One)),
             new PaddleComponent())
@@ -211,7 +270,7 @@ public class AddStartupSpritesSystem : IStartupSystem
                 rotation = Quaternion.Identity,
                 scale = ballScale
             },
-            new SpriteComponent(_silkLogoSprite),
+            new SpriteComponent(silkLogoSprite),
             new KinematicBody2DComponent(),
             new Collider2DComponent(new CircleCollider2D(worldBallScale.X * 0.5f)),
             new BallComponent(),

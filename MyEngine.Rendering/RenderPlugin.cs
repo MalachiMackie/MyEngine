@@ -18,7 +18,7 @@ public class RenderPlugin : IPlugin
     public AppBuilder Register(AppBuilder builder)
     {
         return builder
-            .AddSystemStage(RenderSystemStage.Instance, 4)
+            .AddSystemStage(RenderSystemStage.Instance, 5)
             .AddResource(new Renderer(_width, _height))
             .AddResource(new MyWindow(_windowTitle, _width, _height))
             .AddResource<ILineRenderResource>(new LineRenderResource())

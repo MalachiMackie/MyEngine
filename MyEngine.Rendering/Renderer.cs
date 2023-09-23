@@ -1,4 +1,5 @@
-﻿using MyEngine.Core;
+﻿using MyEngine.Assets;
+using MyEngine.Core;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Rendering.OpenGL;
 using MyEngine.Utils;
@@ -27,7 +28,7 @@ public sealed class Renderer : IDisposable, IResource
 
     private BufferObject<float> _lineVertexBuffer = null!;
     private VertexArrayObject _lineVertexArray = null!;
-    private readonly Dictionary<SpriteId, TextureObject> _textures = new();
+    private readonly Dictionary<AssetId, TextureObject> _textures = new();
 
     private static readonly uint[] Indices =
     {

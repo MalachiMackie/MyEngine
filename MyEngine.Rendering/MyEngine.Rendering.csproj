@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
@@ -10,9 +10,11 @@
   <ItemGroup>
     <PackageReference Include="Silk.NET.OpenGL" Version="2.17.1" />
     <PackageReference Include="Silk.NET.Windowing" Version="2.17.1" />
+    <PackageReference Include="StbImageSharp" Version="2.27.13" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MyEngine.Assets\MyEngine.Assets.csproj" />
     <ProjectReference Include="..\MyEngine.Core\MyEngine.Core.csproj" />
   </ItemGroup>
 

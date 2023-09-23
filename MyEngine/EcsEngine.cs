@@ -27,7 +27,6 @@ internal partial class EcsEngine
     private readonly Dictionary<Type, Type[]> _uninstantiatedStartupSystems = GetUninstantiatedStartupSystems();
     private readonly Dictionary<Type, Type[]> _uninstantiatedSystems = GetUninstantiatedSystems();
 
-
     public EcsEngine()
     {
         var appEntrypoint = GetAppEntrypoint();
