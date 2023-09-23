@@ -29,14 +29,18 @@ namespace MyEngine.SourceGenerator.Generators
                 .Where(x => _helpers.DoesClassNodeImplementInterface(x.SemanticModel, x.ClassNode, "MyEngine.Core.Ecs.Systems.IStartupSystem"))
                 .Select((x, _) => (x.SemanticModel, x.ClassNode, Constructor: TryGetStartupSystemConstructor(x.SemanticModel, x.ClassNode)))
                 .Where(x => x.Constructor != null)
-                .Select((x, _) => new StartupSystemClass(_helpers.GetFullyQualifiedName(x.SemanticModel, x.ClassNode), x.Constructor!))
+                .Select((x, _) => new StartupSystemClass(
+                    x.SemanticModel.GetDeclaredSymbol(x.ClassNode)!.ToDisplayString(),
+                    x.Constructor!))
                 .Collect();
 
             var systemClasses = accessibleClassNodes
                 .Where(x => _helpers.DoesClassNodeImplementInterface(x.SemanticModel, x.ClassNode, "MyEngine.Core.Ecs.Systems.ISystem"))
                 .Select((x, _) => (x.SemanticModel, x.ClassNode, Constructor: TryGetSystemConstructor(x.SemanticModel, x.ClassNode)))
                 .Where(x => x.Constructor != null)
-                .Select((x, _) => new SystemClass(_helpers.GetFullyQualifiedName(x.SemanticModel, x.ClassNode), x.Constructor!))
+                .Select((x, _) => new SystemClass(
+                    x.SemanticModel.GetDeclaredSymbol(x.ClassNode)!.ToDisplayString(),
+                    x.Constructor!))
                 .Collect();
 
             var allSystemsAndCompilation = startupSystemClasses.Combine(systemClasses)

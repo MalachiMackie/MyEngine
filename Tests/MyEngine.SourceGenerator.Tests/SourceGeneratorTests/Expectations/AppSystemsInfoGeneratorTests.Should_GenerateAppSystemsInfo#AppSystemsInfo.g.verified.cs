@@ -5,9 +5,9 @@ namespace MyEngine.SourceGenerator.Tests.Generated
     public static class AppSystemsInfo
     {
         [global::MyEngine.Core.SystemClasses]
-        public const string SystemClasses = "[{\"FullyQualifiedName\":\"global::MyNamespace.MySystem\",\"Constructor\":{\"TotalParameters\":1,\"QueryParameters\":[],\"ResourceParameters\":[{\"Name\":\"MyNamespace.MyResource\",\"ParameterIndex\":0}]}}]";
+        public const string SystemClasses = "[{\"FullyQualifiedName\":\"MyNamespace.MySystem\",\"Constructor\":{\"TotalParameters\":1,\"QueryParameters\":[],\"ResourceParameters\":[{\"Name\":\"MyNamespace.MyResource\",\"ParameterIndex\":0}]}}]";
 
         [global::MyEngine.Core.StartupSystemClasses]
-        public const string StartupSystemClasses = "[{\"FullyQualifiedName\":\"global::MyNamespace.MyStartupSystem\",\"Constructor\":{\"Parameters\":[{\"Name\":\"MyNamespace.MyResource\"}]}}]";
+        public const string StartupSystemClasses = "[{\"FullyQualifiedName\":\"MyNamespace.MyStartupSystem\",\"Constructor\":{\"Parameters\":[{\"Name\":\"MyNamespace.MyResource\"}]}}]";
     }
 }

@@ -21,17 +21,6 @@ namespace MyEngine.SourceGenerator.Generators
             return types;
         }
 
-        public string GetFullyQualifiedName(SemanticModel semanticModel, ClassDeclarationSyntax classNode)
-        {
-            // symbol will not be null, as null is only returned when node is not a declaration
-            var symbol = semanticModel.GetDeclaredSymbol(classNode)!;
-
-            // todo: nested types
-
-            // todo: handle overridden root namespace
-            return $"global::{symbol.ContainingNamespace.ToDisplayString()}.{symbol.Name}";
-        }
-
         public bool DoesAssemblyGiveEngineRuntimeAccessToInternals(IAssemblySymbol assembly)
         {
             return assembly.GetAttributes()

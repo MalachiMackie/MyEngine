@@ -48,33 +48,6 @@ public class SourceGeneratorHelperTests
         result.Should().BeEquivalentTo(expectedTypes, opts => opts.WithoutStrictOrdering());
     }
 
-    [Fact]
-    public void GetFullyQualifiedName_Should_GetFullyQualifiedName()
-    {
-
-        var compilation = SourceGeneratorTestHelpers.CreateCompilation(
-            """
-            namespace MyNamespace.Classes
-            {
-                public class MyClass
-                {
-
-                }
-            }
-            
-            """,
-            Array.Empty<KeyValuePair<string, string>>(),
-            Array.Empty<Assembly>());
-
-        var syntaxTree = compilation.SyntaxTrees.Single();
-        var classNode = syntaxTree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
-
-        var semanticModel = compilation.GetSemanticModel(syntaxTree);
-
-        var result = _helper.GetFullyQualifiedName(semanticModel, classNode);
-        result.Should().Be("global::MyNamespace.Classes.MyClass");
-    }
-
     [Theory]
     [ClassData(typeof(ConcreteAndAccessibleClasses))]
     public void IsClassConcreteAndAccessible_Should_ReturnTrue_When_ItIs(string source, string className)

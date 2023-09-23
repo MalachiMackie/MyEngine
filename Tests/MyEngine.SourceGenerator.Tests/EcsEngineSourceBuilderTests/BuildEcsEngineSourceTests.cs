@@ -1,13 +1,10 @@
-﻿using FluentAssertions;
-
-namespace MyEngine.SourceGenerator.Tests.EcsEngineSourceBuilderTests;
+﻿namespace MyEngine.SourceGenerator.Tests.EcsEngineSourceBuilderTests;
 
 public class BuildEcsEngineSourceTests
 {
     [Fact]
     public void Should_BuildFullEcsEngineSource()
     {
-
         var appEntrypointFullyQualifiedName = "MyAppEntrypoint";
         var systemClasses = new[]
         {
@@ -80,24 +77,24 @@ public class BuildEcsEngineSourceTests
             {
                 internal partial class EcsEngine
                 {
-                    private static partial global::MyEngine.Core.IAppEntrypoint GetAppEntrypoint() => new MyAppEntrypoint();
+                    private static partial global::MyEngine.Core.IAppEntrypoint GetAppEntrypoint() => new global::MyAppEntrypoint();
 
                     private partial void AddStartupSystemInstantiations()
                     {
-                        _startupSystemInstantiations.Add(typeof(MyStartupSystemClass1), () =>
+                        _startupSystemInstantiations.Add(typeof(global::MyStartupSystemClass1), () =>
                         {
-                            if (_resourceContainer.TryGetResource<Resource1>(out var resource1)
-                                && _resourceContainer.TryGetResource<Resource2>(out var resource2))
+                            if (_resourceContainer.TryGetResource<global::Resource1>(out var resource1)
+                                && _resourceContainer.TryGetResource<global::Resource2>(out var resource2))
                             {
-                                return new MyStartupSystemClass1(resource1, resource2);
+                                return new global::MyStartupSystemClass1(resource1, resource2);
                             }
                             return null;
                         });
-                        _startupSystemInstantiations.Add(typeof(MyStartupSystemClass2), () =>
+                        _startupSystemInstantiations.Add(typeof(global::MyStartupSystemClass2), () =>
                         {
                             if (true)
                             {
-                                return new MyStartupSystemClass2();
+                                return new global::MyStartupSystemClass2();
                             }
                             return null;
                         });
@@ -106,24 +103,24 @@ public class BuildEcsEngineSourceTests
 
                     private partial void AddSystemInstantiations()
                     {
-                        _systemInstantiations.Add(typeof(MySystem1), () =>
+                        _systemInstantiations.Add(typeof(global::MySystem1), () =>
                         {
                             
-                            if (_resourceContainer.TryGetResource<Resource1>(out var resource0)
-                                && _resourceContainer.TryGetResource<Resource2>(out var resource1))
+                            if (_resourceContainer.TryGetResource<global::Resource1>(out var resource0)
+                                && _resourceContainer.TryGetResource<global::Resource2>(out var resource1))
                             {
-                                return new MySystem1(
+                                return new global::MySystem1(
                                     resource0,
                                     resource1);
                             }
                             return null;
                         });
-                        _systemInstantiations.Add(typeof(MySystem2), () =>
+                        _systemInstantiations.Add(typeof(global::MySystem2), () =>
                         {
                             
                             if (true)
                             {
-                                return new MySystem2(
+                                return new global::MySystem2(
                                     );
                             }
                             return null;
@@ -133,29 +130,29 @@ public class BuildEcsEngineSourceTests
                     private static partial IReadOnlyCollection<Type> GetAllStartupSystemTypes() =>
                         new Type[]
                         {
-                            typeof(MyStartupSystemClass1),
-                            typeof(MyStartupSystemClass2)
+                            typeof(global::MyStartupSystemClass1),
+                            typeof(global::MyStartupSystemClass2)
                         };
 
                     private static partial IReadOnlyCollection<Type> GetAllSystemTypes() =>
                         new Type[]
                         {
-                            typeof(MySystem1),
-                            typeof(MySystem2)
+                            typeof(global::MySystem1),
+                            typeof(global::MySystem2)
                         };
 
                     private static partial Dictionary<System.Type, System.Type[]> GetUninstantiatedStartupSystems() =>
                         new ()
                         {
-                            { typeof(MyStartupSystemClass1), new Type[] { typeof(Resource1), typeof(Resource2) } },
-                            { typeof(MyStartupSystemClass2), Array.Empty<Type>() }
+                            { typeof(global::MyStartupSystemClass1), new Type[] { typeof(global::Resource1), typeof(global::Resource2) } },
+                            { typeof(global::MyStartupSystemClass2), Array.Empty<Type>() }
                         };
 
                     private static partial Dictionary<System.Type, System.Type[]> GetUninstantiatedSystems() =>
                         new ()
                         {
-                            { typeof(MySystem1), new Type[] { typeof(Resource1), typeof(Resource2) } },
-                            { typeof(MySystem2), Array.Empty<Type>() }
+                            { typeof(global::MySystem1), new Type[] { typeof(global::Resource1), typeof(global::Resource2) } },
+                            { typeof(global::MySystem2), Array.Empty<Type>() }
                         };
                 }
             }

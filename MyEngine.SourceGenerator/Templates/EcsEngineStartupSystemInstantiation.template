@@ -1,8 +1,8 @@
-_startupSystemInstantiations.Add(typeof({template:StartupSystemFullyQualifiedName}), () =>
+_startupSystemInstantiations.Add(typeof({template:GlobalNamespace}{template:StartupSystemFullyQualifiedName}), () =>
 {
     if ({template:ResourceChecks})
     {
-        return new {template:StartupSystemFullyQualifiedName}({template:StartupSystemParameters});
+        return new {template:GlobalNamespace}{template:StartupSystemFullyQualifiedName}({template:StartupSystemParameters});
     }
 
     return null;

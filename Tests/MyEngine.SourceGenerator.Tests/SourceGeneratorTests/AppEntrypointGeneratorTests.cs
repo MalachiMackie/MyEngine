@@ -1,6 +1,4 @@
-﻿using FluentAssertions;
-using MyEngine.Core;
-using MyEngine.SourceGenerator.Generators;
+﻿using MyEngine.Core;
 
 namespace MyEngine.SourceGenerator.Tests.SourceGeneratorTests;
 

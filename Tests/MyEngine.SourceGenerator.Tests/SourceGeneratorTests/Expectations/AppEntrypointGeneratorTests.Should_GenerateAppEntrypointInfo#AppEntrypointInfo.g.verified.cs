@@ -5,6 +5,6 @@ namespace MyEngine.SourceGenerator.Tests.Generated
 	public static class AppEntrypointInfo
 	{
 		[global::MyEngine.Core.AppEntrypointInfoFullyQualifiedName]
-		public const string FullyQualifiedName = "global::MyNamespace.MyAppEntrypoint"; 
+		public const string FullyQualifiedName = "MyNamespace.MyAppEntrypoint"; 
 	}
 }

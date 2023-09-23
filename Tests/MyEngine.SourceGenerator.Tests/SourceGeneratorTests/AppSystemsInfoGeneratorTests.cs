@@ -1,5 +1,4 @@
 ﻿using MyEngine.Core.Ecs.Systems;
-using MyEngine.SourceGenerator.Generators;
 
 namespace MyEngine.SourceGenerator.Tests.SourceGeneratorTests;
 

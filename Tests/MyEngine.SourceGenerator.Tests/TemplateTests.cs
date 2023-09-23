@@ -1,6 +1,4 @@
-﻿using FluentAssertions;
-
-namespace MyEngine.SourceGenerator.Tests;
+﻿namespace MyEngine.SourceGenerator.Tests;
 
 public class TemplateTests
 {

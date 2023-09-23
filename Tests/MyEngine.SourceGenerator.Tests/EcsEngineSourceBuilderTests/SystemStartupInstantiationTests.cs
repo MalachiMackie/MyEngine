@@ -1,6 +1,4 @@
-﻿using FluentAssertions;
-
-namespace MyEngine.SourceGenerator.Tests.EcsEngineSourceBuilderTests;
+﻿namespace MyEngine.SourceGenerator.Tests.EcsEngineSourceBuilderTests;
 public class SystemStartupInstantiationTests
 {
 
@@ -28,12 +26,12 @@ public class SystemStartupInstantiationTests
 
         var output = EcsEngineSourceBuilder.BuildStartupSystemInstantiation(startupSystemClass);
 
-        output.Should().Be(@"_startupSystemInstantiations.Add(typeof(MyStartupSystem<string>), () =>
+        output.Should().Be(@"_startupSystemInstantiations.Add(typeof(global::MyStartupSystem<string>), () =>
 {
-    if (_resourceContainer.TryGetResource<Parameter1<bool>>(out var resource1)
-        && _resourceContainer.TryGetResource<Parameter2<int>>(out var resource2))
+    if (_resourceContainer.TryGetResource<global::Parameter1<bool>>(out var resource1)
+        && _resourceContainer.TryGetResource<global::Parameter2<int>>(out var resource2))
     {
-        return new MyStartupSystem<string>(resource1, resource2);
+        return new global::MyStartupSystem<string>(resource1, resource2);
     }
 
     return null;
@@ -52,11 +50,11 @@ public class SystemStartupInstantiationTests
 
         var output = EcsEngineSourceBuilder.BuildStartupSystemInstantiation(startupSystemClass);
 
-        output.Should().Be(@"_startupSystemInstantiations.Add(typeof(MyStartupSystem), () =>
+        output.Should().Be(@"_startupSystemInstantiations.Add(typeof(global::MyStartupSystem), () =>
 {
     if (true)
     {
-        return new MyStartupSystem();
+        return new global::MyStartupSystem();
     }
 
     return null;

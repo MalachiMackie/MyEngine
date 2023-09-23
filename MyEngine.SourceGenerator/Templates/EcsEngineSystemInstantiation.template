@@ -1,9 +1,9 @@
-_systemInstantiations.Add(typeof({template:SystemFullyQualifiedName}), () =>
+_systemInstantiations.Add(typeof({template:GlobalNamespace}{template:SystemFullyQualifiedName}), () =>
 {
     {template:GetQueryComponentFuncs}
     if ({template:ResourceChecks})
     {
-        return new {template:SystemFullyQualifiedName}(
+        return new {template:GlobalNamespace}{template:SystemFullyQualifiedName}(
             {template:SystemParameters});
     }
 

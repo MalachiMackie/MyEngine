@@ -15,6 +15,7 @@ namespace MyEngine.SourceGenerator
             var startupSystemInstantiations = startupSystemClassModels.Select(BuildStartupSystemInstantiation);
             var systemInstantiations = systemClassModels.Select(BuildSystemInstantiation);
 
+            ecsEngineTemplate.SubstitutePart("GlobalNamespace", "global::");
             ecsEngineTemplate.SubstitutePart("AppEntrypointName", appEntrypointFullyQualifiedName);
             ecsEngineTemplate.SubstitutePart("StartupSystemInstantiations", string.Join("\r\n\r\n", startupSystemInstantiations));
             ecsEngineTemplate.SubstitutePart("SystemInstantiations", string.Join("\r\n\r\n", systemInstantiations));
@@ -22,27 +23,27 @@ namespace MyEngine.SourceGenerator
                 ? "Array.Empty<Type>()"
                 : $@"new Type[]
 {{
-    {string.Join(",\r\n    ", startupSystemClassModels.Select(x => $"typeof({x.FullyQualifiedName})"))}
+    {string.Join(",\r\n    ", startupSystemClassModels.Select(x => $"typeof(global::{x.FullyQualifiedName})"))}
 }}");
             ecsEngineTemplate.SubstitutePart("AllSystemTypesArray", systemClassModels.Count == 0
                 ? "Array.Empty<Type>()"
                 : $@"new Type[]
 {{
-    {string.Join(",\r\n    ", systemClassModels.Select(x => $"typeof({x.FullyQualifiedName})"))}
+    {string.Join(",\r\n    ", systemClassModels.Select(x => $"typeof(global::{x.FullyQualifiedName})"))}
 }}");
             ecsEngineTemplate.SubstitutePart("UninstantiatedStartupSystemsDictionary",
                 startupSystemClassModels.Count == 0
                     ? "new ()"
                     : $@"new ()
 {{
-    {string.Join(",\r\n    ", startupSystemClassModels.Select(x => $"{{ typeof({x.FullyQualifiedName}), {(x.Constructor.Parameters.Count == 0 ? "Array.Empty<Type>()" : $"new Type[] {{ {string.Join(", ", x.Constructor.Parameters.Select(y => $"typeof({y.Name})"))} }}")} }}"))}
+    {string.Join(",\r\n    ", startupSystemClassModels.Select(x => $"{{ typeof(global::{x.FullyQualifiedName}), {(x.Constructor.Parameters.Count == 0 ? "Array.Empty<Type>()" : $"new Type[] {{ {string.Join(", ", x.Constructor.Parameters.Select(y => $"typeof(global::{y.Name})"))} }}")} }}"))}
 }}");
             ecsEngineTemplate.SubstitutePart("UninstantiatedSystemsDictionary",
                 systemClassModels.Count == 0
                 ? "new ()"
                 : $@"new ()
 {{
-    {string.Join(",\r\n    ", systemClassModels.Select(x => $"{{ typeof({x.FullyQualifiedName}), {(x.Constructor.TotalParameters == 0 ? "Array.Empty<Type>()" : $"new Type[] {{ {string.Join(", ", x.Constructor.ResourceParameters.Select(y => $"typeof({y.Name})"))} }}")} }}"))}
+    {string.Join(",\r\n    ", systemClassModels.Select(x => $"{{ typeof(global::{x.FullyQualifiedName}), {(x.Constructor.TotalParameters == 0 ? "Array.Empty<Type>()" : $"new Type[] {{ {string.Join(", ", x.Constructor.ResourceParameters.Select(y => $"typeof(global::{y.Name})"))} }}")} }}"))}
 }}");
 
             var ecsEngineBody = ecsEngineTemplate.Build();
@@ -57,11 +58,12 @@ namespace MyEngine.SourceGenerator
 
             var resourceChecks = systemClass.Constructor.Parameters
                 .Select((x, i) => (Parameter: x, Index: i))
-                .Select(x => (ResourceCheck: $"_resourceContainer.TryGetResource<{x.Parameter.Name}>(out var resource{x.Index + 1})", ParameterName: $"resource{x.Index + 1}"))
+                .Select(x => (ResourceCheck: $"_resourceContainer.TryGetResource<global::{x.Parameter.Name}>(out var resource{x.Index + 1})", ParameterName: $"resource{x.Index + 1}"))
                 .ToArray();
 
             var resourceChecksJoined = resourceChecks.Length == 0 ? "true" : string.Join("\r\n&& ", resourceChecks.Select(x => x.ResourceCheck));
 
+            template.SubstitutePart("GlobalNamespace", "global::");
             template.SubstitutePart("ResourceChecks", resourceChecksJoined);
             template.SubstitutePart("StartupSystemParameters", string.Join(", ", resourceChecks.Select(x => x.ParameterName)));
 
@@ -80,7 +82,7 @@ namespace MyEngine.SourceGenerator
 
             var resourceChecks = systemClass.Constructor.ResourceParameters
                 .Select((x, i) => (Parameter: x, Index: i))
-                .ToDictionary(x => x.Parameter.Name, x => (ResourceCheck: $"_resourceContainer.TryGetResource<{x.Parameter.Name}>(out var resource{x.Index})", ParameterName: $"resource{x.Index}"));
+                .ToDictionary(x => x.Parameter.Name, x => (ResourceCheck: $"_resourceContainer.TryGetResource<global::{x.Parameter.Name}>(out var resource{x.Index})", ParameterName: $"resource{x.Index}"));
 
             if (resourceChecks.Count > 0)
             {
@@ -102,6 +104,7 @@ namespace MyEngine.SourceGenerator
                 parameters[parameterIndex] = resourceChecks[resourceParameter].ParameterName;
             }
 
+            sourceTemplate.SubstitutePart("GlobalNamespace", "global::");
             sourceTemplate.SubstitutePart("SystemParameters", string.Join(",\r\n", parameters));
 
             return sourceTemplate.Build();
@@ -112,15 +115,15 @@ namespace MyEngine.SourceGenerator
             var template = SourceTemplate.LoadFromEmbeddedResource("EcsEngineSystemInstantiationGetComponentFunc.template");
             var entityComponentsTypeArguments = string.Join(",\r\n",
                 queryParameters.Select(x => x.MetaComponentType == MetaComponentType.OptionalComponent
-                    ? $"MyEngine.Core.Ecs.Components.OptionalComponent<{x.ComponentTypeName}>"
-                    : x.ComponentTypeName));
+                    ? $"global::MyEngine.Core.Ecs.Components.OptionalComponent<global::{x.ComponentTypeName}>"
+                    : $"global::{x.ComponentTypeName}"));
 
             template.SubstitutePart("QueryTypeParameters", entityComponentsTypeArguments);
             template.SubstitutePart("QueryNumber", queryNumber.ToString());
 
             var requiredComponentChecks = queryParameters.Select((x, i) => (Parameter: x, Index: i))
                 .Where(x => x.Parameter.MetaComponentType is null)
-                .Select(x => $"_components.TryGetComponent<{x.Parameter.ComponentTypeName}>(entityId, out var component{x.Index + 1})")
+                .Select(x => $"_components.TryGetComponent<global::{x.Parameter.ComponentTypeName}>(entityId, out var component{x.Index + 1})")
                 .ToArray();
 
             if (requiredComponentChecks.Length > 0)
@@ -134,7 +137,7 @@ namespace MyEngine.SourceGenerator
 
             var optionalComponentChecks = queryParameters.Select((x, i) => (Parameter: x, Index: i))
                 .Where(x => x.Parameter.MetaComponentType == MetaComponentType.OptionalComponent)
-                .Select(x => $"var component{x.Index + 1} = _components.GetOptionalComponent<{x.Parameter.ComponentTypeName}>(entityId);");
+                .Select(x => $"var component{x.Index + 1} = _components.GetOptionalComponent<global::{x.Parameter.ComponentTypeName}>(entityId);");
             template.SubstitutePart("OptionalComponentVariables", string.Join("\r\n", optionalComponentChecks));
 
             var propertyAssignments = Enumerable.Range(0, queryParameters.Count)

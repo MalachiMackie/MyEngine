@@ -1,6 +1,4 @@
-﻿using FluentAssertions;
-
-namespace MyEngine.SourceGenerator.Tests.EcsEngineSourceBuilderTests;
+﻿namespace MyEngine.SourceGenerator.Tests.EcsEngineSourceBuilderTests;
 
 public class SystemInstantiationTests
 {
@@ -49,22 +47,22 @@ public class SystemInstantiationTests
 
         output.Should().Be(
             """
-            _systemInstantiations.Add(typeof(MySystemClass<string>), () =>
+            _systemInstantiations.Add(typeof(global::MySystemClass<string>), () =>
             {
-                global::MyEngine.Core.Ecs.Components.EntityComponents<MyQueryComponent1<bool>,
-                                                                      MyEngine.Core.Ecs.Components.OptionalComponent<MyQueryComponent2>,
-                                                                      MyQueryComponent3<string>,
-                                                                      MyEngine.Core.Ecs.Components.OptionalComponent<MyQueryComponent4>>? GetQuery1Components(global::MyEngine.Core.Ecs.EntityId entityId)
+                global::MyEngine.Core.Ecs.Components.EntityComponents<global::MyQueryComponent1<bool>,
+                                                                      global::MyEngine.Core.Ecs.Components.OptionalComponent<global::MyQueryComponent2>,
+                                                                      global::MyQueryComponent3<string>,
+                                                                      global::MyEngine.Core.Ecs.Components.OptionalComponent<global::MyQueryComponent4>>? GetQuery1Components(global::MyEngine.Core.Ecs.EntityId entityId)
                 {
-                    if (_components.TryGetComponent<MyQueryComponent1<bool>>(entityId, out var component1)
-                        && _components.TryGetComponent<MyQueryComponent3<string>>(entityId, out var component3))
+                    if (_components.TryGetComponent<global::MyQueryComponent1<bool>>(entityId, out var component1)
+                        && _components.TryGetComponent<global::MyQueryComponent3<string>>(entityId, out var component3))
                     {
-                        var component2 = _components.GetOptionalComponent<MyQueryComponent2>(entityId);
-                        var component4 = _components.GetOptionalComponent<MyQueryComponent4>(entityId);
-                        return new global::MyEngine.Core.Ecs.Components.EntityComponents<MyQueryComponent1<bool>,
-                                                                                         MyEngine.Core.Ecs.Components.OptionalComponent<MyQueryComponent2>,
-                                                                                         MyQueryComponent3<string>,
-                                                                                         MyEngine.Core.Ecs.Components.OptionalComponent<MyQueryComponent4>>(entityId)
+                        var component2 = _components.GetOptionalComponent<global::MyQueryComponent2>(entityId);
+                        var component4 = _components.GetOptionalComponent<global::MyQueryComponent4>(entityId);
+                        return new global::MyEngine.Core.Ecs.Components.EntityComponents<global::MyQueryComponent1<bool>,
+                                                                                         global::MyEngine.Core.Ecs.Components.OptionalComponent<global::MyQueryComponent2>,
+                                                                                         global::MyQueryComponent3<string>,
+                                                                                         global::MyEngine.Core.Ecs.Components.OptionalComponent<global::MyQueryComponent4>>(entityId)
                         {
                             Component1 = component1,
                             Component2 = component2,
@@ -74,22 +72,22 @@ public class SystemInstantiationTests
                     }
                     return null;
                 }
-                global::MyEngine.Core.Ecs.Components.EntityComponents<OtherQueryComponent>? GetQuery2Components(global::MyEngine.Core.Ecs.EntityId entityId)
+                global::MyEngine.Core.Ecs.Components.EntityComponents<global::OtherQueryComponent>? GetQuery2Components(global::MyEngine.Core.Ecs.EntityId entityId)
                 {
-                    if (_components.TryGetComponent<OtherQueryComponent>(entityId, out var component1))
+                    if (_components.TryGetComponent<global::OtherQueryComponent>(entityId, out var component1))
                     {
                         
-                        return new global::MyEngine.Core.Ecs.Components.EntityComponents<OtherQueryComponent>(entityId)
+                        return new global::MyEngine.Core.Ecs.Components.EntityComponents<global::OtherQueryComponent>(entityId)
                         {
                             Component1 = component1
                         };
                     }
                     return null;
                 }
-                if (_resourceContainer.TryGetResource<MyResource1<string>>(out var resource0)
-                    && _resourceContainer.TryGetResource<MyResource2>(out var resource1))
+                if (_resourceContainer.TryGetResource<global::MyResource1<string>>(out var resource0)
+                    && _resourceContainer.TryGetResource<global::MyResource2>(out var resource1))
                 {
-                    return new MySystemClass<string>(
+                    return new global::MySystemClass<string>(
                         resource0,
                         global::MyEngine.Runtime.Query.Create(_components, _entities, GetQuery1Components),
                         resource1,
