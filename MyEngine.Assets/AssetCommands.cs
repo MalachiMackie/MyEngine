@@ -4,8 +4,8 @@ namespace MyEngine.Assets;
 
 public interface IAssetCommands : IResource
 {
-    AssetId LoadAsset<TAsset>(string assetPath)
-        where TAsset : ILoadableAsset;
+    AssetId LoadAsset<TAsset, TLoadAssetData>(string assetPath, TLoadAssetData loadAssetData)
+        where TAsset : ILoadableAsset<TLoadAssetData>;
 
     internal interface IAssetCommand { } 
 
@@ -17,7 +17,7 @@ public interface IAssetCommands : IResource
 internal class AssetCommands : IAssetCommands
 {
     private readonly Queue<IAssetCommands.IAssetCommand> _commandQueue = new();
-    public AssetId LoadAsset<TAsset>(string assetPath) where TAsset : ILoadableAsset
+    public AssetId LoadAsset<TAsset, TLoadAssetData>(string assetPath, TLoadAssetData loadAssetData) where TAsset : ILoadableAsset<TLoadAssetData>
     {
         var id = AssetId.Generate();
         _commandQueue.Enqueue(new IAssetCommands.LoadAssetCommand(
@@ -25,7 +25,7 @@ internal class AssetCommands : IAssetCommands
             async () =>
             {
                 using var fileStream = File.OpenRead(assetPath);
-                return await TAsset.LoadAsync(id, fileStream);
+                return await TAsset.LoadAsync(id, fileStream, loadAssetData);
             }));
 
         return id;

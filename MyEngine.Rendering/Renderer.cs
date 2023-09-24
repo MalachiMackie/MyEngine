@@ -58,16 +58,6 @@ public sealed class Renderer : IDisposable, IResource
         1, 2, 3
     };
 
-    // todo: have these dynamic based on Sprite.PixelsPerUnit
-    private static readonly float[] Vertices =
-    {
-        //X    Y      Z     aTextCoords
-        0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
-        0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-       -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
-       -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
-    };
-
     private uint _width;
     private uint _height;
 
@@ -76,8 +66,7 @@ public sealed class Renderer : IDisposable, IResource
         // todo: try catch around all opengl stuff
         openGL.ClearColor(Color.CornflowerBlue);
 
-        var vertexBuffer = BufferObject<float>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.StaticDraw);
-        vertexBuffer.SetData(Vertices);
+        var vertexBuffer = BufferObject<float>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw);
 
         var elementBuffer = BufferObject<uint>.CreateAndBind(openGL, BufferTargetARB.ElementArrayBuffer, BufferUsageARB.StaticDraw);
         elementBuffer.SetData(Indices);
@@ -171,7 +160,13 @@ public sealed class Renderer : IDisposable, IResource
     }
 
     public readonly record struct Line(Vector3 Start, Vector3 End);
-    public readonly record struct SpriteRender(Sprite Sprite, GlobalTransform Transform);
+    public readonly record struct SpriteRender(
+        Texture Texture,
+        Vector2[] TextureCoordinates,
+        Vector2 WorldDimensions,
+        int TextureCoordinatesHash,
+        GlobalTransform Transform
+        );
 
     public unsafe void RenderOrthographic(Vector3 cameraPosition, Vector2 viewSize, IEnumerable<SpriteRender> sprites, IReadOnlyCollection<Line> lines)
     {
@@ -185,7 +180,7 @@ public sealed class Renderer : IDisposable, IResource
         var projection = Matrix4x4.CreateOrthographic(viewSize.X, viewSize.Y, 0.1f, 100f);
 
         // todo: better sprite management. Handle sprites from within the engine, rather than from user code
-        void BindOrAddAndBind(Sprite sprite)
+        void BindOrAddAndBind(Texture sprite)
         {
             if (!_textures.TryGetValue(sprite.Id, out var textureObject))
             {
@@ -198,17 +193,43 @@ public sealed class Renderer : IDisposable, IResource
 
         _shader.SetUniform1("uView", view);
         _shader.SetUniform1("uProjection", projection);
-        foreach (var spriteGrouping in sprites.GroupBy(x => x.Sprite))
+        foreach (var textureGrouping in sprites.GroupBy(x => x.Texture))
         {
-            BindOrAddAndBind(spriteGrouping.Key);
+            var texture = textureGrouping.Key;
+            BindOrAddAndBind(textureGrouping.Key);
 
-            _matrixModelBuffer.Bind();
-            var transforms = spriteGrouping.Select(x => x.Transform.ModelMatrix).ToArray();
-            _matrixModelBuffer.SetData(transforms);
 
-            _vertexArrayObject.Bind();
+            _vertexBuffer.Bind();
+            foreach (var textureCoordGrouping in textureGrouping.GroupBy(x => x.TextureCoordinatesHash))
+            {
+                var (_, textureCoords, worldDimensions, _, _) = textureCoordGrouping.First();
 
-            OpenGL.DrawElementsInstanced(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null, (uint)transforms.Length);
+                var halfWidth = worldDimensions.X / 2f;
+                var halfHeight = worldDimensions.Y / 2f;
+
+                // var halfWidth = 0.5f;
+                // var halfHeight = 0.5f;
+
+                var data = new[]
+                {
+                    // X         Y           Z   textCoords
+                     halfWidth,  halfHeight, 0f, textureCoords[0].X, textureCoords[0].Y,
+                     halfWidth, -halfHeight, 0f, textureCoords[1].X, textureCoords[1].Y,
+                    -halfWidth, -halfHeight, 0f, textureCoords[2].X, textureCoords[2].Y,
+                    -halfWidth,  halfHeight, 0f, textureCoords[3].X, textureCoords[3].Y
+                };
+
+                _vertexBuffer.SetData(data);
+
+                _matrixModelBuffer.Bind();
+                var transforms = textureCoordGrouping.Select(x => x.Transform.ModelMatrix).ToArray();
+                _matrixModelBuffer.SetData(transforms);
+
+                _vertexArrayObject.Bind();
+
+                OpenGL.DrawElementsInstanced(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null, (uint)transforms.Length);
+            }
+
         }
 
         if (lines.Any())

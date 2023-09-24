@@ -50,11 +50,11 @@ public class AddStartupSpritesSystem : ISystem
             return;
         }
 
-        var tuple = (_assetCollection.TryGetAsset<Sprite>(_spriteAssetIds.SilkSpriteId),
-            _assetCollection.TryGetAsset<Sprite>(_spriteAssetIds.WhiteSpriteId));
+        var tuple = (_assetCollection.TryGetAsset<Texture>(_spriteAssetIds.BallAssetId),
+            _assetCollection.TryGetAsset<Texture>(_spriteAssetIds.WhiteSpriteId));
 
-        Sprite silkSprite;
-        Sprite whiteSprite;
+        Texture silkSprite;
+        Texture whiteSprite;
 
         switch (tuple)
         {
@@ -140,7 +140,7 @@ public class AddStartupSpritesSystem : ISystem
         return Origin + new Vector2(x * _brickSizeResource.Dimensions.X, y * _brickSizeResource.Dimensions.Y);
     }
 
-    private Result<Unit, AddEntityCommandError> AddBricks(Sprite whiteSprite)
+    private Result<Unit, AddEntityCommandError> AddBricks(Texture whiteSprite)
     {
         var brickPositions = new[]
         {
@@ -189,7 +189,7 @@ public class AddStartupSpritesSystem : ISystem
         return Result.Success<Unit, AddEntityCommandError>(Unit.Value);
     }
 
-    private Result<Unit, AddEntityCommandError> AddWalls(Sprite whiteSprite)
+    private Result<Unit, AddEntityCommandError> AddWalls(Texture whiteSprite)
     {
         // 8 x 6
         var walls = new[]
@@ -238,7 +238,7 @@ public class AddStartupSpritesSystem : ISystem
     }
 
 
-    private Result<Unit, AddPaddleAndBallError> AddPaddleAndBall(Sprite whiteSprite, Sprite silkLogoSprite)
+    private Result<Unit, AddPaddleAndBallError> AddPaddleAndBall(Texture whiteSprite, Texture silkLogoSprite)
     {
         var paddleScale = new Vector3(1.5f, 0.15f, 1f);
         var paddleIdResult = _entityCommands.CreateEntity(new Transform
@@ -262,7 +262,7 @@ public class AddStartupSpritesSystem : ISystem
 
         var worldBallScale = new Vector3(0.25f, 0.25f, 1f);
 
-        var ballScale = new Vector3(worldBallScale.X / paddleScale.X, worldBallScale.Y / paddleScale.Y, worldBallScale.Z / paddleScale.Z);
+        var ballScale = new Vector3(1f / paddleScale.X, 1f / paddleScale.Y, 1f / paddleScale.Z);
 
         var ballIdResult = _entityCommands.CreateEntity(new Transform
             {

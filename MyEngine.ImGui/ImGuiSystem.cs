@@ -16,7 +16,12 @@ public class ImGuiSystem : ISystem
     {
         var controller = _resource.Controller;
         controller.Update((float)deltaTime);
-        ImGuiNET.ImGui.ShowDemoWindow();
+
+        ImGuiNET.ImGui.Begin("Debug Info");
+        ImGuiNET.ImGui.LabelText("DeltaTime", $"{deltaTime}");
+        ImGuiNET.ImGui.LabelText("FPS", $"{1 / deltaTime}");
+        ImGuiNET.ImGui.End();
+
         controller.Render();
     }
 }

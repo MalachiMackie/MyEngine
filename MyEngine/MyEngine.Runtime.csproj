@@ -34,17 +34,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="silk.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
       <ProjectReference Include="../MyEngine.SourceGenerator/MyEngine.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="MyEngine.SourceGenerator.Tests"/>
+    <InternalsVisibleTo Include="MyEngine.SourceGenerator.Tests" />
   </ItemGroup>
 
 </Project>

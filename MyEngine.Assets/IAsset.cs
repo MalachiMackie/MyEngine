@@ -18,7 +18,7 @@ public interface IAsset
 
 }
 
-public interface ILoadableAsset : IAsset
+public interface ILoadableAsset<TLoadData> : IAsset
 {
-    static abstract Task<IAsset> LoadAsync(AssetId id, Stream stream); 
+    static abstract Task<IAsset> LoadAsync(AssetId id, Stream stream, TLoadData loadData); 
 }

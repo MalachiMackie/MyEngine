@@ -73,7 +73,12 @@ public class RenderSystem : ISystem
         _renderer.RenderOrthographic(
             cameraPosition,
             camera.Size,
-            _spriteQuery.Select(x => new Renderer.SpriteRender(x.Component1.Sprite, x.Component2.GlobalTransform)),
+            _spriteQuery.Select(x => new Renderer.SpriteRender(
+                x.Component1.Texture,
+                x.Component1.TextureCoordinates,
+                x.Component1.WorldDimensions,
+                x.Component1.TextureCoordinatesHash,
+                x.Component2.GlobalTransform)),
             lines.Select(x => new Renderer.Line(x.Start, x.End)).ToArray());
 
         return true;

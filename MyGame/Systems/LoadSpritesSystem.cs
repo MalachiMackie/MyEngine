@@ -21,8 +21,9 @@ public class LoadSpritesSystem : IStartupSystem
 
     public void Run()
     {
-        var silkAssetId = _assetCommands.LoadAsset<Sprite>("silk.png");
-        var whiteAssetId = _assetCommands.LoadAsset<Sprite>("White.png");
-        _resourceRegistrationResource.AddResource(new SpriteAssetIdsResource() { SilkSpriteId = silkAssetId, WhiteSpriteId = whiteAssetId });
+        var ballAssetId = _assetCommands.LoadAsset<Texture, TextureLoadData>("ball.png", new TextureLoadData(100));
+        _ = _assetCommands.LoadAsset<Texture, TextureLoadData>("silk.png", new TextureLoadData(100));
+        var whiteAssetId = _assetCommands.LoadAsset<Texture, TextureLoadData>("White.png", new TextureLoadData(1));
+        _resourceRegistrationResource.AddResource(new SpriteAssetIdsResource() { BallAssetId = ballAssetId, WhiteSpriteId = whiteAssetId });
     }
 }
