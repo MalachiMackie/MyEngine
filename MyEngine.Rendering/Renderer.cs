@@ -1,13 +1,12 @@
-﻿using MyEngine.Assets;
+﻿using System.Drawing;
+using System.Numerics;
+using MyEngine.Assets;
 using MyEngine.Core;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Rendering.OpenGL;
 using MyEngine.Utils;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
-using System.Drawing;
-using System.Numerics;
-
 using RendererLoadError = MyEngine.Utils.OneOf<
     MyEngine.Rendering.OpenGL.FragmentShaderCompilationFailed,
     MyEngine.Rendering.OpenGL.VertexShaderCompilationFailed,
@@ -161,10 +160,7 @@ public sealed class Renderer : IDisposable, IResource
 
     public readonly record struct Line(Vector3 Start, Vector3 End);
     public readonly record struct SpriteRender(
-        Texture Texture,
-        Vector2[] TextureCoordinates,
-        Vector2 WorldDimensions,
-        int TextureCoordinatesHash,
+        Sprite Sprite,
         GlobalTransform Transform
         );
 
@@ -193,16 +189,18 @@ public sealed class Renderer : IDisposable, IResource
 
         _shader.SetUniform1("uView", view);
         _shader.SetUniform1("uProjection", projection);
-        foreach (var textureGrouping in sprites.GroupBy(x => x.Texture))
+        foreach (var textureGrouping in sprites.GroupBy(x => x.Sprite.Texture))
         {
             var texture = textureGrouping.Key;
             BindOrAddAndBind(textureGrouping.Key);
 
 
             _vertexBuffer.Bind();
-            foreach (var textureCoordGrouping in textureGrouping.GroupBy(x => x.TextureCoordinatesHash))
+            foreach (var textureCoordGrouping in textureGrouping.GroupBy(x => x.Sprite.SpriteHash))
             {
-                var (_, textureCoords, worldDimensions, _, _) = textureCoordGrouping.First();
+                var first = textureCoordGrouping.First();
+                var textureCoords = first.Sprite.TextureCoordinates;
+                var worldDimensions = first.Sprite.WorldDimensions;
 
                 var halfWidth = worldDimensions.X / 2f;
                 var halfHeight = worldDimensions.Y / 2f;

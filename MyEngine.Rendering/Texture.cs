@@ -6,7 +6,7 @@ namespace MyEngine.Rendering;
 
 public record TextureLoadData(uint PixelsPerUnit);
 
-public class Texture : ILoadableAsset<TextureLoadData>
+public class Texture : ILoadableAsset<Texture, TextureLoadData>
 {
     private Texture(AssetId id, Vector2 dimensions, uint pixelsPerUnit, byte[] data)
     {
@@ -28,7 +28,7 @@ public class Texture : ILoadableAsset<TextureLoadData>
 
     public byte[] Data { get; }
 
-    public static async Task<IAsset> LoadAsync(AssetId id, Stream stream, TextureLoadData loadData)
+    public static async Task<Texture> LoadAsync(AssetId id, Stream stream, TextureLoadData loadData)
     {
         var buffer = new byte[stream.Length];
         await stream.ReadAsync(buffer.AsMemory(0, (int)stream.Length));

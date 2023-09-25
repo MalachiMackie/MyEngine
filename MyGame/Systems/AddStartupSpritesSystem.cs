@@ -5,6 +5,7 @@ using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 using MyEngine.Physics;
 using MyEngine.Rendering;
+using MyEngine.UI;
 using MyEngine.Utils;
 using MyGame.Components;
 using MyGame.Resources;
@@ -50,59 +51,33 @@ public class AddStartupSpritesSystem : ISystem
             return;
         }
 
-        var tuple = (_assetCollection.TryGetAsset<Texture>(_spriteAssetIds.BallAssetId),
-            _assetCollection.TryGetAsset<Texture>(_spriteAssetIds.WhiteSpriteId));
-
-        Texture silkSprite;
-        Texture whiteSprite;
-
-        switch (tuple)
+        var ballResult = _assetCollection.TryGetAsset<Sprite>(_spriteAssetIds.BallAssetId);
+        if (ballResult.IsFailure)
         {
-            case ({ IsSuccess: true } silkSpriteResult, { IsSuccess: true } whiteSpriteResult):
-                {
-                    _loadingSucceeded = true;
-                    silkSprite = silkSpriteResult.Unwrap();
-                    whiteSprite = whiteSpriteResult.Unwrap();
-                    break;
-                }
-            case ({ IsFailure: true } failure, { IsSuccess: true }):
-                {
-                    var err = failure.UnwrapError();
-                    if (err == AssetCollection.GetAssetError.IncorrectAssetType)
-                    {
-                        Console.WriteLine("Failed to load asset");
-                        _loadingFailed = true;
-                    }
-                    return;
-                }
-            case ({ IsSuccess: true }, { IsFailure: true } failure):
-                {
-                    var err = failure.UnwrapError();
-                    if (err == AssetCollection.GetAssetError.IncorrectAssetType)
-                    {
-                        Console.WriteLine("Failed to load asset");
-                        _loadingFailed = true;
-                    }
-                    return;
-                }
-            // both failed
-            case ({ IsFailure: true } failureA, { IsFailure: true } failureB):
-                {
-                    var errA = failureA.UnwrapError();
-                    var errB = failureB.UnwrapError();
-                    if (errA == AssetCollection.GetAssetError.IncorrectAssetType
-                        || errB == AssetCollection.GetAssetError.IncorrectAssetType)
-                    {
-                        Console.WriteLine("Failed to load asset");
-                        _loadingFailed = true;
-                    }
-                    return;
-                }
-            default:
-                {
-                    throw new UnreachableException();
-                }
+            // todo: immediately add asset id to the asset collection, but return null when trying to get it
+            _loadingFailed = ballResult.UnwrapError() != AssetCollection.GetAssetError.AssetIdNotFound;
+            return;
         }
+        var whiteResult = _assetCollection.TryGetAsset<Sprite>(_spriteAssetIds.WhiteSpriteId);
+        if (whiteResult.IsFailure)
+        {
+            _loadingFailed = whiteResult.UnwrapError() != AssetCollection.GetAssetError.AssetIdNotFound;
+            return;
+        }
+        var fontResult = _assetCollection.TryGetAsset<FontAsset>(_spriteAssetIds.FontAssetId);
+        if (fontResult.IsFailure)
+        {
+            _loadingFailed = fontResult.UnwrapError() != AssetCollection.GetAssetError.AssetIdNotFound;
+            return;
+        }
+
+        _loadingSucceeded = true;
+
+        Sprite ballSprite = ballResult.Unwrap();
+        Sprite whiteSprite = whiteResult.Unwrap();
+        FontAsset font = fontResult.Unwrap();
+
+        var ASprite = font.CharSprites['A'];
 
         _resourceRegistrationResource.AddResource(new WorldSizeResource {
             Bottom = -3.5f,
@@ -118,7 +93,7 @@ public class AddStartupSpritesSystem : ISystem
             return;
         }
 
-        if (AddPaddleAndBall(whiteSprite, silkSprite).TryGetError(out var addPaddleAndBallError))
+        if (AddPaddleAndBall(whiteSprite, ASprite).TryGetError(out var addPaddleAndBallError))
         {
             addPaddleAndBallError.Match(
                 addPaddleError => Console.WriteLine("Failed to add paddle: {0}", addPaddleError.Error),
@@ -140,7 +115,7 @@ public class AddStartupSpritesSystem : ISystem
         return Origin + new Vector2(x * _brickSizeResource.Dimensions.X, y * _brickSizeResource.Dimensions.Y);
     }
 
-    private Result<Unit, AddEntityCommandError> AddBricks(Texture whiteSprite)
+    private Result<Unit, AddEntityCommandError> AddBricks(Sprite whiteSprite)
     {
         var brickPositions = new[]
         {
@@ -189,7 +164,7 @@ public class AddStartupSpritesSystem : ISystem
         return Result.Success<Unit, AddEntityCommandError>(Unit.Value);
     }
 
-    private Result<Unit, AddEntityCommandError> AddWalls(Texture whiteSprite)
+    private Result<Unit, AddEntityCommandError> AddWalls(Sprite whiteSprite)
     {
         // 8 x 6
         var walls = new[]
@@ -238,7 +213,7 @@ public class AddStartupSpritesSystem : ISystem
     }
 
 
-    private Result<Unit, AddPaddleAndBallError> AddPaddleAndBall(Texture whiteSprite, Texture silkLogoSprite)
+    private Result<Unit, AddPaddleAndBallError> AddPaddleAndBall(Sprite whiteSprite, Sprite ballSprite)
     {
         var paddleScale = new Vector3(1.5f, 0.15f, 1f);
         var paddleIdResult = _entityCommands.CreateEntity(new Transform
@@ -270,7 +245,7 @@ public class AddStartupSpritesSystem : ISystem
                 rotation = Quaternion.Identity,
                 scale = ballScale
             },
-            new SpriteComponent(silkLogoSprite),
+            new SpriteComponent(ballSprite),
             new KinematicBody2DComponent(),
             new Collider2DComponent(new CircleCollider2D(worldBallScale.X * 0.5f)),
             new BallComponent(),

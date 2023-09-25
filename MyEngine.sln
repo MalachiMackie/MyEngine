@@ -29,7 +29,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.SourceGenerator.Te
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.Assets", "MyEngine.Assets\MyEngine.Assets.csproj", "{0094A4EC-7900-44DD-AF57-68DC7CEBDD0A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.ImGui", "MyEngine.ImGui\MyEngine.ImGui.csproj", "{C121A7DE-9F5D-4806-A631-47C83525CC04}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.ImGui", "MyEngine.ImGui\MyEngine.ImGui.csproj", "{C121A7DE-9F5D-4806-A631-47C83525CC04}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.UI", "MyEngine.UI\MyEngine.UI.csproj", "{B8F68B78-E6BC-4961-8BA3-973BF1BE5CFB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -89,6 +91,10 @@ Global
 		{C121A7DE-9F5D-4806-A631-47C83525CC04}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C121A7DE-9F5D-4806-A631-47C83525CC04}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C121A7DE-9F5D-4806-A631-47C83525CC04}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8F68B78-E6BC-4961-8BA3-973BF1BE5CFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8F68B78-E6BC-4961-8BA3-973BF1BE5CFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8F68B78-E6BC-4961-8BA3-973BF1BE5CFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8F68B78-E6BC-4961-8BA3-973BF1BE5CFB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

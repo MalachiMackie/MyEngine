@@ -6,4 +6,5 @@ public class SpriteAssetIdsResource : IResource
 {
     public required AssetId BallAssetId { get; init; }
     public required AssetId WhiteSpriteId { get; init; }
+    public required AssetId FontAssetId { get; init; }
 }

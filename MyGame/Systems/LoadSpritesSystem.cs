@@ -2,6 +2,7 @@
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 using MyEngine.Rendering;
+using MyEngine.UI;
 using MyGame.Resources;
 
 namespace MyGame.Systems;
@@ -21,9 +22,14 @@ public class LoadSpritesSystem : IStartupSystem
 
     public void Run()
     {
-        var ballAssetId = _assetCommands.LoadAsset<Texture, TextureLoadData>("ball.png", new TextureLoadData(100));
-        _ = _assetCommands.LoadAsset<Texture, TextureLoadData>("silk.png", new TextureLoadData(100));
-        var whiteAssetId = _assetCommands.LoadAsset<Texture, TextureLoadData>("White.png", new TextureLoadData(1));
-        _resourceRegistrationResource.AddResource(new SpriteAssetIdsResource() { BallAssetId = ballAssetId, WhiteSpriteId = whiteAssetId });
+        var ballAssetId = _assetCommands.LoadAsset<Sprite, CreateSpriteFromFullTexture>("ball.png", new CreateSpriteFromFullTexture(100));
+        var whiteAssetId = _assetCommands.LoadAsset<Sprite, CreateSpriteFromFullTexture>("White.png", new CreateSpriteFromFullTexture(1));
+        var fontAssetId = _assetCommands.LoadAsset<FontAsset>("Hermit-Regular-fed68123.png");
+        _resourceRegistrationResource.AddResource(new SpriteAssetIdsResource()
+        {
+            BallAssetId = ballAssetId,
+            WhiteSpriteId = whiteAssetId,
+            FontAssetId = fontAssetId
+        });
     }
 }
