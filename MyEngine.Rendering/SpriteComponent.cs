@@ -1,4 +1,5 @@
 ﻿using MyEngine.Core.Ecs.Components;
+using MyEngine.Core.Rendering;
 
 namespace MyEngine.Rendering;
 

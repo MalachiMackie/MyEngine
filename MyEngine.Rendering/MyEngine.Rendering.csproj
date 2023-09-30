@@ -15,7 +15,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MyEngine.Assets\MyEngine.Assets.csproj" />
+    <ProjectReference Include="..\MyEngine.Core.Rendering\MyEngine.Core.Rendering.csproj" />
     <ProjectReference Include="..\MyEngine.Core\MyEngine.Core.csproj" />
+    <ProjectReference Include="..\MyEngine.UI\MyEngine.UI.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,6 +31,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Shaders\shader.vert">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Shaders\textShader.frag">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Shaders\textShader.vert">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

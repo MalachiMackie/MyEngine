@@ -1,7 +1,10 @@
 ﻿using System.Numerics;
+using System.Runtime.CompilerServices;
 using MyEngine.Assets;
 
-namespace MyEngine.Rendering;
+[assembly: InternalsVisibleTo("MyEngine.Rendering")]
+
+namespace MyEngine.Core.Rendering;
 
 public record CreateSpriteFromTextureAtlas(Texture Texture, Vector2 BottomLeftTextureCoordinate, Vector2 AtlasPieceDimensions);
 

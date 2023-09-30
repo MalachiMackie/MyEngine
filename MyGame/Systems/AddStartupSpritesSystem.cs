@@ -3,6 +3,7 @@ using MyEngine.Core;
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
+using MyEngine.Core.Rendering;
 using MyEngine.Physics;
 using MyEngine.Rendering;
 using MyEngine.UI;
@@ -64,20 +65,11 @@ public class AddStartupSpritesSystem : ISystem
             _loadingFailed = whiteResult.UnwrapError() != AssetCollection.GetAssetError.AssetIdNotFound;
             return;
         }
-        var fontResult = _assetCollection.TryGetAsset<FontAsset>(_spriteAssetIds.FontAssetId);
-        if (fontResult.IsFailure)
-        {
-            _loadingFailed = fontResult.UnwrapError() != AssetCollection.GetAssetError.AssetIdNotFound;
-            return;
-        }
 
         _loadingSucceeded = true;
 
         Sprite ballSprite = ballResult.Unwrap();
         Sprite whiteSprite = whiteResult.Unwrap();
-        FontAsset font = fontResult.Unwrap();
-
-        var ASprite = font.CharSprites['A'];
 
         _resourceRegistrationResource.AddResource(new WorldSizeResource {
             Bottom = -3.5f,
@@ -93,7 +85,7 @@ public class AddStartupSpritesSystem : ISystem
             return;
         }
 
-        if (AddPaddleAndBall(whiteSprite, ASprite).TryGetError(out var addPaddleAndBallError))
+        if (AddPaddleAndBall(whiteSprite, ballSprite).TryGetError(out var addPaddleAndBallError))
         {
             addPaddleAndBallError.Match(
                 addPaddleError => Console.WriteLine("Failed to add paddle: {0}", addPaddleError.Error),

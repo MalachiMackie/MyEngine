@@ -26,8 +26,6 @@ public class CameraMovementSystem : ISystem
 
     public void Run(double deltaTime)
     {
-        return;
-
         if (!TryMove3D(deltaTime))
         {
             TryMove2D(deltaTime);

@@ -2,7 +2,7 @@
 using MyEngine.Assets;
 using StbImageSharp;
 
-namespace MyEngine.Rendering;
+namespace MyEngine.Core.Rendering;
 
 public record TextureLoadData(uint PixelsPerUnit);
 

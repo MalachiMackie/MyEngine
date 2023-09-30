@@ -1,7 +1,7 @@
 ﻿using MyEngine.Assets;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
-using MyEngine.Rendering;
+using MyEngine.Core.Rendering;
 using MyEngine.UI;
 using MyGame.Resources;
 
@@ -24,12 +24,10 @@ public class LoadSpritesSystem : IStartupSystem
     {
         var ballAssetId = _assetCommands.LoadAsset<Sprite, CreateSpriteFromFullTexture>("ball.png", new CreateSpriteFromFullTexture(100));
         var whiteAssetId = _assetCommands.LoadAsset<Sprite, CreateSpriteFromFullTexture>("White.png", new CreateSpriteFromFullTexture(1));
-        var fontAssetId = _assetCommands.LoadAsset<FontAsset>("Hermit-Regular-fed68123.png");
         _resourceRegistrationResource.AddResource(new SpriteAssetIdsResource()
         {
             BallAssetId = ballAssetId,
             WhiteSpriteId = whiteAssetId,
-            FontAssetId = fontAssetId
         });
     }
 }

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
@@ -7,9 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="StbImageSharp" Version="2.27.13" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\MyEngine.Assets\MyEngine.Assets.csproj" />
-    <ProjectReference Include="..\MyEngine.Core.Rendering\MyEngine.Core.Rendering.csproj" />
-    <ProjectReference Include="..\MyEngine.Core\MyEngine.Core.csproj" />
   </ItemGroup>
 
 </Project>
