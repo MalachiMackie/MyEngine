@@ -8,7 +8,7 @@ public record FontCharTextureAtlasPiece(char Char, Vector2 TopLeftCoordinate, Ve
 
 public record CreateFontFromLoadedTexture(Texture Texture, IEnumerable<FontCharTextureAtlasPiece> CharAtlasPieces);
 
-public class FontAsset : ICreatableAsset<FontAsset, CreateFontFromLoadedTexture>, ILoadableAsset<FontAsset>
+public class FontAsset : ICreatableAsset<FontAsset, CreateFontFromLoadedTexture>, ILoadableAsset<FontAsset>, IEquatable<FontAsset>
 {
     private FontAsset(AssetId id, Texture texture, IReadOnlyDictionary<char, Sprite> charSprites)
     {
@@ -70,5 +70,10 @@ public class FontAsset : ICreatableAsset<FontAsset, CreateFontFromLoadedTexture>
                 new('Y', new Vector2(165, 76), new Vector2(15, 24)),
                 new('Z', new Vector2(188, 76), new Vector2(15, 24)),
             }));
+    }
+
+    public bool Equals(FontAsset? other)
+    {
+        return other is not null && other.Id == Id;
     }
 }

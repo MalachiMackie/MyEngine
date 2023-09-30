@@ -151,7 +151,6 @@ public sealed class Renderer : IDisposable, IResource
         var textElementBuffer = BufferObject<uint>.CreateAndBind(openGL, BufferTargetARB.ElementArrayBuffer, BufferUsageARB.DynamicDraw);
         textElementBuffer.SetData(SpriteIndices);
 
-
         var textVertexArrayObject = VertexArrayObject.CreateAndBind(openGL, textVertexBuffer);
         textVertexArrayObject.AttachBuffer(textElementBuffer);
 
@@ -211,7 +210,7 @@ public sealed class Renderer : IDisposable, IResource
         _height = (uint)size.Y;
     }
 
-    public readonly record struct Line(Vector3 Start, Vector3 End);
+    public readonly record struct LineRender(Vector3 Start, Vector3 End);
     public readonly record struct SpriteRender(
         Sprite Sprite,
         GlobalTransform Transform
@@ -274,9 +273,10 @@ public sealed class Renderer : IDisposable, IResource
         }
     }
 
-    private void DrawLines(IReadOnlyCollection<Line> lines, Matrix4x4 view, Matrix4x4 projection)
+    private void DrawLines(IEnumerable<LineRender> lines, Matrix4x4 view, Matrix4x4 projection)
     {
-        if (!lines.Any())
+        var linePoints = lines.SelectMany(x => new[] { x.Start.X, x.Start.Y, x.Start.Z, x.End.X, x.End.Y, x.End.Z }).ToArray();
+        if (linePoints.Length == 0)
         {
             return;
         }
@@ -284,69 +284,75 @@ public sealed class Renderer : IDisposable, IResource
         _lineShader.SetUniform1("uView", view);
         _lineShader.SetUniform1("uProjection", projection);
         _lineVertexBuffer.Bind();
-        _lineVertexBuffer.SetData(lines.SelectMany(x => new[] { x.Start.X, x.Start.Y, x.Start.Z, x.End.X, x.End.Y, x.End.Z }).ToArray());
+        _lineVertexBuffer.SetData(linePoints);
 
         _lineVertexArray.Bind();
 
 
-        OpenGL.DrawArrays(GLEnum.Lines, 0, (uint)(lines.Count * 2));
+        OpenGL.DrawArrays(GLEnum.Lines, 0, (uint)(linePoints.Length / 3));
     }
 
-    private unsafe void DrawText(string text, FontAsset font, Matrix4x4 projection, Matrix4x4 worldToScreen)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return;
-        }
+    public sealed record TextRender(Vector2 Position, string Text, FontAsset Font);
 
+    private unsafe void DrawText(IEnumerable<TextRender> textRenders, Matrix4x4 projection, Matrix4x4 worldToScreen)
+    {
         _textShader.UseProgram();
         _textShader.SetUniform1("uProjection", worldToScreen * projection);
-        BindOrAddAndBind(font.Texture);
-        var characterPositions = new Dictionary<char, (Vector2[] TextureCoords, Vector2 CharacterDimensions, List<Vector2> Positions)>();
-        var x = 0;
-        foreach (var character in text)
-        {
-            x += 24;
-            if (character == ' ')
-            {
-                continue;
-            }
-
-            // this assumes that the char sprite has the same texture atlas.
-            // Find a nicer way around that rather than blindly assuming things have been setup correctly
-            var sprite = font.CharSprites[character];
-
-            if (!characterPositions.TryGetValue(character, out var positions))
-            {
-                positions = (sprite.TextureCoordinates, sprite.Dimensions, new List<Vector2>());
-                characterPositions[character] = positions;
-            }
-            positions.Positions.Add(new Vector2(x, 24));
-        }
-
         _textVertexArrayObject.Bind();
-
-        foreach (var (textureCoords, characterDimensions, Positions) in characterPositions.Values)
+        foreach (var fontAndTextRenders in textRenders.GroupBy(x => x.Font))
         {
-            var halfWidth = characterDimensions.X / 2f;
-            var halfHeight = characterDimensions.Y / 2f;
+            var font = fontAndTextRenders.Key;
+            BindOrAddAndBind(font.Texture);
 
-            var vertexData = new[]
+            var characterPositions = new Dictionary<char, (Vector2[] TextureCoords, Vector2 CharacterDimensions, List<Vector2> Positions)>();
+            foreach (var textRender in fontAndTextRenders)
             {
-                // X, Y, Z, textureCoords
-                halfWidth, halfHeight, 0f, textureCoords[0].X, textureCoords[0].Y,
-                halfWidth, -halfHeight, 0f, textureCoords[1].X, textureCoords[1].Y,
-                -halfWidth, -halfHeight, 0f, textureCoords[2].X, textureCoords[2].Y,
-                -halfWidth, halfHeight, 0f, textureCoords[3].X, textureCoords[3].Y
-            };
+                var position = textRender.Position;
+                const int charWidth = 24;
+                foreach (var character in textRender.Text)
+                {
+                    if (character == ' ')
+                    {
+                        position = new Vector2(position.X + charWidth, position.Y);
+                        continue;
+                    }
 
-            _textVertexBuffer.Bind();
-            _textVertexBuffer.SetData(vertexData);
+                    // this assumes that the char sprite has the same texture atlas.
+                    // Find a nicer way around that rather than blindly assuming things have been setup correctly
+                    var sprite = font.CharSprites[character];
 
-            _textPositionBuffer.Bind();
-            _textPositionBuffer.SetData(Positions.ToArray());
+                    if (!characterPositions.TryGetValue(character, out var positions))
+                    {
+                        positions = (sprite.TextureCoordinates, sprite.Dimensions, new List<Vector2>());
+                        characterPositions[character] = positions;
+                    }
+                    positions.Positions.Add(position);
+                    position = new Vector2(position.X + charWidth, position.Y);
+                }
+            }
 
-            OpenGL.DrawElementsInstanced(PrimitiveType.Triangles, (uint)SpriteIndices.Length, DrawElementsType.UnsignedInt, null, (uint)Positions.Count);
+            foreach (var (textureCoords, characterDimensions, Positions) in characterPositions.Values)
+            {
+                var halfWidth = characterDimensions.X / 2f;
+                var halfHeight = characterDimensions.Y / 2f;
+
+                var vertexData = new[]
+                {
+                    // X, Y, Z, textureCoords
+                    halfWidth, halfHeight, 0f, textureCoords[0].X, textureCoords[0].Y,
+                    halfWidth, -halfHeight, 0f, textureCoords[1].X, textureCoords[1].Y,
+                    -halfWidth, -halfHeight, 0f, textureCoords[2].X, textureCoords[2].Y,
+                    -halfWidth, halfHeight, 0f, textureCoords[3].X, textureCoords[3].Y
+                };
+
+                _textVertexBuffer.Bind();
+                _textVertexBuffer.SetData(vertexData);
+
+                _textPositionBuffer.Bind();
+                _textPositionBuffer.SetData(Positions.ToArray());
+
+                OpenGL.DrawElementsInstanced(PrimitiveType.Triangles, (uint)SpriteIndices.Length, DrawElementsType.UnsignedInt, null, (uint)Positions.Count);
+            }
         }
     }
 
@@ -354,8 +360,8 @@ public sealed class Renderer : IDisposable, IResource
         Vector3 cameraPosition,
         Vector2 viewSize,
         IEnumerable<SpriteRender> sprites,
-        IReadOnlyCollection<Line> lines,
-        FontAsset? fontAsset)
+        IEnumerable<LineRender> lines,
+        IEnumerable<TextRender> textRenders)
     {
         OpenGL.Clear(ClearBufferMask.ColorBufferBit);
 
@@ -364,15 +370,13 @@ public sealed class Renderer : IDisposable, IResource
         var view = Matrix4x4.CreateLookAt(cameraPosition, cameraPosition - Vector3.UnitZ, Vector3.UnitY);
         var projection = Matrix4x4.CreateOrthographic(viewSize.X, viewSize.Y, 0.1f, 100f);
 
+        // todo: get this from the outside world
+        var screenSize = new Vector2(800, 600);
+        var worldToScreen = Matrix4x4.CreateScale(viewSize.X / screenSize.X, viewSize.Y / screenSize.Y, 1f);
+
         DrawSprites(sprites, view, projection);
         DrawLines(lines, view, projection);
-        if (fontAsset is not null)
-        {
-            // todo: get this from the outside world
-            var screenSize = new Vector2(800, 600);
-            var worldToScreen = Matrix4x4.CreateScale(viewSize.X / screenSize.X, viewSize.Y / screenSize.Y, 1f);
-            DrawText("HELLO", fontAsset, projection, worldToScreen);
-        }
+        DrawText(textRenders, projection, worldToScreen);
     }
 
     public readonly record struct RenderError(GlobalTransform.GetPositionRotationScaleError Error);

@@ -7,12 +7,12 @@ using MyGame.Resources;
 
 namespace MyGame.Systems;
 
-public class LoadSpritesSystem : IStartupSystem
+public class LoadResourcesSystem : IStartupSystem
 {
     private readonly ResourceRegistrationResource _resourceRegistrationResource;
     private readonly IAssetCommands _assetCommands;
 
-    public LoadSpritesSystem(
+    public LoadResourcesSystem(
         ResourceRegistrationResource resourceRegistrationResource,
         IAssetCommands assetCommands)
     {
@@ -29,5 +29,7 @@ public class LoadSpritesSystem : IStartupSystem
             BallAssetId = ballAssetId,
             WhiteSpriteId = whiteAssetId,
         });
+        var fontAssetId = _assetCommands.LoadAsset<FontAsset>("Hermit-Regular-fed68123.png");
+        _resourceRegistrationResource.AddResource(new FontResource { FontId = fontAssetId });
     }
 }
