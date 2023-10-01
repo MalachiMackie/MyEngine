@@ -227,11 +227,10 @@ public sealed class Renderer : IDisposable, IResource
         textureObject.Bind(TextureUnit.Texture0);
     }
 
-    private unsafe void DrawSprites(IEnumerable<SpriteRender> sprites, Matrix4x4 view, Matrix4x4 projection)
+    private unsafe void DrawSprites(IEnumerable<SpriteRender> sprites, Matrix4x4 viewProjection)
     {
         _spriteShader.UseProgram();
-        _spriteShader.SetUniform1("uView", view);
-        _spriteShader.SetUniform1("uProjection", projection);
+        _spriteShader.SetUniform1("uViewProjection", viewProjection);
 
         _spriteVertexArrayObject.Bind();
         foreach (var textureGrouping in sprites.GroupBy(x => x.Sprite.Texture))
@@ -239,10 +238,8 @@ public sealed class Renderer : IDisposable, IResource
             var texture = textureGrouping.Key;
             BindOrAddAndBind(textureGrouping.Key);
 
-
             foreach (var textureCoordGrouping in textureGrouping.GroupBy(x => x.Sprite.SpriteHash))
             {
-
                 var first = textureCoordGrouping.First();
                 var textureCoords = first.Sprite.TextureCoordinates;
                 var worldDimensions = first.Sprite.WorldDimensions;
@@ -273,7 +270,7 @@ public sealed class Renderer : IDisposable, IResource
         }
     }
 
-    private void DrawLines(IEnumerable<LineRender> lines, Matrix4x4 view, Matrix4x4 projection)
+    private void DrawLines(IEnumerable<LineRender> lines, Matrix4x4 viewProjection)
     {
         var linePoints = lines.SelectMany(x => new[] { x.Start.X, x.Start.Y, x.Start.Z, x.End.X, x.End.Y, x.End.Z }).ToArray();
         if (linePoints.Length == 0)
@@ -281,8 +278,7 @@ public sealed class Renderer : IDisposable, IResource
             return;
         }
         _lineShader.UseProgram();
-        _lineShader.SetUniform1("uView", view);
-        _lineShader.SetUniform1("uProjection", projection);
+        _lineShader.SetUniform1("uViewProjection", viewProjection);
         _lineVertexBuffer.Bind();
         _lineVertexBuffer.SetData(linePoints);
 
@@ -370,12 +366,14 @@ public sealed class Renderer : IDisposable, IResource
         var view = Matrix4x4.CreateLookAt(cameraPosition, cameraPosition - Vector3.UnitZ, Vector3.UnitY);
         var projection = Matrix4x4.CreateOrthographic(viewSize.X, viewSize.Y, 0.1f, 100f);
 
+        var viewProjection = projection * view;
+
         // todo: get this from the outside world
         var screenSize = new Vector2(800, 600);
         var worldToScreen = Matrix4x4.CreateScale(viewSize.X / screenSize.X, viewSize.Y / screenSize.Y, 1f);
 
-        DrawSprites(sprites, view, projection);
-        DrawLines(lines, view, projection);
+        DrawSprites(sprites, viewProjection);
+        DrawLines(lines, viewProjection);
         DrawText(textRenders, projection, worldToScreen);
     }
 
