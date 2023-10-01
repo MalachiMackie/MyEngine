@@ -22,8 +22,8 @@ public class LoadResourcesSystem : IStartupSystem
 
     public void Run()
     {
-        var ballAssetId = _assetCommands.LoadAsset<Sprite, CreateSpriteFromFullTexture>("ball.png", new CreateSpriteFromFullTexture(100));
-        var whiteAssetId = _assetCommands.LoadAsset<Sprite, CreateSpriteFromFullTexture>("White.png", new CreateSpriteFromFullTexture(1));
+        var ballAssetId = _assetCommands.LoadAsset<Sprite, CreateSpriteFromFullTexture>("ball.png", new CreateSpriteFromFullTexture(100, SpriteOrigin.Center));
+        var whiteAssetId = _assetCommands.LoadAsset<Sprite, CreateSpriteFromFullTexture>("White.png", new CreateSpriteFromFullTexture(1, SpriteOrigin.Center));
         _resourceRegistrationResource.AddResource(new SpriteAssetIdsResource()
         {
             BallAssetId = ballAssetId,

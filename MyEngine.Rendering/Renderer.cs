@@ -13,7 +13,6 @@ using RendererLoadError = MyEngine.Utils.OneOf<
     MyEngine.Rendering.OpenGL.VertexShaderCompilationFailed,
     MyEngine.Rendering.OpenGL.ShaderProgramLinkFailed
     >;
-using MyEngine.UI;
 
 namespace MyEngine.Rendering;
 
@@ -227,6 +226,19 @@ public sealed class Renderer : IDisposable, IResource
         textureObject.Bind(TextureUnit.Texture0);
     }
 
+    private (float LeftEdge, float RightEdge, float BottomEdge, float TopEdge) GetRectEdges(Vector2 dimensions, SpriteOrigin origin)
+    {
+        return origin switch
+        {
+            //                          LeftEdge             RightEdge          BottomEdge          TopEdge
+            SpriteOrigin.BottomLeft =>  (0f,                 dimensions.X,      0f,                 dimensions.Y),
+            SpriteOrigin.BottomRight => (-dimensions.X,      0f,                0f,                 dimensions.Y),
+            SpriteOrigin.TopLeft =>     (0f,                 dimensions.X,      -dimensions.Y,      0f),
+            SpriteOrigin.TopRight =>    (-dimensions.X,      0f,                -dimensions.Y,      0f),
+            _ or SpriteOrigin.Center => (-dimensions.X / 2f, dimensions.X / 2f, -dimensions.Y / 2f, dimensions.Y / 2f),
+        };
+    }
+
     private unsafe void DrawSprites(IEnumerable<SpriteRender> sprites, Matrix4x4 viewProjection)
     {
         _spriteShader.UseProgram();
@@ -244,16 +256,14 @@ public sealed class Renderer : IDisposable, IResource
                 var textureCoords = first.Sprite.TextureCoordinates;
                 var worldDimensions = first.Sprite.WorldDimensions;
 
-                var halfWidth = worldDimensions.X / 2f;
-                var halfHeight = worldDimensions.Y / 2f;
-
+                var (leftEdge, rightEdge, bottomEdge, topEdge) = GetRectEdges(worldDimensions, first.Sprite.Origin);
                 var data = new[]
                 {
-                    // X         Y           Z   textCoords
-                     halfWidth,  halfHeight, 0f, textureCoords[0].X, textureCoords[0].Y,
-                     halfWidth, -halfHeight, 0f, textureCoords[1].X, textureCoords[1].Y,
-                    -halfWidth, -halfHeight, 0f, textureCoords[2].X, textureCoords[2].Y,
-                    -halfWidth,  halfHeight, 0f, textureCoords[3].X, textureCoords[3].Y
+                    // X       Y           Z   textureCoords
+                    rightEdge, topEdge,    0f, textureCoords[0].X, textureCoords[0].Y,
+                    rightEdge, bottomEdge, 0f, textureCoords[1].X, textureCoords[1].Y,
+                    leftEdge,  bottomEdge, 0f, textureCoords[2].X, textureCoords[2].Y,
+                    leftEdge,  topEdge,    0f, textureCoords[3].X, textureCoords[3].Y
                 };
 
                 _spriteVertexBuffer.Bind();
@@ -293,16 +303,16 @@ public sealed class Renderer : IDisposable, IResource
         Core.Rendering.Texture Texture,
         IReadOnlyDictionary<char, Sprite> CharacterSprites);
 
-    private unsafe void DrawText(IEnumerable<TextRender> textRenders, Matrix4x4 projection, Matrix4x4 worldToScreen)
+    private unsafe void DrawText(IEnumerable<TextRender> textRenders, Matrix4x4 projection)
     {
         _textShader.UseProgram();
-        _textShader.SetUniform1("uProjection", worldToScreen * projection);
+        _textShader.SetUniform1("uProjection", projection);
         _textVertexArrayObject.Bind();
         foreach (var textureGrouping in textRenders.GroupBy(x => x.Texture))
         {
             BindOrAddAndBind(textureGrouping.Key);
 
-            var characterPositions = new Dictionary<char, (Vector2[] TextureCoords, Vector2 CharacterDimensions, List<Vector2> Positions)>();
+            var characterPositions = new Dictionary<char, (Vector2[] TextureCoords, Vector2 CharacterDimensions, List<Vector2> Positions, SpriteOrigin Origin)>();
             foreach (var textRender in textureGrouping)
             {
                 var position = textRender.Position;
@@ -321,7 +331,7 @@ public sealed class Renderer : IDisposable, IResource
 
                     if (!characterPositions.TryGetValue(character, out var positions))
                     {
-                        positions = (sprite.TextureCoordinates, sprite.Dimensions, new List<Vector2>());
+                        positions = (sprite.TextureCoordinates, sprite.Dimensions, new List<Vector2>(), sprite.Origin);
                         characterPositions[character] = positions;
                     }
                     positions.Positions.Add(position);
@@ -329,18 +339,16 @@ public sealed class Renderer : IDisposable, IResource
                 }
             }
 
-            foreach (var (textureCoords, characterDimensions, Positions) in characterPositions.Values)
+            foreach (var (textureCoords, characterDimensions, Positions, origin) in characterPositions.Values)
             {
-                var halfWidth = characterDimensions.X / 2f;
-                var halfHeight = characterDimensions.Y / 2f;
-
+                var (leftEdge, rightEdge, bottomEdge, topEdge) = GetRectEdges(characterDimensions, origin);
                 var vertexData = new[]
                 {
-                    // X, Y, Z, textureCoords
-                    halfWidth, halfHeight, 0f, textureCoords[0].X, textureCoords[0].Y,
-                    halfWidth, -halfHeight, 0f, textureCoords[1].X, textureCoords[1].Y,
-                    -halfWidth, -halfHeight, 0f, textureCoords[2].X, textureCoords[2].Y,
-                    -halfWidth, halfHeight, 0f, textureCoords[3].X, textureCoords[3].Y
+                    // X       Y           Z   textureCoords
+                    rightEdge, topEdge,    0f, textureCoords[0].X, textureCoords[0].Y,
+                    rightEdge, bottomEdge, 0f, textureCoords[1].X, textureCoords[1].Y,
+                    leftEdge,  bottomEdge, 0f, textureCoords[2].X, textureCoords[2].Y,
+                    leftEdge,  topEdge,    0f, textureCoords[3].X, textureCoords[3].Y
                 };
 
                 _textVertexBuffer.Bind();
@@ -370,11 +378,13 @@ public sealed class Renderer : IDisposable, IResource
 
         // todo: get this from the outside world
         var screenSize = new Vector2(800, 600);
-        var worldToScreen = Matrix4x4.CreateScale(viewSize.X / screenSize.X, viewSize.Y / screenSize.Y, 1f);
+        var worldToScreen =
+            Matrix4x4.CreateTranslation(-screenSize.X / 2f, -screenSize.Y / 2f, 0f)
+            * Matrix4x4.CreateScale(viewSize.X / screenSize.X, viewSize.Y / screenSize.Y, 1f);
 
         DrawSprites(sprites, viewProjection);
         DrawLines(lines, viewProjection);
-        DrawText(textRenders, projection, worldToScreen);
+        DrawText(textRenders, worldToScreen * projection);
     }
 
     public readonly record struct RenderError(GlobalTransform.GetPositionRotationScaleError Error);

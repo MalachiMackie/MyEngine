@@ -31,7 +31,7 @@ public class FontAsset : ICreatableAsset<FontAsset, CreateFontFromLoadedTexture>
             x => x.Char,
             x => Sprite.Create(
                 AssetId.Generate(),
-                new CreateSpriteFromTextureAtlas(texture, x.TopLeftCoordinate, x.AtlasPieceDimensions)));
+                new CreateSpriteFromTextureAtlas(texture, x.TopLeftCoordinate, x.AtlasPieceDimensions, SpriteOrigin.BottomLeft)));
 
         return new FontAsset(id, texture, charSprites);
     }

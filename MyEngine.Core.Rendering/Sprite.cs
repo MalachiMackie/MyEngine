@@ -6,12 +6,22 @@ using MyEngine.Assets;
 
 namespace MyEngine.Core.Rendering;
 
-public record CreateSpriteFromTextureAtlas(Texture Texture, Vector2 BottomLeftTextureCoordinate, Vector2 AtlasPieceDimensions);
+public record CreateSpriteFromTextureAtlas(Texture Texture, Vector2 BottomLeftTextureCoordinate, Vector2 AtlasPieceDimensions, SpriteOrigin Origin);
 
-public record CreateSpriteFromFullTexture(uint PixelsPerUnit);
+public record CreateSpriteFromFullTexture(uint PixelsPerUnit, SpriteOrigin Origin);
+
+public enum SpriteOrigin
+{
+    Center,
+    TopLeft,
+    BottomLeft,
+    TopRight,
+    BottomRight
+}
 
 public class Sprite : ICreatableAsset<Sprite, CreateSpriteFromTextureAtlas>, ILoadableAsset<Sprite, CreateSpriteFromFullTexture>
 {
+    public SpriteOrigin Origin { get; }
     public Texture Texture { get; }
     public Vector2[] TextureCoordinates { get; }
     internal int SpriteHash { get; }
@@ -21,7 +31,14 @@ public class Sprite : ICreatableAsset<Sprite, CreateSpriteFromTextureAtlas>, ILo
 
     public AssetId Id { get; }
 
-    private Sprite(Texture texture, Vector2[] textureCoordinates, int spriteHash, Vector2 worldDimensions, Vector2 dimensions, AssetId id)
+    private Sprite(
+        Texture texture,
+        Vector2[] textureCoordinates,
+        int spriteHash,
+        Vector2 worldDimensions,
+        Vector2 dimensions,
+        AssetId id,
+        SpriteOrigin origin)
     {
         Texture = texture;
         TextureCoordinates = textureCoordinates;
@@ -29,11 +46,12 @@ public class Sprite : ICreatableAsset<Sprite, CreateSpriteFromTextureAtlas>, ILo
         Dimensions = dimensions;
         WorldDimensions = worldDimensions;
         Id = id;
+        Origin = origin;
     }
 
     public static Sprite Create(AssetId id, CreateSpriteFromTextureAtlas createData)
     {
-        var (texture, bottomLeftTextureCoordinate, atlasPieceDimensions) = createData;
+        var (texture, bottomLeftTextureCoordinate, atlasPieceDimensions, origin) = createData;
 
         var worldDimensions = new Vector2(
             atlasPieceDimensions.X / texture.PixelsPerUnit,
@@ -76,14 +94,15 @@ public class Sprite : ICreatableAsset<Sprite, CreateSpriteFromTextureAtlas>, ILo
             textureCoordinates[1],
             textureCoordinates[2],
             textureCoordinates[3],
-            worldDimensions);
+            worldDimensions,
+            origin);
 
-        return new Sprite(texture, textureCoordinates, hash, worldDimensions, atlasPieceDimensions, id);
+        return new Sprite(texture, textureCoordinates, hash, worldDimensions, atlasPieceDimensions, id, origin);
     }
 
     public static async Task<Sprite> LoadAsync(AssetId id, Stream stream, CreateSpriteFromFullTexture loadData)
     {
         var texture = await Texture.LoadAsync(AssetId.Generate(), stream, new TextureLoadData(loadData.PixelsPerUnit));
-        return Create(id, new CreateSpriteFromTextureAtlas(texture, Vector2.Zero, texture.Dimensions));
+        return Create(id, new CreateSpriteFromTextureAtlas(texture, Vector2.Zero, texture.Dimensions, loadData.Origin));
     }
 }
