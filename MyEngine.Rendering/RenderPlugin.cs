@@ -1,5 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using MyEngine.Core;
+using MyEngine.Core.Rendering;
+using MyEngine.Rendering.RenderSystems;
 
 [assembly: InternalsVisibleTo("MyEngine.Input")]
 [assembly: InternalsVisibleTo("MyEngine.ImGui")]
@@ -24,9 +26,12 @@ public class RenderPlugin : IPlugin
         return builder
             .AddResource(new InitialWindowProps(_windowTitle, _width, _height))
             .AddStartupSystem<InitializeRenderingSystem>()
+            .AddSystemStage(PreRenderSystemStage.Instance, 6)
             .AddSystemStage(RenderSystemStage.Instance, 5)
             .AddResource<ILineRenderResource>(new LineRenderResource())
+            .AddResource(new RenderCommandQueue())
             .AddSystem<RenderSystem>(RenderSystemStage.Instance)
-            ;
+            .AddSystem<LineRenderSystem>(PreRenderSystemStage.Instance)
+            .AddSystem<SpriteRenderSystem>(PreRenderSystemStage.Instance);
     }
 }

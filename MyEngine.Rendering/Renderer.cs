@@ -288,20 +288,22 @@ public sealed class Renderer : IDisposable, IResource
         OpenGL.DrawArrays(GLEnum.Lines, 0, (uint)(linePoints.Length / 3));
     }
 
-    public sealed record TextRender(Vector2 Position, string Text, FontAsset Font);
+    public sealed record TextRender(Vector2 Position,
+        string Text,
+        Core.Rendering.Texture Texture,
+        IReadOnlyDictionary<char, Sprite> CharacterSprites);
 
     private unsafe void DrawText(IEnumerable<TextRender> textRenders, Matrix4x4 projection, Matrix4x4 worldToScreen)
     {
         _textShader.UseProgram();
         _textShader.SetUniform1("uProjection", worldToScreen * projection);
         _textVertexArrayObject.Bind();
-        foreach (var fontAndTextRenders in textRenders.GroupBy(x => x.Font))
+        foreach (var textureGrouping in textRenders.GroupBy(x => x.Texture))
         {
-            var font = fontAndTextRenders.Key;
-            BindOrAddAndBind(font.Texture);
+            BindOrAddAndBind(textureGrouping.Key);
 
             var characterPositions = new Dictionary<char, (Vector2[] TextureCoords, Vector2 CharacterDimensions, List<Vector2> Positions)>();
-            foreach (var textRender in fontAndTextRenders)
+            foreach (var textRender in textureGrouping)
             {
                 var position = textRender.Position;
                 const int charWidth = 24;
@@ -315,7 +317,7 @@ public sealed class Renderer : IDisposable, IResource
 
                     // this assumes that the char sprite has the same texture atlas.
                     // Find a nicer way around that rather than blindly assuming things have been setup correctly
-                    var sprite = font.CharSprites[character];
+                    var sprite = textRender.CharacterSprites[character];
 
                     if (!characterPositions.TryGetValue(character, out var positions))
                     {
@@ -360,8 +362,6 @@ public sealed class Renderer : IDisposable, IResource
         IEnumerable<TextRender> textRenders)
     {
         OpenGL.Clear(ClearBufferMask.ColorBufferBit);
-
-        _spriteVertexArrayObject.Bind();
 
         var view = Matrix4x4.CreateLookAt(cameraPosition, cameraPosition - Vector3.UnitZ, Vector3.UnitY);
         var projection = Matrix4x4.CreateOrthographic(viewSize.X, viewSize.Y, 0.1f, 100f);

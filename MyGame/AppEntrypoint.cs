@@ -4,6 +4,7 @@ using MyEngine.ImGui;
 using MyEngine.Input;
 using MyEngine.Physics;
 using MyEngine.Rendering;
+using MyEngine.UI;
 using MyGame.Systems;
 
 namespace MyGame;
@@ -31,6 +32,6 @@ public class AppEntrypoint : IAppEntrypoint
             .AddPlugin(new RenderPlugin("My Game", 800, 600))
             .AddPlugin(new AssetPlugin())
             .AddPlugin(new ImGuiPlugin())
-            ;
+            .AddPlugin(new UIPlugin());
     }
 }

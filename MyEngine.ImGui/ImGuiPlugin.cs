@@ -22,7 +22,7 @@ public class ImGuiPlugin : IPlugin
     public AppBuilder Register(AppBuilder builder)
     {
         return builder
-            .AddSystemStage(ImGuiSystemStage.Instance, 6)
+            .AddSystemStage(ImGuiSystemStage.Instance, 7)
             .AddSystem<InitailizeImGuiSystem>(PreUpdateSystemStage.Instance)
             .AddSystem<ImGuiSystem>(ImGuiSystemStage.Instance);
     }

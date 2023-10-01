@@ -12,7 +12,7 @@ internal class LineRenderResource : ILineRenderResource
         _lines.Enqueue(new ILineRenderResource.Line(Start, End));
     }
 
-    public IEnumerable<ILineRenderResource.Line> FlushLines()
+    public IEnumerable<ILineRenderResource.Line> Flush()
     {
         while (_lines.TryDequeue(out var line))
         {

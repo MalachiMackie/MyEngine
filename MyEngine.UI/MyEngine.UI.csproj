@@ -12,4 +12,8 @@
     <ProjectReference Include="..\MyEngine.Core\MyEngine.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+      <ProjectReference Include="../MyEngine.SourceGenerator/MyEngine.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
 </Project>
