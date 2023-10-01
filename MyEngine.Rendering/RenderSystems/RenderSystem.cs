@@ -1,7 +1,10 @@
-﻿using MyEngine.Core.Ecs;
+﻿using System.Numerics;
+using MyEngine.Core;
+using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Systems;
 using MyEngine.Core.Rendering;
+using MyEngine.Utils;
 
 namespace MyEngine.Rendering;
 
@@ -69,6 +72,7 @@ public class RenderSystem : ISystem
 
         var lines = new List<Renderer.LineRender>();
         var sprites = new List<Renderer.SpriteRender>();
+        var screenSprites = new List<Renderer.SpriteRender>();
         var textRenders = new List<Renderer.TextRender>();
 
         var renderCommands = _renderCommandQueue.Flush();
@@ -83,16 +87,27 @@ public class RenderSystem : ISystem
                     }
                 case RenderSpriteCommand renderSpriteCommand:
                     {
-                        sprites.Add(new Renderer.SpriteRender(renderSpriteCommand.Sprite, renderSpriteCommand.GlobalTransform));
+                        sprites.Add(new Renderer.SpriteRender(
+                            renderSpriteCommand.Sprite,
+                            renderSpriteCommand.Sprite.WorldDimensions,
+                            renderSpriteCommand.GlobalTransform.ModelMatrix));
                         break;
                     }
-                    case RenderScreenSpaceTextCommand renderScreenSpaceTextCommand:
+                case RenderScreenSpaceTextCommand renderScreenSpaceTextCommand:
                     {
                         textRenders.Add(new Renderer.TextRender(
                             renderScreenSpaceTextCommand.Position,
                             renderScreenSpaceTextCommand.Text,
                             renderScreenSpaceTextCommand.Texture,
                             renderScreenSpaceTextCommand.CharacterSprites));
+                        break;
+                    }
+                case RenderScreenSpaceSpriteCommand renderScreenSpaceSpriteCommand:
+                    {
+                        screenSprites.Add(new Renderer.SpriteRender(
+                            renderScreenSpaceSpriteCommand.Sprite,
+                            renderScreenSpaceSpriteCommand.Dimensions,
+                            Matrix4x4.CreateTranslation(renderScreenSpaceSpriteCommand.Position.Extend(0f))));
                         break;
                     }
             }
@@ -102,6 +117,7 @@ public class RenderSystem : ISystem
             cameraPosition,
             camera.Size,
             sprites,
+            screenSprites,
             lines,
             textRenders);
 

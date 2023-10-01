@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MyEngine.Assets;
+﻿using MyEngine.Assets;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 using MyEngine.UI;
@@ -14,17 +9,23 @@ namespace MyGame.Systems;
 public class InitUiSystem : ISystem
 {
 
-    private readonly FontResource _fontResource;
+    private readonly FontIdResource _fontResource;
+    private readonly LoadedSpritesResource _loadedSpritesResource;
     private readonly ICommands _commands;
     private readonly IHierarchyCommands _hierarchyCommands;
     private readonly AssetCollection _assetCollection;
 
-    public InitUiSystem(FontResource fontResource, ICommands commands, IHierarchyCommands hierarchyCommands, AssetCollection assetCollection)
+    public InitUiSystem(FontIdResource fontResource,
+        ICommands commands,
+        IHierarchyCommands hierarchyCommands,
+        AssetCollection assetCollection,
+        LoadedSpritesResource loadedSpritesResource)
     {
         _fontResource = fontResource;
         _commands = commands;
         _hierarchyCommands = hierarchyCommands;
         _assetCollection = assetCollection;
+        _loadedSpritesResource = loadedSpritesResource;
     }
 
     private bool _hasFontLoaded;
@@ -62,7 +63,11 @@ public class InitUiSystem : ISystem
         var textEntity = _commands.CreateEntity(new MyEngine.Core.Transform(),
             new UITextComponent { Font = font, Text = "HELLO WORLD" },
             new UITransformComponent { Position = new System.Numerics.Vector2() }).Unwrap();
+        var boxEntity = _commands.CreateEntity(new MyEngine.Core.Transform(),
+            new UIBoxComponent { BackgroundSprite = _loadedSpritesResource.Ball, Dimensions = new System.Numerics.Vector2(100f, 100f) },
+            new UITransformComponent { Position = new System.Numerics.Vector2(100f, 100f) }).Unwrap();
 
-        _hierarchyCommands.AddChild(canvasEntity, textEntity);
+        _hierarchyCommands.AddChild(canvasEntity, boxEntity);
+        _hierarchyCommands.AddChild(boxEntity, textEntity);
     }
 }

@@ -30,6 +30,6 @@ public class LoadResourcesSystem : IStartupSystem
             WhiteSpriteId = whiteAssetId,
         });
         var fontAssetId = _assetCommands.LoadAsset<FontAsset>("Hermit-Regular-fed68123.png");
-        _resourceRegistrationResource.AddResource(new FontResource { FontId = fontAssetId });
+        _resourceRegistrationResource.AddResource(new FontIdResource { FontId = fontAssetId });
     }
 }

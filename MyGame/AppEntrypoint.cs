@@ -26,6 +26,7 @@ public class AppEntrypoint : IAppEntrypoint
             .AddSystem<BrickCollisionSystem>(UpdateSystemStage.Instance)
             .AddSystem<ToggleColliderDebugDisplaySystem>(UpdateSystemStage.Instance)
             .AddSystem<InitUiSystem>(UpdateSystemStage.Instance)
+            .AddSystem<CameraMovementSystem>(UpdateSystemStage.Instance)
             .AddPlugin(new CorePlugin())
             .AddPlugin(new Physics2DPlugin())
             .AddPlugin(new InputPlugin())

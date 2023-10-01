@@ -70,6 +70,7 @@ public class AddStartupSpritesSystem : ISystem
 
         Sprite ballSprite = ballResult.Unwrap();
         Sprite whiteSprite = whiteResult.Unwrap();
+        _resourceRegistrationResource.AddResource(new LoadedSpritesResource { Ball = ballSprite, White = whiteSprite });
 
         _resourceRegistrationResource.AddResource(new WorldSizeResource {
             Bottom = -3.5f,

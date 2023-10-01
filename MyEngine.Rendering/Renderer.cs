@@ -212,7 +212,8 @@ public sealed class Renderer : IDisposable, IResource
     public readonly record struct LineRender(Vector3 Start, Vector3 End);
     public readonly record struct SpriteRender(
         Sprite Sprite,
-        GlobalTransform Transform
+        Vector2 Dimensions,
+        Matrix4x4 ModelMatrix
         );
 
     void BindOrAddAndBind(Core.Rendering.Texture texture)
@@ -254,9 +255,8 @@ public sealed class Renderer : IDisposable, IResource
             {
                 var first = textureCoordGrouping.First();
                 var textureCoords = first.Sprite.TextureCoordinates;
-                var worldDimensions = first.Sprite.WorldDimensions;
 
-                var (leftEdge, rightEdge, bottomEdge, topEdge) = GetRectEdges(worldDimensions, first.Sprite.Origin);
+                var (leftEdge, rightEdge, bottomEdge, topEdge) = GetRectEdges(first.Dimensions, first.Sprite.Origin);
                 var data = new[]
                 {
                     // X       Y           Z   textureCoords
@@ -269,7 +269,7 @@ public sealed class Renderer : IDisposable, IResource
                 _spriteVertexBuffer.Bind();
                 _spriteVertexBuffer.SetData(data);
 
-                var transforms = textureCoordGrouping.Select(x => x.Transform.ModelMatrix).ToArray();
+                var transforms = textureCoordGrouping.Select(x => x.ModelMatrix).ToArray();
                 _matrixModelBuffer.Bind();
                 _matrixModelBuffer.SetData(transforms);
 
@@ -366,6 +366,7 @@ public sealed class Renderer : IDisposable, IResource
         Vector3 cameraPosition,
         Vector2 viewSize,
         IEnumerable<SpriteRender> sprites,
+        IEnumerable<SpriteRender> screenSprites,
         IEnumerable<LineRender> lines,
         IEnumerable<TextRender> textRenders)
     {
@@ -382,9 +383,13 @@ public sealed class Renderer : IDisposable, IResource
             Matrix4x4.CreateTranslation(-screenSize.X / 2f, -screenSize.Y / 2f, 0f)
             * Matrix4x4.CreateScale(viewSize.X / screenSize.X, viewSize.Y / screenSize.Y, 1f);
 
+        // world space
         DrawSprites(sprites, viewProjection);
         DrawLines(lines, viewProjection);
+
+        // screen space
         DrawText(textRenders, worldToScreen * projection);
+        DrawSprites(screenSprites, worldToScreen * projection);
     }
 
     public readonly record struct RenderError(GlobalTransform.GetPositionRotationScaleError Error);

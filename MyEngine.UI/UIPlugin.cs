@@ -7,6 +7,6 @@ public class UIPlugin : IPlugin
 {
     public AppBuilder Register(AppBuilder builder)
     {
-        return builder.AddSystem<UITextRenderSystem>(PreRenderSystemStage.Instance);
+        return builder.AddSystem<UIRenderSystem>(PreRenderSystemStage.Instance);
     }
 }
