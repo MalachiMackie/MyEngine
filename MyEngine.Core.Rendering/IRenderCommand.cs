@@ -12,6 +12,7 @@ public record RenderScreenSpaceTextCommand(
     Texture Texture,
     IReadOnlyDictionary<char, Sprite> CharacterSprites,
     string Text,
+    float Transparency,
     Vector2 Position) : IRenderCommand;
 
 public record RenderScreenSpaceSpriteCommand(

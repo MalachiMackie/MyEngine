@@ -99,6 +99,7 @@ public class RenderSystem : ISystem
                         textRenders.Add(new Renderer.TextRender(
                             renderScreenSpaceTextCommand.Position,
                             renderScreenSpaceTextCommand.Text,
+                            renderScreenSpaceTextCommand.Transparency,
                             renderScreenSpaceTextCommand.Texture,
                             renderScreenSpaceTextCommand.CharacterSprites));
                         break;

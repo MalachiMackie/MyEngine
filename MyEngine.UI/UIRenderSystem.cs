@@ -46,6 +46,7 @@ public class UIRenderSystem : ISystem
                 textComponent.Font.Texture,
                 textComponent.Font.CharSprites,
                 textComponent.Text,
+                textComponent.Transparency ?? 1f,
                 position + uiTransformComponent.Position));
         }
         var boxComponents = _boxQuery.TryGetForEntity(entity);
@@ -54,7 +55,7 @@ public class UIRenderSystem : ISystem
             var (boxComponent, uiTransformComponent, maybeChildrenComponent) = boxComponents;
             _renderCommandQueue.Enqueue(new RenderScreenSpaceSpriteCommand(
                 boxComponent.BackgroundSprite,
-                boxComponent.Transparency,
+                boxComponent.Transparency ?? 1f,
                 uiTransformComponent.Position,
                 boxComponent.Dimensions));
 
