@@ -24,22 +24,21 @@ public class AssetCollection : IResource
 
     public enum GetAssetError
     {
-        AssetIdNotFound,
         IncorrectAssetType
     }
 
-    public Result<TAsset, GetAssetError> TryGetAsset<TAsset>(AssetId id)
+    public Result<TAsset?, GetAssetError> TryGetAsset<TAsset>(AssetId id)
     {
         if (!_assets.TryGetValue(id, out var asset))
         {
-            return Result.Failure<TAsset, GetAssetError>(GetAssetError.AssetIdNotFound);
+            return Result.Success<TAsset?, GetAssetError>(default);
         }
 
         if (asset is not TAsset tAsset)
         {
-            return Result.Failure<TAsset, GetAssetError>(GetAssetError.IncorrectAssetType);
+            return Result.Failure<TAsset?, GetAssetError>(GetAssetError.IncorrectAssetType);
         }
 
-        return Result.Success<TAsset, GetAssetError>(tAsset);
+        return Result.Success<TAsset?, GetAssetError>(tAsset);
     }
 }

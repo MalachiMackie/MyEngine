@@ -16,7 +16,7 @@ public class AppEntrypoint : IAppEntrypoint
     {
         builder
             .AddStartupSystem<AddCameraStartupSystem>()
-            .AddStartupSystem<LoadResourcesSystem>()
+            .AddSystem<LoadResourcesSystem>(UpdateSystemStage.Instance)
             .AddSystem<AddStartupSpritesSystem>(PostUpdateSystemStage.Instance)
             .AddSystem<QuitOnEscapeSystem>(UpdateSystemStage.Instance)
             .AddSystem<LaunchBallSystem>(UpdateSystemStage.Instance)
@@ -26,7 +26,6 @@ public class AppEntrypoint : IAppEntrypoint
             .AddSystem<BrickCollisionSystem>(UpdateSystemStage.Instance)
             .AddSystem<ToggleColliderDebugDisplaySystem>(UpdateSystemStage.Instance)
             .AddSystem<InitUiSystem>(UpdateSystemStage.Instance)
-            .AddSystem<CameraMovementSystem>(UpdateSystemStage.Instance)
             .AddPlugin(new CorePlugin())
             .AddPlugin(new Physics2DPlugin())
             .AddPlugin(new InputPlugin())

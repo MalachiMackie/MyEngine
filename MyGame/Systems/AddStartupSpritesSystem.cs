@@ -6,11 +6,9 @@ using MyEngine.Core.Ecs.Systems;
 using MyEngine.Core.Rendering;
 using MyEngine.Physics;
 using MyEngine.Rendering;
-using MyEngine.UI;
 using MyEngine.Utils;
 using MyGame.Components;
 using MyGame.Resources;
-using System.Diagnostics;
 using System.Numerics;
 
 using AddPaddleAndBallError = MyEngine.Utils.OneOf<
@@ -25,53 +23,33 @@ public class AddStartupSpritesSystem : ISystem
     private readonly ICommands _entityCommands;
     private readonly ResourceRegistrationResource _resourceRegistrationResource;
     private readonly IHierarchyCommands _hierarchyCommands;
-    private readonly SpriteAssetIdsResource _spriteAssetIds;
+    private readonly GameAssets _gameAssets;
     private readonly BrickSizeResource _brickSizeResource = new() { Dimensions = new Vector2(0.5f, 0.2f) };
-    private readonly AssetCollection _assetCollection;
 
     public AddStartupSpritesSystem(ICommands entityContainerResource,
         ResourceRegistrationResource resourceRegistrationResource,
         IHierarchyCommands hierarchyCommands,
-        SpriteAssetIdsResource spriteAssetIds,
-        AssetCollection assetCollection)
+        GameAssets gameAssets)
     {
         _entityCommands = entityContainerResource;
         _resourceRegistrationResource = resourceRegistrationResource;
         _hierarchyCommands = hierarchyCommands;
-        _spriteAssetIds = spriteAssetIds;
-        _assetCollection = assetCollection;
+        _gameAssets = gameAssets;
     }
 
-    private bool _loadingFailed = false;
-    private bool _loadingSucceeded = false;
+    private bool _initialized;
 
     public void Run(double _)
     {
-        if (_loadingFailed || _loadingSucceeded)
+        if (_initialized)
         {
             return;
         }
 
-        var ballResult = _assetCollection.TryGetAsset<Sprite>(_spriteAssetIds.BallAssetId);
-        if (ballResult.IsFailure)
-        {
-            // todo: immediately add asset id to the asset collection, but return null when trying to get it
-            _loadingFailed = ballResult.UnwrapError() != AssetCollection.GetAssetError.AssetIdNotFound;
-            return;
-        }
-        var whiteResult = _assetCollection.TryGetAsset<Sprite>(_spriteAssetIds.WhiteSpriteId);
-        if (whiteResult.IsFailure)
-        {
-            _loadingFailed = whiteResult.UnwrapError() != AssetCollection.GetAssetError.AssetIdNotFound;
-            return;
-        }
+        _initialized = true;
 
-        _loadingSucceeded = true;
-
-        Sprite ballSprite = ballResult.Unwrap();
-        Sprite whiteSprite = whiteResult.Unwrap();
-        _resourceRegistrationResource.AddResource(new LoadedSpritesResource { Ball = ballSprite, White = whiteSprite });
-
+        Sprite ballSprite = _gameAssets.Ball;
+        Sprite whiteSprite = _gameAssets.White;
         _resourceRegistrationResource.AddResource(new WorldSizeResource {
             Bottom = -3.5f,
             Top = 3.5f,

@@ -13,7 +13,7 @@ public interface IAssetCommands : IResource
     AssetId CreateAsset<TAsset, TCreateAssetData>(TCreateAssetData createAssetData)
         where TAsset : ICreatableAsset<TAsset, TCreateAssetData>;
 
-    internal interface IAssetCommand { } 
+    internal interface IAssetCommand { }
 
     internal record LoadAssetCommand(AssetId assetId, Func<Task<IAsset>> loadFunc) : IAssetCommand;
     internal record CreateAssetCommand(AssetId assetId, Func<IAsset> createFunc) : IAssetCommand;
