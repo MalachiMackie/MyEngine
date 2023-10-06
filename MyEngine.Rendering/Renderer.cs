@@ -31,12 +31,14 @@ public sealed class Renderer : IDisposable, IResource
         BufferObject<uint> textElementBuffer,
         BufferObject<Vector2> textPositionBuffer,
         VertexArrayObject textVertexArrayObject,
-        ShaderProgram textShader)
+        ShaderProgram textShader,
+        BufferObject<float> spriteInstanceBuffer)
     {
         OpenGL = openGL;
 
         _spriteVertexBuffer = spriteVertexBuffer;
         _spriteElementBuffer = spriteElementBuffer;
+        _spriteInstanceBuffer = spriteInstanceBuffer;
         _matrixModelBuffer = spriteMatrixModelBuffer;
         _spriteVertexArrayObject = spriteVertexArrayObject;
         _spriteShader = spriteShader;
@@ -53,6 +55,7 @@ public sealed class Renderer : IDisposable, IResource
     internal GL OpenGL { get; }
     private readonly BufferObject<float> _spriteVertexBuffer;
     private readonly BufferObject<uint> _spriteElementBuffer;
+    private readonly BufferObject<float> _spriteInstanceBuffer;
     private readonly BufferObject<Matrix4x4> _matrixModelBuffer;
     private readonly VertexArrayObject _spriteVertexArrayObject;
     private readonly ShaderProgram _spriteShader;
@@ -86,6 +89,7 @@ public sealed class Renderer : IDisposable, IResource
         var elementBuffer = BufferObject<uint>.CreateAndBind(openGL, BufferTargetARB.ElementArrayBuffer, BufferUsageARB.StaticDraw);
         elementBuffer.SetData(SpriteIndices);
 
+        var spriteInstanceBuffer = BufferObject<float>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw);
         var matrixModelBuffer = BufferObject<Matrix4x4>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw);
 
         var vertexArrayObject = VertexArrayObject.CreateAndBind(openGL, vertexBuffer);
@@ -102,11 +106,15 @@ public sealed class Renderer : IDisposable, IResource
         vertexArrayObject.VertexArrayAttribute(4, 4, VertexAttribPointerType.Float, false, 16, 8); // model matrix
         vertexArrayObject.VertexArrayAttribute(5, 4, VertexAttribPointerType.Float, false, 16, 12); // model matrix
 
+        vertexArrayObject.AttachBuffer(spriteInstanceBuffer);
+        vertexArrayObject.VertexArrayAttribute(6, 1, VertexAttribPointerType.Float, false, 1, 0); // transparency
+
         // only progress to the next buffer item when (1) models have been drawn rather than every vertex
         openGL.VertexAttribDivisor(2, 1);
         openGL.VertexAttribDivisor(3, 1);
         openGL.VertexAttribDivisor(4, 1);
         openGL.VertexAttribDivisor(5, 1);
+        openGL.VertexAttribDivisor(6, 1);
 
         // todo: custom shaders
         var vertexCode = File.ReadAllText(Path.Join("Shaders", "shader.vert"));
@@ -197,7 +205,8 @@ public sealed class Renderer : IDisposable, IResource
             textElementBuffer,
             textPositionBuffer,
             textVertexArrayObject,
-            textShader);
+            textShader,
+            spriteInstanceBuffer);
 
         return Result.Success<Renderer, RendererLoadError>(renderer);
     }
@@ -212,6 +221,7 @@ public sealed class Renderer : IDisposable, IResource
     public readonly record struct LineRender(Vector3 Start, Vector3 End);
     public readonly record struct SpriteRender(
         Sprite Sprite,
+        float Transparency,
         Vector2 Dimensions,
         Matrix4x4 ModelMatrix
         );
@@ -251,7 +261,7 @@ public sealed class Renderer : IDisposable, IResource
             var texture = textureGrouping.Key;
             BindOrAddAndBind(textureGrouping.Key);
 
-            foreach (var textureCoordGrouping in textureGrouping.GroupBy(x => x.Sprite.SpriteHash))
+            foreach (var textureCoordGrouping in textureGrouping.GroupBy(x => (x.Sprite.SpriteHash, x.Transparency)))
             {
                 var first = textureCoordGrouping.First();
                 var textureCoords = first.Sprite.TextureCoordinates;
@@ -269,10 +279,12 @@ public sealed class Renderer : IDisposable, IResource
                 _spriteVertexBuffer.Bind();
                 _spriteVertexBuffer.SetData(data);
 
+                _spriteInstanceBuffer.Bind();
+                _spriteInstanceBuffer.SetData(textureCoordGrouping.Select(x => x.Transparency).ToArray());
+
                 var transforms = textureCoordGrouping.Select(x => x.ModelMatrix).ToArray();
                 _matrixModelBuffer.Bind();
                 _matrixModelBuffer.SetData(transforms);
-
 
                 OpenGL.DrawElementsInstanced(PrimitiveType.Triangles, (uint)SpriteIndices.Length, DrawElementsType.UnsignedInt, null, (uint)transforms.Length);
             }

@@ -13,6 +13,7 @@ public class UIBoxComponent : IComponent
 {
     public required Vector2 Dimensions { get; set; }
     public required Sprite BackgroundSprite { get; set; }
+    public float Transparency { get; set; }
 }
 
 public class UITextComponent : IComponent

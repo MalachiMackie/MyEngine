@@ -54,6 +54,7 @@ public class UIRenderSystem : ISystem
             var (boxComponent, uiTransformComponent, maybeChildrenComponent) = boxComponents;
             _renderCommandQueue.Enqueue(new RenderScreenSpaceSpriteCommand(
                 boxComponent.BackgroundSprite,
+                boxComponent.Transparency,
                 uiTransformComponent.Position,
                 boxComponent.Dimensions));
 

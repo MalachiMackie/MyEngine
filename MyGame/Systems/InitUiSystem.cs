@@ -40,7 +40,7 @@ public class InitUiSystem : ISystem
             new UITextComponent { Font = _gameAssets.Font, Text = "HELLO WORLD" },
             new UITransformComponent { Position = new System.Numerics.Vector2() }).Unwrap();
         var boxEntity = _commands.CreateEntity(new MyEngine.Core.Transform(),
-            new UIBoxComponent { BackgroundSprite = _gameAssets.White, Dimensions = new System.Numerics.Vector2(100f, 100f) },
+            new UIBoxComponent { BackgroundSprite = _gameAssets.White, Dimensions = new System.Numerics.Vector2(100f, 100f), Transparency = 0.3f },
             new UITransformComponent { Position = new System.Numerics.Vector2(100f, 100f) }).Unwrap();
 
         _hierarchyCommands.AddChild(canvasEntity, boxEntity);
