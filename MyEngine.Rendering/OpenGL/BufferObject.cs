@@ -40,12 +40,9 @@ internal class BufferObject<TData> : BufferObject
     {
     }
 
-    public unsafe void SetData(TData[] data)
+    public void SetData(ReadOnlySpan<TData> data)
     {
-        fixed (TData* ptr = data)
-        {
-            GL.BufferData(Target, (nuint)(data.Length * sizeof(TData)), ptr, Usage);
-        }
+        GL.BufferData(Target, data, Usage);
     }
 
     public static BufferObject<TData> CreateAndBind(GL gl, BufferTargetARB target, BufferUsageARB usage)

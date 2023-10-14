@@ -5,20 +5,25 @@ namespace MyEngine.Rendering.OpenGL;
 internal class VertexArrayObject : IDisposable
 {
     private readonly uint _handle;
-    private readonly uint _vertexDataTypeSize;
     private readonly GL _gl;
 
-    private VertexArrayObject(GL gl, uint handle, uint vertexDataTypeSize)
+    private VertexArrayObject(GL gl, uint handle)
     {
         _gl = gl;
-        _vertexDataTypeSize = vertexDataTypeSize;
         _handle = handle;
     }
 
-    public unsafe void VertexArrayAttribute(uint location, int count, VertexAttribPointerType type, bool normalized, uint vertexSize, uint offsetSize)
+    public unsafe void VertexArrayAttribute(
+        uint location,
+        int count,
+        VertexAttribPointerType type,
+        uint pointerTypeSize,
+        bool normalized,
+        uint vertexSize,
+        uint offsetSize)
     {
         _gl.EnableVertexAttribArray(location);
-        _gl.VertexAttribPointer(location, count, type, normalized, vertexSize * _vertexDataTypeSize, (void*)(offsetSize * _vertexDataTypeSize));
+        _gl.VertexAttribPointer(location, count, type, normalized, vertexSize * pointerTypeSize, (void*)(offsetSize * pointerTypeSize));
     }
 
     public void AttachBuffer<TElementType>(BufferObject<TElementType> elementBuffer)
@@ -42,14 +47,12 @@ internal class VertexArrayObject : IDisposable
         _gl.DeleteVertexArray(_handle);
     }
 
-    public unsafe static VertexArrayObject CreateAndBind<TVertexType>(GL gl, BufferObject<TVertexType> vertexBuffer)
-        where TVertexType : unmanaged
+    public unsafe static VertexArrayObject CreateAndBind(GL gl)
     {
         var handle = gl.GenVertexArray();
-        var vertexArrayObject = new VertexArrayObject(gl, handle, (uint)sizeof(TVertexType));
+        var vertexArrayObject = new VertexArrayObject(gl, handle);
 
         vertexArrayObject.Bind();
-        vertexBuffer.Bind();
 
         return vertexArrayObject;
     }
