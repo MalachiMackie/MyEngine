@@ -51,6 +51,15 @@ internal class TextureObject : IDisposable
         _gl.GenerateMipmap(_target);
     }
 
+    public void Bind(uint slot)
+    {
+        if (slot > 31)
+        {
+            throw new InvalidOperationException("Texture slot must be less than 32");
+        }
+        Bind((TextureUnit)((int)TextureUnit.Texture0 + slot));
+    }
+
     public void Bind(TextureUnit unit)
     {
         _gl.ActiveTexture(unit);

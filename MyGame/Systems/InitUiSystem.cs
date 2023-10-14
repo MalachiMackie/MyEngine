@@ -37,7 +37,7 @@ public class InitUiSystem : ISystem
         var canvasEntity = _commands.CreateEntity(new MyEngine.Core.Transform(),
             new UICanvasComponent()).Unwrap();
         var textEntity = _commands.CreateEntity(new MyEngine.Core.Transform(),
-            new UITextComponent { Font = _gameAssets.Font, Text = "HELLO WORLD", Transparency = 0.3f },
+            new UITextComponent { Font = _gameAssets.Font, Text = "HELLO WORLD", Transparency = 1f },
             new UITransformComponent { Position = new System.Numerics.Vector2() }).Unwrap();
         var boxEntity = _commands.CreateEntity(new MyEngine.Core.Transform(),
             new UIBoxComponent { BackgroundSprite = _gameAssets.White, Dimensions = new System.Numerics.Vector2(100f, 100f), Transparency = 1f },
