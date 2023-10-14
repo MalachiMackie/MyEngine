@@ -8,7 +8,7 @@ internal class TextureObject : IDisposable
     private readonly GL _gl;
     private readonly TextureTarget _target;
 
-    public unsafe TextureObject(
+    public TextureObject(
         GL gl,
         byte[] bytes,
         uint width,
@@ -23,19 +23,16 @@ internal class TextureObject : IDisposable
 
         Bind(unit);
 
-        fixed (byte* ptr = bytes)
-        {
-            _gl.TexImage2D(
-                _target,
-                0,
-                InternalFormat.Rgba,
-                width,
-                height,
-                0,
-                PixelFormat.Rgba,
-                PixelType.UnsignedByte,
-                ptr);
-        }
+        _gl.TexImage2D<byte>(
+            _target,
+            level: 0,
+            InternalFormat.Rgba,
+            width,
+            height,
+            border: 0,
+            PixelFormat.Rgba,
+            PixelType.UnsignedByte,
+            bytes.AsSpan());
 
         SetParameters();
     }

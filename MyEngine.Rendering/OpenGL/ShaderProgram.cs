@@ -33,6 +33,8 @@ internal class ShaderProgram : IDisposable
     public unsafe void SetUniform1(string uniformName, Matrix4x4 matrix)
     {
         var location = _gl.GetUniformLocation(_handle, uniformName);
+        // there is an overload that takes a Span<float>,
+        // which would enable this method to be safe, but there's no way to safely get long lasting span of a matrix
         _gl.UniformMatrix4(location, 1, false, (float*)&matrix);
     }
 

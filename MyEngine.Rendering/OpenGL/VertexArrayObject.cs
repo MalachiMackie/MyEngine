@@ -23,6 +23,7 @@ internal class VertexArrayObject : IDisposable
         uint offsetSize)
     {
         _gl.EnableVertexAttribArray(location);
+        // no safe overload
         _gl.VertexAttribPointer(location, count, type, normalized, vertexSize * pointerTypeSize, (void*)(offsetSize * pointerTypeSize));
     }
 
@@ -47,7 +48,7 @@ internal class VertexArrayObject : IDisposable
         _gl.DeleteVertexArray(_handle);
     }
 
-    public unsafe static VertexArrayObject CreateAndBind(GL gl)
+    public static VertexArrayObject CreateAndBind(GL gl)
     {
         var handle = gl.GenVertexArray();
         var vertexArrayObject = new VertexArrayObject(gl, handle);
