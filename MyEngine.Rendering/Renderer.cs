@@ -82,7 +82,7 @@ public sealed class Renderer : IDisposable, IResource
     private uint _width;
     private uint _height;
 
-    internal static unsafe Result<Renderer, RendererLoadError> Create(GL openGL)
+    internal static Result<Renderer, RendererLoadError> Create(GL openGL)
     {
         var spriteIndices = new uint[Render2DBatch.MaxQuadCount * 6];
         uint offset = 0;
@@ -276,7 +276,7 @@ public sealed class Renderer : IDisposable, IResource
         };
     }
 
-    private unsafe void DrawSprites(IEnumerable<SpriteRender> sprites, Matrix4x4 viewProjection)
+    private void DrawSprites(IEnumerable<SpriteRender> sprites, Matrix4x4 viewProjection)
     {
         _spriteShader.UseProgram();
         _spriteShader.SetUniform1("uViewProjection", viewProjection);
@@ -312,7 +312,7 @@ public sealed class Renderer : IDisposable, IResource
                 _matrixModelBuffer.Bind();
                 _matrixModelBuffer.SetData(transforms);
 
-                OpenGL.DrawElementsInstanced(PrimitiveType.Triangles, 6u, DrawElementsType.UnsignedInt, null, (uint)transforms.Length);
+                OpenGL.DrawElementsInstanced(PrimitiveType.Triangles, 6u, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, (uint)transforms.Length);
             }
 
         }
@@ -342,7 +342,7 @@ public sealed class Renderer : IDisposable, IResource
         Core.Rendering.Texture Texture,
         IReadOnlyDictionary<char, Sprite> CharacterSprites);
 
-    private unsafe void DrawText(IEnumerable<TextRender> textRenders, Render2DBatch renderBatch)
+    private void DrawText(IEnumerable<TextRender> textRenders, Render2DBatch renderBatch)
     {
         foreach (var textRender in textRenders)
         {
@@ -408,7 +408,7 @@ public sealed class Renderer : IDisposable, IResource
         private const uint TextSpriteVertexSize = 3 + 2 + 1 + 1;
         public TextVertexData[] TextVertexData = new TextVertexData[MaxTextVertexBatch];
 
-        public unsafe void Flush()
+        public void Flush()
         {
             if (TextVertexCount > 0)
             {
@@ -426,7 +426,7 @@ public sealed class Renderer : IDisposable, IResource
 
                 var instanceCount = TextVertexCount / 4;
 
-                OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u * instanceCount, DrawElementsType.UnsignedInt, null, instanceCount);
+                OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u * instanceCount, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, instanceCount);
                 TextVertexCount = 0;
             }
             UsedTextureSlots.Clear();
@@ -486,7 +486,7 @@ public sealed class Renderer : IDisposable, IResource
         }
     }
 
-    public unsafe void RenderOrthographic(
+    public void RenderOrthographic(
         Vector3 cameraPosition,
         Vector2 viewSize,
         IEnumerable<SpriteRender> sprites,
@@ -532,7 +532,7 @@ public sealed class Renderer : IDisposable, IResource
 
     public readonly record struct RenderError(GlobalTransform.GetPositionRotationScaleError Error);
 
-    public unsafe Result<Unit, RenderError> Render(GlobalTransform cameraTransform, IEnumerable<GlobalTransform> transforms)
+    public Result<Unit, RenderError> Render(GlobalTransform cameraTransform, IEnumerable<GlobalTransform> transforms)
     {
         OpenGL.Clear(ClearBufferMask.ColorBufferBit);
 
@@ -566,7 +566,7 @@ public sealed class Renderer : IDisposable, IResource
 
             _spriteShader.SetUniform1("uModel", model);
 
-            OpenGL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null);
+            OpenGL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty);
         }
 
         return Result.Success<Unit, RenderError>(Unit.Value);
