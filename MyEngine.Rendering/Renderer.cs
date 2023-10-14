@@ -20,9 +20,8 @@ namespace MyEngine.Rendering;
 public sealed class Renderer : IDisposable, IResource
 {
     private Renderer(GL openGL,
-        BufferObject<float> spriteVertexBuffer,
+        BufferObject<SpriteVertexData> spriteVertexBuffer,
         BufferObject<uint> spriteElementBuffer,
-        BufferObject<Matrix4x4> spriteMatrixModelBuffer,
         VertexArrayObject spriteVertexArrayObject,
         ShaderProgram spriteShader,
         ShaderProgram lineShader,
@@ -33,7 +32,7 @@ public sealed class Renderer : IDisposable, IResource
         BufferObject<TextInstanceData> textSpriteInstanceBuffer,
         VertexArrayObject textVertexArrayObject,
         ShaderProgram textShader,
-        BufferObject<float> spriteInstanceBuffer
+        BufferObject<SpriteInstanceData> spriteInstanceBuffer
         )
     {
         OpenGL = openGL;
@@ -41,7 +40,6 @@ public sealed class Renderer : IDisposable, IResource
         _spriteVertexBuffer = spriteVertexBuffer;
         _spriteElementBuffer = spriteElementBuffer;
         _spriteInstanceBuffer = spriteInstanceBuffer;
-        _matrixModelBuffer = spriteMatrixModelBuffer;
         _spriteVertexArrayObject = spriteVertexArrayObject;
         _spriteShader = spriteShader;
         _lineShader = lineShader;
@@ -68,11 +66,24 @@ public sealed class Renderer : IDisposable, IResource
         public float TextureSlot;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct SpriteVertexData
+    {
+        public Vector3 Position;
+        public Vector2 TextCoordinate;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct SpriteInstanceData
+    {
+        public Matrix4x4 ModelMatrix;
+        public float Transparency;
+    }
+
     internal GL OpenGL { get; }
-    private readonly BufferObject<float> _spriteVertexBuffer;
+    private readonly BufferObject<SpriteVertexData> _spriteVertexBuffer;
     private readonly BufferObject<uint> _spriteElementBuffer;
-    private readonly BufferObject<float> _spriteInstanceBuffer;
-    private readonly BufferObject<Matrix4x4> _matrixModelBuffer;
+    private readonly BufferObject<SpriteInstanceData> _spriteInstanceBuffer;
     private readonly VertexArrayObject _spriteVertexArrayObject;
     private readonly ShaderProgram _spriteShader;
     private readonly ShaderProgram _lineShader;
@@ -109,13 +120,12 @@ public sealed class Renderer : IDisposable, IResource
         // todo: try catch around all opengl stuff
         openGL.ClearColor(Color.CornflowerBlue);
 
-        var vertexBuffer = BufferObject<float>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw);
+        var vertexBuffer = BufferObject<SpriteVertexData>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw);
 
         var elementBuffer = BufferObject<uint>.CreateAndBind(openGL, BufferTargetARB.ElementArrayBuffer, BufferUsageARB.StaticDraw);
         elementBuffer.SetData(spriteIndices);
 
-        var spriteInstanceBuffer = BufferObject<float>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw);
-        var matrixModelBuffer = BufferObject<Matrix4x4>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw);
+        var spriteInstanceBuffer = BufferObject<SpriteInstanceData>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw);
 
         var vertexArrayObject = VertexArrayObject.CreateAndBind(openGL);
         vertexArrayObject.AttachBuffer(elementBuffer);
@@ -124,16 +134,14 @@ public sealed class Renderer : IDisposable, IResource
         vertexArrayObject.VertexArrayAttribute(0, 3, VertexAttribPointerType.Float, sizeof(float), false, 5, 0); // vertex location
         vertexArrayObject.VertexArrayAttribute(1, 2, VertexAttribPointerType.Float, sizeof(float), false, 5, 3); // texture coordinate
 
-        vertexArrayObject.AttachBuffer(matrixModelBuffer);
+        vertexArrayObject.AttachBuffer(spriteInstanceBuffer);
 
         // model matrix needs 4 attributes, because attributes can only hold 4 values each
-        vertexArrayObject.VertexArrayAttribute(2, 4, VertexAttribPointerType.Float, sizeof(float), false, 16, 0); // model matrix
-        vertexArrayObject.VertexArrayAttribute(3, 4, VertexAttribPointerType.Float, sizeof(float), false, 16, 4); // model matrix
-        vertexArrayObject.VertexArrayAttribute(4, 4, VertexAttribPointerType.Float, sizeof(float), false, 16, 8); // model matrix
-        vertexArrayObject.VertexArrayAttribute(5, 4, VertexAttribPointerType.Float, sizeof(float), false, 16, 12); // model matrix
-
-        vertexArrayObject.AttachBuffer(spriteInstanceBuffer);
-        vertexArrayObject.VertexArrayAttribute(6, 1, VertexAttribPointerType.Float, sizeof(float), false, 1, 0); // transparency
+        vertexArrayObject.VertexArrayAttribute(2, 4, VertexAttribPointerType.Float, sizeof(float), false, 17, 0); // model matrix
+        vertexArrayObject.VertexArrayAttribute(3, 4, VertexAttribPointerType.Float, sizeof(float), false, 17, 4); // model matrix
+        vertexArrayObject.VertexArrayAttribute(4, 4, VertexAttribPointerType.Float, sizeof(float), false, 17, 8); // model matrix
+        vertexArrayObject.VertexArrayAttribute(5, 4, VertexAttribPointerType.Float, sizeof(float), false, 17, 12); // model matrix
+        vertexArrayObject.VertexArrayAttribute(6, 1, VertexAttribPointerType.Float, sizeof(float), false, 17, 16); // transparency
 
         // only progress to the next buffer item when (1) models have been drawn rather than every vertex
         openGL.VertexAttribDivisor(2, 1);
@@ -225,7 +233,6 @@ public sealed class Renderer : IDisposable, IResource
         var renderer = new Renderer(openGL,
             vertexBuffer,
             elementBuffer,
-            matrixModelBuffer,
             vertexArrayObject,
             shader,
             lineShader,
@@ -310,24 +317,24 @@ public sealed class Renderer : IDisposable, IResource
                 var (leftEdge, rightEdge, bottomEdge, topEdge) = GetRectEdges(first.Dimensions, first.Sprite.Origin);
                 var data = new[]
                 {
-                    // X       Y           Z   textureCoords
-                    rightEdge, topEdge,    0f, textureCoords[0].X, textureCoords[0].Y,
-                    rightEdge, bottomEdge, 0f, textureCoords[1].X, textureCoords[1].Y,
-                    leftEdge,  bottomEdge, 0f, textureCoords[2].X, textureCoords[2].Y,
-                    leftEdge,  topEdge,    0f, textureCoords[3].X, textureCoords[3].Y
+                    new SpriteVertexData{Position = new Vector3(rightEdge, topEdge, 0), TextCoordinate = textureCoords[0]},
+                    new SpriteVertexData{Position = new Vector3(rightEdge, bottomEdge, 0), TextCoordinate = textureCoords[1]},
+                    new SpriteVertexData{Position = new Vector3(leftEdge, bottomEdge, 0), TextCoordinate = textureCoords[2]},
+                    new SpriteVertexData{Position = new Vector3(leftEdge, topEdge, 0), TextCoordinate = textureCoords[3]},
                 };
 
                 _spriteVertexBuffer.Bind();
                 _spriteVertexBuffer.SetData(data);
 
                 _spriteInstanceBuffer.Bind();
-                _spriteInstanceBuffer.SetData(textureCoordGrouping.Select(x => x.Transparency).ToArray());
+                var instanceData = textureCoordGrouping.Select(x => new SpriteInstanceData
+                {
+                    ModelMatrix = x.ModelMatrix,
+                    Transparency = x.Transparency
+                }).ToArray();
+                _spriteInstanceBuffer.SetData(instanceData);
 
-                var transforms = textureCoordGrouping.Select(x => x.ModelMatrix).ToArray();
-                _matrixModelBuffer.Bind();
-                _matrixModelBuffer.SetData(transforms);
-
-                OpenGL.DrawElementsInstanced(PrimitiveType.Triangles, 6u, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, (uint)transforms.Length);
+                OpenGL.DrawElementsInstanced(PrimitiveType.Triangles, 6u, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, (uint)instanceData.Length);
             }
 
         }
