@@ -57,13 +57,14 @@ public class Sprite : ICreatableAsset<Sprite, CreateSpriteFromTextureAtlas>, ILo
             atlasPieceDimensions.X / texture.PixelsPerUnit,
             atlasPieceDimensions.Y / texture.PixelsPerUnit);
 
+        // add half a pixel, so the texture coordinate is in the middle of the pixel, rather than on the edge
         var normalizedBottomLeftTextureCoordinate = new Vector2(
-            bottomLeftTextureCoordinate.X / texture.Dimensions.X,
-            bottomLeftTextureCoordinate.Y / texture.Dimensions.Y);
+            (bottomLeftTextureCoordinate.X + 0.5f) / texture.Dimensions.X,
+            (bottomLeftTextureCoordinate.Y + 0.5f) / texture.Dimensions.Y);
 
         var normalizedAtlasPieceDimensions = new Vector2(
-            atlasPieceDimensions.X / texture.Dimensions.X,
-            atlasPieceDimensions.Y / texture.Dimensions.Y);
+            (atlasPieceDimensions.X - 1f) / texture.Dimensions.X,
+            (atlasPieceDimensions.Y - 1f) / texture.Dimensions.Y);
 
         if (normalizedBottomLeftTextureCoordinate.X < 0
             || normalizedBottomLeftTextureCoordinate.Y < 0)

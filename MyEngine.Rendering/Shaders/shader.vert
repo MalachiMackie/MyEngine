@@ -10,11 +10,13 @@ layout (location = 4) in vec4 aModelRow3;
 layout (location = 5) in vec4 aModelRow4;
 
 layout (location = 6) in float aTransparency;
+layout (location = 7) in float aTextureIndex;
 
 uniform mat4 uViewProjection;
 
 out vec2 frag_texCoords;
 out float frag_transparency;
+out float frag_textureIndex;
 
 void main()
 {
@@ -22,4 +24,5 @@ void main()
     gl_Position = uViewProjection * aModel * vec4(aPosition, 1.0);
     frag_texCoords = aTextCoords;
     frag_transparency = aTransparency;
+    frag_textureIndex = aTextureIndex;
 }

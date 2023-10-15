@@ -188,11 +188,11 @@ public class AddStartupSpritesSystem : ISystem
     {
         var paddleScale = new Vector3(1.5f, 0.15f, 1f);
         var paddleIdResult = _entityCommands.CreateEntity(new Transform
-            {
-                position = new Vector3(0f, -1.25f, 0f),
-                rotation = Quaternion.Identity,
-                scale = paddleScale
-            },
+        {
+            position = new Vector3(0f, -1.25f, 0f),
+            rotation = Quaternion.Identity,
+            scale = paddleScale
+        },
             new SpriteComponent(whiteSprite),
             new KinematicBody2DComponent(),
             new Collider2DComponent(new BoxCollider2D(Vector2.One)),

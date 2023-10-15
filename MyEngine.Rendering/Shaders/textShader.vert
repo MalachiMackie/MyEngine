@@ -9,14 +9,12 @@ uniform mat4 uProjection;
 
 out vec2 frag_texCoords;
 out float frag_transparency;
-flat out int frag_textureIndex;
-flat out int frag_instanceId;
+out float frag_textureIndex;
 
 void main()
 {
     gl_Position = uProjection * vec4(aPosition, 1.0);
     frag_texCoords = aTextCoords;
     frag_transparency = aTransparency;
-    frag_textureIndex = int(aTextureIndex);
-    frag_instanceId = gl_InstanceID;
+    frag_textureIndex = aTextureIndex;
 }

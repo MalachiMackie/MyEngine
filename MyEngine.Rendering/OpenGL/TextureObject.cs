@@ -13,15 +13,14 @@ internal class TextureObject : IDisposable
         byte[] bytes,
         uint width,
         uint height,
-        TextureTarget target,
-        TextureUnit unit)
+        TextureTarget target)
     {
         _gl = gl;
 
         _handle = _gl.GenTexture();
         _target = target;
 
-        Bind(unit);
+        _gl.BindTexture(_target, _handle);
 
         _gl.TexImage2D<byte>(
             _target,
@@ -54,13 +53,8 @@ internal class TextureObject : IDisposable
         {
             throw new InvalidOperationException("Texture slot must be less than 32");
         }
-        Bind((TextureUnit)((int)TextureUnit.Texture0 + slot));
-    }
 
-    public void Bind(TextureUnit unit)
-    {
-        _gl.ActiveTexture(unit);
-        _gl.BindTexture(_target, _handle);
+        _gl.BindTextureUnit(slot, _handle);
     }
 
     public void Unbind()
