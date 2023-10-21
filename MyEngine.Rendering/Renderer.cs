@@ -446,7 +446,7 @@ public sealed class Renderer : IDisposable, IResource
                 //TextInstanceBuffer.Bind();
                 //TextInstanceBuffer.SetData(_textInstanceData.AsSpan(0, (int)_textInstanceCount));
 
-                OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u * _textInstanceCount, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, _textInstanceCount);
+                OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u * _textInstanceCount, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, 1);
                 _textInstanceCount = 0;
             }
 
@@ -465,7 +465,7 @@ public sealed class Renderer : IDisposable, IResource
                 //SpriteInstanceBuffer.Bind();
                 //SpriteInstanceBuffer.SetData(_spriteInstanceData.AsSpan(0, (int)_spriteInstanceCount));
 
-                OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u * _spriteInstanceCount, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, _spriteInstanceCount);
+                OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u * _spriteInstanceCount, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, 1);
                 _spriteInstanceCount = 0;
             }
         }

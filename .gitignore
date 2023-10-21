@@ -3,3 +3,4 @@
 **/bin
 **/Generated
 *.received.cs
+RenderDocCaptures/
