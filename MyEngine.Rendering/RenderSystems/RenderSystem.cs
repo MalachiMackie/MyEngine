@@ -101,6 +101,8 @@ public class RenderSystem : ISystem
                             renderScreenSpaceTextCommand.Text,
                             renderScreenSpaceTextCommand.Transparency,
                             renderScreenSpaceTextCommand.Texture,
+                            LineHeight: 30,
+                            SpaceWidth: 20,
                             renderScreenSpaceTextCommand.CharacterSprites));
                         break;
                     }

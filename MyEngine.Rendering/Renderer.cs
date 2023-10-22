@@ -20,7 +20,7 @@ namespace MyEngine.Rendering;
 public sealed class Renderer : IDisposable, IResource
 {
     private Renderer(GL openGL,
-        BufferObject<SpriteVertexData> spriteVertexBuffer,
+        BufferObject<Vector3> spriteVertexBuffer,
         BufferObject<uint> spriteElementBuffer,
         VertexArrayObject spriteVertexArrayObject,
         ShaderProgram spriteShader,
@@ -28,7 +28,7 @@ public sealed class Renderer : IDisposable, IResource
         BufferObject<float> lineVertexBuffer,
         VertexArrayObject lineVertexArray,
         BufferObject<uint> textElementBuffer,
-        BufferObject<TextVertexData> textSpriteVertexBuffer,
+        BufferObject<Vector3> textSpriteVertexBuffer,
         BufferObject<TextInstanceData> textSpriteInstanceBuffer,
         VertexArrayObject textVertexArrayObject,
         ShaderProgram textShader,
@@ -53,48 +53,38 @@ public sealed class Renderer : IDisposable, IResource
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct TextVertexData
-    {
-        public Vector3 Position;
-        public Vector2 TextureCoordinate;
-
-        public float Transparency;
-        public float TextureSlot;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
     private struct TextInstanceData
     {
         public float Transparency;
         public float TextureSlot;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct SpriteVertexData
-    {
-        public Vector3 Position;
-        public Vector2 TextCoordinate;
-        public Matrix4x4 ModelMatrix;
-        public float Transparency;
-        public float TextureSlot;
+        public Vector2 Position;
+        public Vector2 Scale;
+        public Vector2 TextureCoordinate1;
+        public Vector2 TextureCoordinate2;
+        public Vector2 TextureCoordinate3;
+        public Vector2 TextureCoordinate4;
     }
 
     [StructLayout(LayoutKind.Sequential)]
     private struct SpriteInstanceData
     {
+        public Vector2 TextureCoordinateA;
+        public Vector2 TextureCoordinateB;
+        public Vector2 TextureCoordinateC;
+        public Vector2 TextureCoordinateD;
         public Matrix4x4 ModelMatrix;
         public float Transparency;
         public float TextureSlot;
     }
 
     internal GL OpenGL { get; }
-    private readonly BufferObject<SpriteVertexData> _spriteVertexBuffer;
+    private readonly BufferObject<Vector3> _spriteVertexBuffer;
     private readonly BufferObject<uint> _spriteElementBuffer;
     private readonly BufferObject<SpriteInstanceData> _spriteInstanceBuffer;
     private readonly VertexArrayObject _spriteVertexArrayObject;
     private readonly ShaderProgram _spriteShader;
     private readonly ShaderProgram _lineShader;
-    private readonly BufferObject<TextVertexData> _textSpriteVertexBuffer;
+    private readonly BufferObject<Vector3> _textSpriteVertexBuffer;
     private readonly BufferObject<TextInstanceData> _textSpriteInstanceBuffer;
     private readonly BufferObject<uint> _textElementBuffer;
     private readonly VertexArrayObject _textVertexArrayObject;
@@ -124,25 +114,26 @@ public sealed class Renderer : IDisposable, IResource
 
     internal static Result<Renderer, RendererLoadError> Create(GL openGL)
     {
-        var spriteIndices = new uint[Render2DBatch.MaxQuadCount * 6];
-        uint offset = 0;
-        for (var i = 0; i < spriteIndices.Length; i += 6)
+        Span<uint> spriteIndices = stackalloc uint[]
         {
-            spriteIndices[i + 0] = offset + 0;
-            spriteIndices[i + 1] = offset + 1;
-            spriteIndices[i + 2] = offset + 3;
+            0, 1, 3,
+            1, 2, 3
+        };
 
-            spriteIndices[i + 3] = offset + 1;
-            spriteIndices[i + 4] = offset + 2;
-            spriteIndices[i + 5] = offset + 3;
-
-            offset += 4;
-        }
+        var (leftEdge, rightEdge, bottomEdge, topEdge) = GetRectEdges(Vector2.One, SpriteOrigin.Center);
+        Span<Vector3> spriteVertices = stackalloc[]
+        {
+            new Vector3(rightEdge, topEdge, 0),
+            new Vector3(rightEdge, bottomEdge, 0),
+            new Vector3(leftEdge, bottomEdge, 0),
+            new Vector3(leftEdge, topEdge, 0),
+        };
 
         // todo: try catch around all opengl stuff
         openGL.ClearColor(Color.CornflowerBlue);
 
-        var vertexBuffer = BufferObject<SpriteVertexData>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw);
+        var vertexBuffer = BufferObject<Vector3>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw);
+        vertexBuffer.SetData(spriteVertices);
 
         var elementBuffer = BufferObject<uint>.CreateAndBind(openGL, BufferTargetARB.ElementArrayBuffer, BufferUsageARB.DynamicDraw);
         elementBuffer.SetData(spriteIndices);
@@ -153,29 +144,34 @@ public sealed class Renderer : IDisposable, IResource
         vertexArrayObject.AttachBuffer(elementBuffer);
         vertexArrayObject.AttachBuffer(vertexBuffer);
 
-        vertexArrayObject.VertexArrayAttribute(0, 3, VertexAttribPointerType.Float, sizeof(float), false, 23, 0); // vertex location
-        vertexArrayObject.VertexArrayAttribute(1, 2, VertexAttribPointerType.Float, sizeof(float), false, 23, 3); // texture coordinate
+        vertexArrayObject.VertexArrayAttribute(0, 3, VertexAttribPointerType.Float, sizeof(float), false, 3, 0); // vertex location
 
-        //vertexArrayObject.AttachBuffer(spriteInstanceBuffer);
+        vertexArrayObject.AttachBuffer(spriteInstanceBuffer);
 
-        // todo: figure out why these need to be in the vertex buffer, rather than being in the instance buffer.
-        // when they're in the instance buffer, we get weird double drawing
+        vertexArrayObject.VertexArrayAttribute(1, 2, VertexAttribPointerType.Float, sizeof(float), false, 26, 0); // texture coordinate 0
+        vertexArrayObject.VertexArrayAttribute(2, 2, VertexAttribPointerType.Float, sizeof(float), false, 26, 2); // texture coordinate 1
+        vertexArrayObject.VertexArrayAttribute(3, 2, VertexAttribPointerType.Float, sizeof(float), false, 26, 4); // texture coordinate 2
+        vertexArrayObject.VertexArrayAttribute(4, 2, VertexAttribPointerType.Float, sizeof(float), false, 26, 6); // texture coordinate 3
 
-        // model matrix needs 4 attributes, because attributes can only hold 4 values each
-        vertexArrayObject.VertexArrayAttribute(2, 4, VertexAttribPointerType.Float, sizeof(float), false, 23, 5); // model matrix
-        vertexArrayObject.VertexArrayAttribute(3, 4, VertexAttribPointerType.Float, sizeof(float), false, 23, 9); // model matrix
-        vertexArrayObject.VertexArrayAttribute(4, 4, VertexAttribPointerType.Float, sizeof(float), false, 23, 13); // model matrix
-        vertexArrayObject.VertexArrayAttribute(5, 4, VertexAttribPointerType.Float, sizeof(float), false, 23, 17); // model matrix
-        vertexArrayObject.VertexArrayAttribute(6, 1, VertexAttribPointerType.Float, sizeof(float), false, 23, 21); // transparency
-        vertexArrayObject.VertexArrayAttribute(7, 1, VertexAttribPointerType.Float, sizeof(float), false, 23, 22); // texture slot
+        vertexArrayObject.VertexArrayAttribute(5, 4, VertexAttribPointerType.Float, sizeof(float), false, 26, 8); // model matrix row 1
+        vertexArrayObject.VertexArrayAttribute(6, 4, VertexAttribPointerType.Float, sizeof(float), false, 26, 12); // model matrix row 2
+        vertexArrayObject.VertexArrayAttribute(7, 4, VertexAttribPointerType.Float, sizeof(float), false, 26, 16); // model matrix row 3
+        vertexArrayObject.VertexArrayAttribute(8, 4, VertexAttribPointerType.Float, sizeof(float), false, 26, 20); // model matrix row 4
+
+        vertexArrayObject.VertexArrayAttribute(9, 1, VertexAttribPointerType.Float, sizeof(float), false, 26, 24); // transparency
+        vertexArrayObject.VertexArrayAttribute(10, 1, VertexAttribPointerType.Float, sizeof(float), false, 26, 25); // texture slot
 
         // only progress to the next buffer item when (1) models have been drawn rather than every vertex
-        //openGL.VertexAttribDivisor(2, 1);
-        //openGL.VertexAttribDivisor(3, 1);
-        //openGL.VertexAttribDivisor(4, 1);
-        //openGL.VertexAttribDivisor(5, 1);
-        //openGL.VertexAttribDivisor(6, 1);
-        //openGL.VertexAttribDivisor(7, 1);
+        openGL.VertexAttribDivisor(1, 1);
+        openGL.VertexAttribDivisor(2, 1);
+        openGL.VertexAttribDivisor(3, 1);
+        openGL.VertexAttribDivisor(4, 1);
+        openGL.VertexAttribDivisor(5, 1);
+        openGL.VertexAttribDivisor(6, 1);
+        openGL.VertexAttribDivisor(7, 1);
+        openGL.VertexAttribDivisor(8, 1);
+        openGL.VertexAttribDivisor(9, 1);
+        openGL.VertexAttribDivisor(10, 1);
 
         // todo: custom shaders
         var vertexCode = File.ReadAllText(Path.Join("Shaders", "shader.vert"));
@@ -216,7 +212,8 @@ public sealed class Renderer : IDisposable, IResource
         }
 
         var textSpriteInstanceBuffer = BufferObject<TextInstanceData>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw);
-        var textSpriteVertexBuffer = BufferObject<TextVertexData>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw);
+        var textSpriteVertexBuffer = BufferObject<Vector3>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw);
+        textSpriteVertexBuffer.SetData(spriteVertices);
         var textElementBuffer = BufferObject<uint>.CreateAndBind(openGL, BufferTargetARB.ElementArrayBuffer, BufferUsageARB.DynamicDraw);
         textElementBuffer.SetData(spriteIndices);
 
@@ -224,17 +221,27 @@ public sealed class Renderer : IDisposable, IResource
         textVertexArrayObject.AttachBuffer(textElementBuffer);
         textVertexArrayObject.AttachBuffer(textSpriteVertexBuffer);
 
-        textVertexArrayObject.VertexArrayAttribute(0, 3, VertexAttribPointerType.Float, sizeof(float), normalized: false, vertexSize: 7, offsetSize: 0); // vertex location
-        textVertexArrayObject.VertexArrayAttribute(1, 2, VertexAttribPointerType.Float, sizeof(float), normalized: false, vertexSize: 7, offsetSize: 3); // texture coordinate
+        textVertexArrayObject.VertexArrayAttribute(0, 3, VertexAttribPointerType.Float, sizeof(float), normalized: false, vertexSize: 3, offsetSize: 0); // vertex location
 
-        // todo: figure out how to use instance buffer as well as vertex buffer
-        //textVertexArrayObject.AttachBuffer(textSpriteInstanceBuffer);
+        textVertexArrayObject.AttachBuffer(textSpriteInstanceBuffer);
 
-        textVertexArrayObject.VertexArrayAttribute(2, 1, VertexAttribPointerType.Float, sizeof(float), normalized: false, vertexSize: 7, offsetSize: 5); // transparency
-        textVertexArrayObject.VertexArrayAttribute(3, 1, VertexAttribPointerType.Float, sizeof(float), normalized: false, vertexSize: 7, offsetSize: 6); // textureSlot
+        textVertexArrayObject.VertexArrayAttribute(1, 1, VertexAttribPointerType.Float, sizeof(float), normalized: false, vertexSize: 14, offsetSize: 0); // transparency
+        textVertexArrayObject.VertexArrayAttribute(2, 1, VertexAttribPointerType.Float, sizeof(float), normalized: false, vertexSize: 14, offsetSize: 1); // textureSlot
+        textVertexArrayObject.VertexArrayAttribute(3, 2, VertexAttribPointerType.Float, sizeof(float), normalized: false, vertexSize: 14, offsetSize: 2); // position
+        textVertexArrayObject.VertexArrayAttribute(4, 2, VertexAttribPointerType.Float, sizeof(float), normalized: false, vertexSize: 14, offsetSize: 4); // scale
+        textVertexArrayObject.VertexArrayAttribute(5, 2, VertexAttribPointerType.Float, sizeof(float), normalized: false, vertexSize: 14, offsetSize: 6); // texture coordinate 1
+        textVertexArrayObject.VertexArrayAttribute(6, 2, VertexAttribPointerType.Float, sizeof(float), normalized: false, vertexSize: 14, offsetSize: 8); // texture coordinate 2
+        textVertexArrayObject.VertexArrayAttribute(7, 2, VertexAttribPointerType.Float, sizeof(float), normalized: false, vertexSize: 14, offsetSize: 10); // texture coordinate 3
+        textVertexArrayObject.VertexArrayAttribute(8, 2, VertexAttribPointerType.Float, sizeof(float), normalized: false, vertexSize: 14, offsetSize: 12); // texture coordinate 4
 
-        //openGL.VertexAttribDivisor(2, 1);
-        //openGL.VertexAttribDivisor(3, 1);
+        openGL.VertexAttribDivisor(1, 1);
+        openGL.VertexAttribDivisor(2, 1);
+        openGL.VertexAttribDivisor(3, 1);
+        openGL.VertexAttribDivisor(4, 1);
+        openGL.VertexAttribDivisor(5, 1);
+        openGL.VertexAttribDivisor(6, 1);
+        openGL.VertexAttribDivisor(7, 1);
+        openGL.VertexAttribDivisor(8, 1);
 
         var lineVertexBuffer = BufferObject<float>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.StaticDraw);
 
@@ -323,7 +330,6 @@ public sealed class Renderer : IDisposable, IResource
             renderBatch.RenderSprite(
                 sprite.ModelMatrix,
                 sprite.Sprite.WorldDimensions,
-                sprite.Sprite.Dimensions,
                 sprite.Sprite.Origin,
                 textureCoordinates,
                 textureSlot,
@@ -353,6 +359,8 @@ public sealed class Renderer : IDisposable, IResource
         string Text,
         float Transparency,
         Core.Rendering.Texture Texture,
+        float LineHeight,
+        float SpaceWidth,
         IReadOnlyDictionary<char, Sprite> CharacterSprites);
 
     private void DrawText(IEnumerable<TextRender> textRenders, Render2DBatch renderBatch)
@@ -360,8 +368,6 @@ public sealed class Renderer : IDisposable, IResource
         foreach (var textRender in textRenders)
         {
             var position = textRender.Position;
-            const int charWidth = 24;
-            const int charHeight = 24;
             foreach (var character in textRender.Text)
             {
                 if (character == '\r')
@@ -370,12 +376,12 @@ public sealed class Renderer : IDisposable, IResource
                 }
                 if (character == '\n')
                 {
-                    position = new Vector2(textRender.Position.X, position.Y + charHeight);
+                    position = new Vector2(textRender.Position.X, position.Y - textRender.LineHeight);
                     continue;
                 }
                 if (character == ' ')
                 {
-                    position = new Vector2(position.X + charWidth, position.Y);
+                    position = new Vector2(position.X + textRender.SpaceWidth, position.Y);
                     continue;
                 }
 
@@ -397,7 +403,7 @@ public sealed class Renderer : IDisposable, IResource
 
                 renderBatch.RenderText(position, sprite.Dimensions, sprite.Origin, textureCoordinates, textureSlot, textRender.Transparency);
                 
-                position = new Vector2(position.X + charWidth, position.Y);
+                position = new Vector2(position.X + sprite.Dimensions.X, position.Y);
             }
         }
     }
@@ -409,20 +415,18 @@ public sealed class Renderer : IDisposable, IResource
         // Text
         private uint _textInstanceCount;
         public required ShaderProgram TextShader { get; init; }
-        public required BufferObject<TextVertexData> TextVertexBuffer { get; init; }
+        public required BufferObject<Vector3> TextVertexBuffer { get; init; }
         public required BufferObject<TextInstanceData> TextInstanceBuffer { get; init; }
         public required VertexArrayObject TextVertexArrayObject { get; init; }
-        private readonly TextVertexData[] _textVertexData = new TextVertexData[MaxQuadCount];
-        //private readonly TextInstanceData[] _textInstanceData = new TextInstanceData[MaxQuadCount];
+        private readonly TextInstanceData[] _textInstanceData = new TextInstanceData[MaxQuadCount];
 
         // Sprites
         private uint _spriteInstanceCount;
         public required ShaderProgram SpriteShader { get; init; }
-        public required BufferObject<SpriteVertexData> SpriteVertexBuffer { get; init; }
+        public required BufferObject<Vector3> SpriteVertexBuffer { get; init; }
         public required BufferObject<SpriteInstanceData> SpriteInstanceBuffer { get; init; }
         public required VertexArrayObject SpriteVertexArrayObject { get; init; }
-        private readonly SpriteVertexData[] _spriteVertexData = new SpriteVertexData[MaxQuadCount];
-        //private readonly SpriteInstanceData[] _spriteInstanceData = new SpriteInstanceData[MaxQuadCount];
+        private readonly SpriteInstanceData[] _spriteInstanceData = new SpriteInstanceData[MaxQuadCount];
 
         public required GL OpenGl { get; init; }
         public required Matrix4x4 ScreenSpaceProjection { get; init; }
@@ -441,12 +445,11 @@ public sealed class Renderer : IDisposable, IResource
                 TextVertexArrayObject.Bind();
 
                 TextVertexBuffer.Bind();
-                TextVertexBuffer.SetData(_textVertexData.AsSpan(0, (int)_textInstanceCount * 4));
 
-                //TextInstanceBuffer.Bind();
-                //TextInstanceBuffer.SetData(_textInstanceData.AsSpan(0, (int)_textInstanceCount));
+                TextInstanceBuffer.Bind();
+                TextInstanceBuffer.SetData(_textInstanceData.AsSpan(0, (int)_textInstanceCount));
 
-                OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u * _textInstanceCount, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, 1);
+                OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, _textInstanceCount);
                 _textInstanceCount = 0;
             }
 
@@ -460,12 +463,11 @@ public sealed class Renderer : IDisposable, IResource
                 SpriteVertexArrayObject.Bind();
 
                 SpriteVertexBuffer.Bind();
-                SpriteVertexBuffer.SetData(_spriteVertexData.AsSpan(0, (int)_spriteInstanceCount * 4));
 
-                //SpriteInstanceBuffer.Bind();
-                //SpriteInstanceBuffer.SetData(_spriteInstanceData.AsSpan(0, (int)_spriteInstanceCount));
+                SpriteInstanceBuffer.Bind();
+                SpriteInstanceBuffer.SetData(_spriteInstanceData.AsSpan(0, (int)_spriteInstanceCount));
 
-                OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u * _spriteInstanceCount, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, 1);
+                OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, _spriteInstanceCount);
                 _spriteInstanceCount = 0;
             }
         }
@@ -483,39 +485,23 @@ public sealed class Renderer : IDisposable, IResource
                 Flush();
             }
 
-            var (leftEdge, rightEdge, bottomEdge, topEdge) = GetRectEdges(spriteDimensions, spriteOrigin);
-
-            Span<Vector2> vertexPositions = stackalloc[]
+            _textInstanceData[_textInstanceCount] = new TextInstanceData
             {
-                new Vector2(rightEdge, topEdge)  + position,
-                new Vector2(rightEdge, bottomEdge) + position,
-                new Vector2(leftEdge, bottomEdge) + position,
-                new Vector2(leftEdge, topEdge) + position
-            }; 
-
-            for (var i = 0; i < vertexPositions.Length; i++)
-            {
-                _textVertexData[(_textInstanceCount * 4) + i] = new TextVertexData
-                {
-                    Position = vertexPositions[i].Extend(0f),
-                    TextureCoordinate = textureCoords[i],
-                    TextureSlot = textureSlot,
-                    Transparency = transparency
-                };
-            }
-
-            //_textInstanceData[_textInstanceCount] = new TextInstanceData
-            //{
-            //    Transparency = transparency,
-            //    TextureSlot = textureSlot
-            //};
+                Transparency = transparency,
+                TextureSlot = textureSlot,
+                TextureCoordinate1 = textureCoords[0],
+                TextureCoordinate2 = textureCoords[1],
+                TextureCoordinate3 = textureCoords[2],
+                TextureCoordinate4 = textureCoords[3],
+                Position = position,
+                Scale = spriteDimensions,
+            };
 
             _textInstanceCount++;
         }
 
         public void RenderSprite(
             Matrix4x4 transform,
-            Vector2 worldDimensions,
             Vector2 spriteDimensions,
             SpriteOrigin spriteOrigin,
             Vector2[] textureCoords,
@@ -527,54 +513,27 @@ public sealed class Renderer : IDisposable, IResource
                 Flush();
             }
 
-            var (leftEdge, rightEdge, bottomEdge, topEdge) = GetRectEdges(worldDimensions, spriteOrigin);
-            Span<SpriteVertexData> vertexData = stackalloc[]
+            var translation = spriteOrigin switch
             {
-                new SpriteVertexData
-                {
-                    Position = new Vector3(rightEdge, topEdge, 0),
-                    TextCoordinate = textureCoords[0],
-                    ModelMatrix = transform,
-                    TextureSlot = textureSlot,
-                    Transparency = transparency
-                },
-                new SpriteVertexData
-                {
-                    Position = new Vector3(rightEdge, bottomEdge, 0),
-                    TextCoordinate = textureCoords[1],
-                    ModelMatrix = transform,
-                    TextureSlot = textureSlot,
-                    Transparency = transparency
-                },
-                new SpriteVertexData
-                {
-                    Position = new Vector3(leftEdge, bottomEdge, 0),
-                    TextCoordinate = textureCoords[2],
-                    ModelMatrix = transform,
-                    TextureSlot = textureSlot,
-                    Transparency = transparency
-                },
-                new SpriteVertexData
-                {
-                    Position = new Vector3(leftEdge, topEdge, 0),
-                    TextCoordinate = textureCoords[3],
-                    ModelMatrix = transform,
-                    TextureSlot = textureSlot,
-                    Transparency = transparency
-                },
+                SpriteOrigin.Center => Vector2.Zero,
+                SpriteOrigin.TopLeft => new Vector2(spriteDimensions.X * 0.5f, spriteDimensions.Y * -0.5f),
+                SpriteOrigin.BottomLeft => new Vector2(spriteDimensions.X * 0.5f, spriteDimensions.Y * 0.5f),
+                SpriteOrigin.TopRight => new Vector2(spriteDimensions.X * -0.5f, spriteDimensions.Y * -0.5f),
+                SpriteOrigin.BottomRight => new Vector2(spriteDimensions.X * -0.5f, spriteDimensions.Y * 0.5f),
+                _ => throw new Exception()
             };
+            var transformUpdate = Matrix4x4.CreateTranslation(translation.Extend(0f)) * Matrix4x4.CreateScale(spriteDimensions.Extend(1f));
 
-            for (var i = 0; i < vertexData.Length; i++)
+            _spriteInstanceData[_spriteInstanceCount] = new SpriteInstanceData
             {
-                _spriteVertexData[(_spriteInstanceCount * 4) + i] = vertexData[i];
-            }
-
-            //_spriteInstanceData[_spriteInstanceCount] = new SpriteInstanceData
-            //{
-            //    ModelMatrix = transform,
-            //    Transparency = transparency,
-            //    TextureSlot = textureSlot
-            //};
+                TextureCoordinateA = textureCoords[0],
+                TextureCoordinateB = textureCoords[1],
+                TextureCoordinateC = textureCoords[2],
+                TextureCoordinateD = textureCoords[3],
+                ModelMatrix = transformUpdate * transform,
+                Transparency = transparency,
+                TextureSlot = textureSlot
+            };
 
             _spriteInstanceCount++;
         }
