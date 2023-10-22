@@ -90,7 +90,6 @@ public class RenderSystem : ISystem
                         sprites.Add(new Renderer.SpriteRender(
                             renderSpriteCommand.Sprite,
                             1f,
-                            renderSpriteCommand.Sprite.WorldDimensions,
                             renderSpriteCommand.GlobalTransform.ModelMatrix));
                         break;
                     }
@@ -111,8 +110,9 @@ public class RenderSystem : ISystem
                         screenSprites.Add(new Renderer.SpriteRender(
                             renderScreenSpaceSpriteCommand.Sprite,
                             renderScreenSpaceSpriteCommand.Transparency,
-                            renderScreenSpaceSpriteCommand.Dimensions,
-                            Matrix4x4.CreateTranslation(renderScreenSpaceSpriteCommand.Position.Extend(0f))));
+                            Matrix4x4.CreateScale(renderScreenSpaceSpriteCommand.Dimensions.Extend(1f))
+                            * Matrix4x4.CreateTranslation(renderScreenSpaceSpriteCommand.Position.Extend(0f))
+                            ));
                         break;
                     }
             }
