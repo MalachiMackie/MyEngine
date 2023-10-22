@@ -50,6 +50,20 @@ public sealed class Renderer : IDisposable, IResource
         _textSpriteVertexBuffer = textSpriteVertexBuffer;
         _textSpriteInstanceBuffer = textSpriteInstanceBuffer;
         _textureArray = new TextureArray(OpenGL, 2048, 2048, TextureTarget.Texture2DArray);
+
+        _render2DBatch = new Render2DBatch
+        {
+            OpenGl = openGL,
+            SpriteInstanceBuffer = spriteInstanceBuffer,
+            SpriteShader = spriteShader,
+            SpriteVertexArrayObject = spriteVertexArrayObject,
+            SpriteVertexBuffer = spriteVertexBuffer,
+            TextInstanceBuffer = textSpriteInstanceBuffer,
+            TextShader = textShader,
+            TextureArray = _textureArray,
+            TextVertexArrayObject = _textVertexArrayObject,
+            TextVertexBuffer = _textSpriteVertexBuffer,
+        };
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -76,6 +90,8 @@ public sealed class Renderer : IDisposable, IResource
         public float Transparency;
         public float TextureSlot;
     }
+
+    private readonly Render2DBatch _render2DBatch;
 
     internal GL OpenGL { get; }
     private readonly BufferObject<Vector3> _spriteVertexBuffer;
@@ -429,9 +445,10 @@ public sealed class Renderer : IDisposable, IResource
         private readonly SpriteInstanceData[] _spriteInstanceData = new SpriteInstanceData[MaxQuadCount];
 
         public required GL OpenGl { get; init; }
-        public required Matrix4x4 ScreenSpaceProjection { get; init; }
-        public required Matrix4x4 WorldViewProjection { get; init; }
         public required TextureArray TextureArray { get; init; }
+
+        public Matrix4x4 ScreenSpaceProjection { get; set; }
+        public Matrix4x4 WorldViewProjection { get; set; }
 
         public void Flush()
         {
@@ -485,6 +502,16 @@ public sealed class Renderer : IDisposable, IResource
                 Flush();
             }
 
+            var translation = spriteOrigin switch
+            {
+                SpriteOrigin.Center => Vector2.Zero,
+                SpriteOrigin.TopLeft => new Vector2(spriteDimensions.X * 0.5f, spriteDimensions.Y * -0.5f),
+                SpriteOrigin.BottomLeft => new Vector2(spriteDimensions.X * 0.5f, spriteDimensions.Y * 0.5f),
+                SpriteOrigin.TopRight => new Vector2(spriteDimensions.X * -0.5f, spriteDimensions.Y * -0.5f),
+                SpriteOrigin.BottomRight => new Vector2(spriteDimensions.X * -0.5f, spriteDimensions.Y * 0.5f),
+                _ => throw new Exception()
+            };
+            
             _textInstanceData[_textInstanceCount] = new TextInstanceData
             {
                 Transparency = transparency,
@@ -493,7 +520,7 @@ public sealed class Renderer : IDisposable, IResource
                 TextureCoordinate2 = textureCoords[1],
                 TextureCoordinate3 = textureCoords[2],
                 TextureCoordinate4 = textureCoords[3],
-                Position = position,
+                Position = position + translation,
                 Scale = spriteDimensions,
             };
 
@@ -562,31 +589,18 @@ public sealed class Renderer : IDisposable, IResource
 
         // todo: depth sorting for transparency
 
-        var renderBatch = new Render2DBatch
-        {
-            OpenGl = OpenGL,
-            TextShader = _textShader,
-            TextVertexArrayObject = _textVertexArrayObject,
-            TextVertexBuffer = _textSpriteVertexBuffer,
-            TextInstanceBuffer = _textSpriteInstanceBuffer,
-            ScreenSpaceProjection = worldToScreen * projection,
-            WorldViewProjection = viewProjection,
-            SpriteInstanceBuffer = _spriteInstanceBuffer,
-            SpriteVertexBuffer = _spriteVertexBuffer,
-            SpriteVertexArrayObject = _spriteVertexArrayObject,
-            SpriteShader = _spriteShader,
-            TextureArray = _textureArray
-        };
+        _render2DBatch.ScreenSpaceProjection = worldToScreen * projection;
+        _render2DBatch.WorldViewProjection = viewProjection;
 
         // world space
-        DrawSprites(sprites, renderBatch);
+        DrawSprites(sprites, _render2DBatch);
         DrawLines(lines, viewProjection);
 
         // screen space
         //DrawSprites(screenSprites, worldToScreen * projection);
-        DrawText(textRenders, renderBatch);
+        DrawText(textRenders, _render2DBatch);
 
-        renderBatch.Flush();
+        _render2DBatch.Flush();
     }
 
     public readonly record struct RenderError(GlobalTransform.GetPositionRotationScaleError Error);
