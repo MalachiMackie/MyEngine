@@ -5,6 +5,7 @@ using MyEngine.Rendering.RenderSystems;
 
 [assembly: InternalsVisibleTo("MyEngine.Input")]
 [assembly: InternalsVisibleTo("MyEngine.ImGui")]
+[assembly: InternalsVisibleTo("MyEngine.Runtime")]
 
 namespace MyEngine.Rendering;
 
@@ -30,6 +31,7 @@ public class RenderPlugin : IPlugin
             .AddSystemStage(RenderSystemStage.Instance, 5)
             .AddResource<ILineRenderResource>(new LineRenderResource())
             .AddResource(new RenderCommandQueue())
+            .AddResource(new RenderStats())
             .AddSystem<RenderSystem>(RenderSystemStage.Instance)
             .AddSystem<LineRenderSystem>(PreRenderSystemStage.Instance)
             .AddSystem<SpriteRenderSystem>(PreRenderSystemStage.Instance);

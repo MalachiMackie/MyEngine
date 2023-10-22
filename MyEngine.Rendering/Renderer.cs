@@ -17,7 +17,7 @@ using System.Runtime.InteropServices;
 
 namespace MyEngine.Rendering;
 
-public sealed class Renderer : IDisposable, IResource
+internal sealed class Renderer : IDisposable, IResource
 {
     private Renderer(GL openGL,
         BufferObject<Vector3> spriteVertexBuffer,
@@ -459,6 +459,13 @@ public sealed class Renderer : IDisposable, IResource
         public Matrix4x4 ScreenSpaceProjection { get; set; }
         public Matrix4x4 WorldViewProjection { get; set; }
 
+        public uint DrawCalls { get; private set; }
+
+        public void ClearStats()
+        {
+            DrawCalls = 0;
+        }
+
         public void Flush()
         {
             if (_spriteInstanceCount > 0)
@@ -477,6 +484,7 @@ public sealed class Renderer : IDisposable, IResource
 
                 OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, _spriteInstanceCount);
                 _spriteInstanceCount = 0;
+                DrawCalls++;
             }
 
             if (_screenSpaceSpriteInstanceCount > 0)
@@ -495,6 +503,7 @@ public sealed class Renderer : IDisposable, IResource
 
                 OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, _screenSpaceSpriteInstanceCount);
                 _screenSpaceSpriteInstanceCount = 0;
+                DrawCalls++;
             }
 
             if (_textInstanceCount > 0)
@@ -513,6 +522,7 @@ public sealed class Renderer : IDisposable, IResource
 
                 OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, _textInstanceCount);
                 _textInstanceCount = 0;
+                DrawCalls++;
             }
         }
 
@@ -633,7 +643,9 @@ public sealed class Renderer : IDisposable, IResource
         }
     }
 
-    public void RenderOrthographic(
+    public record struct RendererStats(uint DrawCalls);
+
+    public RendererStats RenderOrthographic(
         Vector3 cameraPosition,
         Vector2 viewSize,
         IEnumerable<SpriteRender> sprites,
@@ -641,6 +653,7 @@ public sealed class Renderer : IDisposable, IResource
         IEnumerable<LineRender> lines,
         IEnumerable<TextRender> textRenders)
     {
+        _render2DBatch.ClearStats();
         OpenGL.Clear(ClearBufferMask.ColorBufferBit);
 
         var view = Matrix4x4.CreateLookAt(cameraPosition, cameraPosition - Vector3.UnitZ, Vector3.UnitY);
@@ -677,6 +690,8 @@ public sealed class Renderer : IDisposable, IResource
         }
 
         _render2DBatch.Flush();
+        
+        return new RendererStats(_render2DBatch.DrawCalls);
     }
 
     public readonly record struct RenderError(GlobalTransform.GetPositionRotationScaleError Error);

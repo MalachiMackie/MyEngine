@@ -16,7 +16,7 @@ public class ImGuiResource : IResource
     }
 }
 
-public class InitailizeImGuiSystem : ISystem
+internal class InitailizeImGuiSystem : ISystem
 {
     private readonly MyWindow _window;
     private readonly MyInput _input;
