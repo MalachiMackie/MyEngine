@@ -26,6 +26,8 @@ public class AddStartupSpritesSystem : ISystem
     private readonly GameAssets _gameAssets;
     private readonly BrickSizeResource _brickSizeResource = new() { Dimensions = new Vector2(0.5f, 0.2f) };
 
+    private const float DefaultZIndex = 0f;
+
     public AddStartupSpritesSystem(ICommands entityContainerResource,
         ResourceRegistrationResource resourceRegistrationResource,
         IHierarchyCommands hierarchyCommands,
@@ -111,7 +113,7 @@ public class AddStartupSpritesSystem : ISystem
 
         foreach (var position in brickPositions)
         {
-            var createEntityResult = _entityCommands.CreateEntity(Transform.Default(position: position.Extend(3.0f), scale: _brickSizeResource.Dimensions.Extend(1f)),
+            var createEntityResult = _entityCommands.CreateEntity(Transform.Default(position: position.Extend(DefaultZIndex), scale: _brickSizeResource.Dimensions.Extend(1f)),
                 new SpriteComponent(whiteSprite),
                 new StaticBody2DComponent(),
                 new Collider2DComponent(new BoxCollider2D(Vector2.One)),
@@ -142,19 +144,19 @@ public class AddStartupSpritesSystem : ISystem
         {
             new Transform
             {
-                position = new Vector3(-3.95f, 0f, 0f),
+                position = new Vector3(-3.95f, 0f, DefaultZIndex),
                 rotation = Quaternion.Identity,
                 scale = new Vector3(0.1f, 6f, 1f)
             },
             new Transform
             {
-                position = new Vector3(3.95f, 0f, 0f),
+                position = new Vector3(3.95f, 0f, DefaultZIndex),
                 rotation = Quaternion.Identity,
                 scale = new Vector3(0.1f, 6f, 1f)
             },
             new Transform
             {
-                position = new Vector3(0f, 2.95f, 0f),
+                position = new Vector3(0f, 2.95f, DefaultZIndex),
                 rotation = Quaternion.Identity,
                 scale = new Vector3(8f, 0.1f, 1f)
             },
@@ -189,7 +191,7 @@ public class AddStartupSpritesSystem : ISystem
         var paddleScale = new Vector3(1.5f, 0.15f, 1f);
         var paddleIdResult = _entityCommands.CreateEntity(new Transform
         {
-            position = new Vector3(0f, -1.25f, 0f),
+            position = new Vector3(0f, -1.25f, DefaultZIndex),
             rotation = Quaternion.Identity,
             scale = paddleScale
         },
@@ -212,7 +214,7 @@ public class AddStartupSpritesSystem : ISystem
 
         var ballIdResult = _entityCommands.CreateEntity(new Transform
             {
-                position = new Vector3(0f, 2f, 0f),
+                position = new Vector3(0f, 2f, DefaultZIndex),
                 rotation = Quaternion.Identity,
                 scale = ballScale
             },

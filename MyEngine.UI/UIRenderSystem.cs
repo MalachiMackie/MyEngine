@@ -11,13 +11,13 @@ public class UIRenderSystem : ISystem
 {
     private readonly RenderCommandQueue _renderCommandQueue;
     private readonly IQuery<UICanvasComponent, ChildrenComponent> _canvasQuery;
-    private readonly IQuery<UITextComponent, UITransformComponent> _textQuery;
-    private readonly IQuery<UIBoxComponent, UITransformComponent, OptionalComponent<ChildrenComponent>> _boxQuery;
+    private readonly IQuery<UITextComponent, UITransformComponent, OptionalComponent<ChildrenComponent>, OptionalComponent<UITransparencyComponent>> _textQuery;
+    private readonly IQuery<UIBoxComponent, UITransformComponent, OptionalComponent<ChildrenComponent>, OptionalComponent<UITransparencyComponent>> _boxQuery;
 
-    public UIRenderSystem(IQuery<UITextComponent, UITransformComponent> textQuery,
+    public UIRenderSystem(IQuery<UITextComponent, UITransformComponent, OptionalComponent<ChildrenComponent>, OptionalComponent<UITransparencyComponent>> textQuery,
         IQuery<UICanvasComponent, ChildrenComponent> canvasQuery,
         RenderCommandQueue renderCommandQueue,
-        IQuery<UIBoxComponent, UITransformComponent, OptionalComponent<ChildrenComponent>> boxQuery)
+        IQuery<UIBoxComponent, UITransformComponent, OptionalComponent<ChildrenComponent>, OptionalComponent<UITransparencyComponent>> boxQuery)
     {
         _textQuery = textQuery;
         _canvasQuery = canvasQuery;
@@ -31,40 +31,57 @@ public class UIRenderSystem : ISystem
         {
             foreach (var childEntity in childrenComponent.Children)
             {
-                RenderEntityAndChildren(childEntity, new Vector2());
+                RenderEntityAndChildren(childEntity, new Vector3());
             }
         }
     }
 
-    private void RenderEntityAndChildren(EntityId entity, Vector2 position)
+    private void RenderEntityAndChildren(EntityId entity, Vector3 position)
     {
         var textComponents = _textQuery.TryGetForEntity(entity);
         if (textComponents is not null)
         {
-            var (textComponent, uiTransformComponent) = textComponents;
+            var (textComponent, uiTransformComponent, maybeChildrenComponent, maybeTransparency) = textComponents;
+
+            position += uiTransformComponent.Position;
+
             _renderCommandQueue.Enqueue(new RenderScreenSpaceTextCommand(
                 textComponent.Font.Texture,
                 textComponent.Font.CharSprites,
                 textComponent.Text,
-                textComponent.Transparency ?? 1f,
-                position + uiTransformComponent.Position));
+                maybeTransparency.Component?.Transparency ?? 1f,
+                position));
+
+            TryRenderChildren(maybeChildrenComponent, position);
         }
         var boxComponents = _boxQuery.TryGetForEntity(entity);
         if (boxComponents is not null)
         {
-            var (boxComponent, uiTransformComponent, maybeChildrenComponent) = boxComponents;
+            var (boxComponent, uiTransformComponent, maybeChildrenComponent, maybeTransparency) = boxComponents;
+
+            position += uiTransformComponent.Position;
+
             _renderCommandQueue.Enqueue(new RenderScreenSpaceSpriteCommand(
                 boxComponent.BackgroundSprite,
-                boxComponent.Transparency ?? 1f,
-                uiTransformComponent.Position,
+                maybeTransparency.Component?.Transparency ?? 1f,
+                position,
                 boxComponent.Dimensions));
 
-            if (maybeChildrenComponent.HasComponent)
+            TryRenderChildren(maybeChildrenComponent, position);
+        }
+    }
+
+    private void TryRenderChildren(OptionalComponent<ChildrenComponent> maybeChildrenComponent, Vector3 parentPosition)
+    {
+        if (maybeChildrenComponent.HasComponent)
+        {
+            var childPosition = new Vector3(
+                parentPosition.X,
+                parentPosition.Y,
+                parentPosition.Z + 1);
+            foreach (var childEntity in maybeChildrenComponent.Component.Children)
             {
-                foreach (var childEntity in maybeChildrenComponent.Component.Children)
-                {
-                    RenderEntityAndChildren(childEntity, uiTransformComponent.Position);
-                }
+                RenderEntityAndChildren(childEntity, childPosition);
             }
         }
     }

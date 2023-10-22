@@ -14,6 +14,7 @@ using RendererLoadError = MyEngine.Utils.OneOf<
     MyEngine.Rendering.OpenGL.ShaderProgramLinkFailed
     >;
 using System.Runtime.InteropServices;
+using System.ComponentModel;
 
 namespace MyEngine.Rendering;
 
@@ -311,7 +312,10 @@ internal sealed class Renderer : IDisposable, IResource
         Sprite Sprite,
         float Transparency,
         Matrix4x4 ModelMatrix
-        );
+        )
+    {
+        public Vector3 Position => ModelMatrix.Translation;
+    };
 
     private static (float LeftEdge, float RightEdge, float BottomEdge, float TopEdge) GetRectEdges(Vector2 dimensions, SpriteOrigin origin)
     {
@@ -329,16 +333,21 @@ internal sealed class Renderer : IDisposable, IResource
     private void DrawSprite(SpriteRender sprite, Render2DBatch renderBatch, bool screenSpace = false)
     {
         var textureSlot = GetTextureSlot(sprite.Sprite.Texture);
-        Span<Vector2> textureCoordinates = stackalloc Vector2[4];
-
-        for (var i = 0; i < 4; i++)
+        Span<Vector2> textureCoordinates = stackalloc Vector2[]
         {
-            var og = sprite.Sprite.TextureCoordinates[i];
-
-            textureCoordinates[i] = new Vector2(
-                og.X * sprite.Sprite.Dimensions.X / _textureArray.Width,
-                og.Y * sprite.Sprite.Dimensions.Y / _textureArray.Height);
-        }
+            new Vector2(
+                sprite.Sprite.TextureCoordinates[0].X * sprite.Sprite.Dimensions.X / _textureArray.Width,
+                sprite.Sprite.TextureCoordinates[0].Y * sprite.Sprite.Dimensions.Y / _textureArray.Height),
+            new Vector2(
+                sprite.Sprite.TextureCoordinates[1].X * sprite.Sprite.Dimensions.X / _textureArray.Width,
+                sprite.Sprite.TextureCoordinates[1].Y * sprite.Sprite.Dimensions.Y / _textureArray.Height),
+            new Vector2(
+                sprite.Sprite.TextureCoordinates[2].X * sprite.Sprite.Dimensions.X / _textureArray.Width,
+                sprite.Sprite.TextureCoordinates[2].Y * sprite.Sprite.Dimensions.Y / _textureArray.Height),
+            new Vector2(
+                sprite.Sprite.TextureCoordinates[3].X * sprite.Sprite.Dimensions.X / _textureArray.Width,
+                sprite.Sprite.TextureCoordinates[3].Y * sprite.Sprite.Dimensions.Y / _textureArray.Height),
+        };
 
         if (screenSpace)
         {
@@ -381,7 +390,7 @@ internal sealed class Renderer : IDisposable, IResource
         OpenGL.DrawArrays(GLEnum.Lines, 0, (uint)(linePoints.Length / 3));
     }
 
-    public sealed record TextRender(Vector2 Position,
+    public sealed record TextRender(Vector3 Position,
         string Text,
         float Transparency,
         Core.Rendering.Texture Texture,
@@ -400,12 +409,12 @@ internal sealed class Renderer : IDisposable, IResource
             }
             if (character == '\n')
             {
-                position = new Vector2(textRender.Position.X, position.Y - textRender.LineHeight);
+                position = new Vector3(textRender.Position.X, position.Y - textRender.LineHeight, position.Z);
                 continue;
             }
             if (character == ' ')
             {
-                position = new Vector2(position.X + textRender.SpaceWidth, position.Y);
+                position = new Vector3(position.X + textRender.SpaceWidth, position.Y, position.Z);
                 continue;
             }
 
@@ -425,9 +434,9 @@ internal sealed class Renderer : IDisposable, IResource
                     og.Y * sprite.Texture.Dimensions.Y / _textureArray.Height);
             }
 
-            renderBatch.RenderText(position, sprite.Dimensions, sprite.Origin, textureCoordinates, textureSlot, textRender.Transparency);
+            renderBatch.RenderText(position.XY(), sprite.Dimensions, sprite.Origin, textureCoordinates, textureSlot, textRender.Transparency);
             
-            position = new Vector2(position.X + sprite.Dimensions.X, position.Y);
+            position = new Vector3(position.X + sprite.Dimensions.X, position.Y, position.Z);
         }
     }
 
@@ -461,6 +470,25 @@ internal sealed class Renderer : IDisposable, IResource
 
         public uint DrawCalls { get; private set; }
 
+
+        private enum RenderType
+        {
+            None,
+            WorldSpaceSprite,
+            ScreenSpaceSprite,
+            ScreenSpaceText
+        }
+
+        private class BatchCount
+        {
+            public RenderType Type;
+            public uint FromIndex;
+            public uint ToIndex;
+        }
+
+        private readonly Queue<BatchCount> _batches = new();
+        private BatchCount? _currentBatch;
+
         public void ClearStats()
         {
             DrawCalls = 0;
@@ -468,62 +496,124 @@ internal sealed class Renderer : IDisposable, IResource
 
         public void Flush()
         {
-            if (_spriteInstanceCount > 0)
+            while (_batches.TryDequeue(out var batch))
             {
-                SpriteShader.UseProgram();
-                SpriteShader.SetUniform1("uViewProjection", WorldViewProjection);
+                var batchIndexLength = batch.ToIndex - batch.FromIndex + 1;
+                switch (batch.Type)
+                {
+                    case RenderType.None:
+                        throw new InvalidEnumArgumentException("batch.Type", (int)batch.Type, typeof(RenderType));
+                    case RenderType.WorldSpaceSprite:
+                        {
+                            SpriteShader.UseProgram();
+                            SpriteShader.SetUniform1("uViewProjection", WorldViewProjection);
 
-                TextureArray.Bind();
+                            TextureArray.Bind();
 
-                SpriteVertexArrayObject.Bind();
+                            SpriteVertexArrayObject.Bind();
 
-                SpriteVertexBuffer.Bind();
+                            SpriteVertexBuffer.Bind();
 
-                SpriteInstanceBuffer.Bind();
-                SpriteInstanceBuffer.SetData(_spriteInstanceData.AsSpan(0, (int)_spriteInstanceCount));
+                            SpriteInstanceBuffer.Bind();
+                            SpriteInstanceBuffer.SetData(_spriteInstanceData.AsSpan((int)batch.FromIndex, (int)batchIndexLength));
 
-                OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, _spriteInstanceCount);
-                _spriteInstanceCount = 0;
-                DrawCalls++;
+                            OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, batchIndexLength);
+                            DrawCalls++;
+                            break;
+                        }
+                    case RenderType.ScreenSpaceSprite:
+                        {
+                            SpriteShader.UseProgram();
+                            SpriteShader.SetUniform1("uViewProjection", ScreenSpaceProjection);
+
+                            TextureArray.Bind();
+
+                            SpriteVertexArrayObject.Bind();
+
+                            SpriteVertexBuffer.Bind();
+
+                            SpriteInstanceBuffer.Bind();
+                            SpriteInstanceBuffer.SetData(_screenSpaceSpriteInstanceData.AsSpan((int)batch.FromIndex, (int)batchIndexLength));
+
+                            OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, batchIndexLength);
+                            DrawCalls++;
+
+                            break;
+                        }
+                    case RenderType.ScreenSpaceText:
+                        {
+                            TextShader.UseProgram();
+                            TextShader.SetUniform1("uProjection", ScreenSpaceProjection);
+
+                            TextureArray.Bind();
+
+                            TextVertexArrayObject.Bind();
+
+                            TextVertexBuffer.Bind();
+
+                            TextInstanceBuffer.Bind();
+                            TextInstanceBuffer.SetData(_textInstanceData.AsSpan((int)batch.FromIndex, (int)batchIndexLength));
+
+                            OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, batchIndexLength);
+                            DrawCalls++;
+
+                            break;
+                        }
+                }
+            }
+            _textInstanceCount = 0;
+            _spriteInstanceCount = 0;
+            _screenSpaceSpriteInstanceCount = 0;
+            _currentBatch = null;
+        }
+
+        ref uint GetCurrentCountRef(RenderType renderType)
+        {
+            switch (renderType)
+            {
+                case RenderType.WorldSpaceSprite:
+                    return ref _spriteInstanceCount;
+                case RenderType.ScreenSpaceSprite:
+                    return ref _screenSpaceSpriteInstanceCount;
+                case RenderType.ScreenSpaceText:
+                    return ref _textInstanceCount;
+                default:
+                    throw new InvalidEnumArgumentException(nameof(renderType), (int)renderType, typeof(RenderType));
+            }
+        }
+
+        private void IncrementBatch(RenderType renderType)
+        {
+            ref var currentCount = ref GetCurrentCountRef(renderType);
+
+            if (_currentBatch is null)
+            {
+                _currentBatch = new BatchCount()
+                {
+                    Type = renderType,
+                    FromIndex = 0,
+                    ToIndex = 0
+                };
+                currentCount++;
+                _batches.Enqueue(_currentBatch);
+                return;
             }
 
-            if (_screenSpaceSpriteInstanceCount > 0)
+            if (_currentBatch.Type != renderType)
             {
-                SpriteShader.UseProgram();
-                SpriteShader.SetUniform1("uViewProjection", ScreenSpaceProjection);
-
-                TextureArray.Bind();
-
-                SpriteVertexArrayObject.Bind();
-
-                SpriteVertexBuffer.Bind();
-
-                SpriteInstanceBuffer.Bind();
-                SpriteInstanceBuffer.SetData(_screenSpaceSpriteInstanceData.AsSpan(0, (int)_screenSpaceSpriteInstanceCount));
-
-                OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, _screenSpaceSpriteInstanceCount);
-                _screenSpaceSpriteInstanceCount = 0;
-                DrawCalls++;
+                _currentBatch = new BatchCount
+                {
+                    Type = renderType,
+                    FromIndex = currentCount,
+                    ToIndex = currentCount
+                };
+                currentCount++;
+                _batches.Enqueue(_currentBatch);
+                return;
             }
 
-            if (_textInstanceCount > 0)
-            {
-                TextShader.UseProgram();
-                TextShader.SetUniform1("uProjection", ScreenSpaceProjection);
-
-                TextureArray.Bind();
-
-                TextVertexArrayObject.Bind();
-
-                TextVertexBuffer.Bind();
-
-                TextInstanceBuffer.Bind();
-                TextInstanceBuffer.SetData(_textInstanceData.AsSpan(0, (int)_textInstanceCount));
-
-                OpenGl.DrawElementsInstanced(PrimitiveType.Triangles, 6u, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty, _textInstanceCount);
-                _textInstanceCount = 0;
-                DrawCalls++;
-            }
+            _currentBatch.ToIndex = currentCount;
+            currentCount++;
         }
 
         public void RenderText(
@@ -561,7 +651,7 @@ internal sealed class Renderer : IDisposable, IResource
                 Scale = spriteDimensions,
             };
 
-            _textInstanceCount++;
+            IncrementBatch(RenderType.ScreenSpaceText);
         }
 
         public void RenderSpriteScreenSpace(
@@ -581,6 +671,8 @@ internal sealed class Renderer : IDisposable, IResource
                 transparency,
                 _screenSpaceSpriteInstanceData,
                 ref _screenSpaceSpriteInstanceCount);
+
+            IncrementBatch(RenderType.ScreenSpaceSprite);
         }
 
         public void RenderSpriteWorldSpace(
@@ -600,6 +692,8 @@ internal sealed class Renderer : IDisposable, IResource
                 transparency,
                 _spriteInstanceData,
                 ref _spriteInstanceCount);
+
+            IncrementBatch(RenderType.WorldSpaceSprite);
         }
 
         private void RenderSprite(
@@ -638,8 +732,6 @@ internal sealed class Renderer : IDisposable, IResource
                 Transparency = transparency,
                 TextureSlot = textureSlot
             };
-
-            instanceCount++;
         }
     }
 
@@ -667,31 +759,44 @@ internal sealed class Renderer : IDisposable, IResource
             Matrix4x4.CreateTranslation(-screenSize.X / 2f, -screenSize.Y / 2f, 0f)
             * Matrix4x4.CreateScale(viewSize.X / screenSize.X, viewSize.Y / screenSize.Y, 1f);
 
-        // todo: depth sorting for transparency
-
         _render2DBatch.ScreenSpaceProjection = worldToScreen * projection;
         _render2DBatch.WorldViewProjection = viewProjection;
 
         // world space
-        foreach (var sprite in sprites)
-        {
-            DrawSprite(sprite, _render2DBatch);
-        }
-        DrawLines(lines, viewProjection);
+        DrawWorldSpaceEntities(sprites);
 
         // screen space
-        foreach (var sprite in screenSprites)
-        {
-            DrawSprite(sprite, _render2DBatch, screenSpace: true);
-        }
-        foreach (var textRender in textRenders)
-        {
-            DrawText(textRender, _render2DBatch);
-        }
+        DrawScreenSpaceEntities(screenSprites, textRenders);
+
+        DrawLines(lines, viewProjection);
 
         _render2DBatch.Flush();
         
         return new RendererStats(_render2DBatch.DrawCalls);
+    }
+
+    private void DrawScreenSpaceEntities(IEnumerable<SpriteRender> spriteRenders, IEnumerable<TextRender> textRenders)
+    {
+        var zOrdered = spriteRenders.Select(x => new OneOf<SpriteRender, TextRender>(x))
+            .Concat(textRenders.Select(x => new OneOf<SpriteRender, TextRender>(x)))
+            .OrderBy(x => x.Match(y => y.Position.Z, y => y.Position.Z));
+
+        foreach (var spriteOrText in zOrdered)
+        {
+            spriteOrText.Match(
+                sprite => DrawSprite(sprite, _render2DBatch, screenSpace: true),
+                text => DrawText(text, _render2DBatch));
+        }
+    }
+
+    private void DrawWorldSpaceEntities(IEnumerable<SpriteRender> spriteRenders)
+    {
+        var zOrdered = spriteRenders.OrderBy(x => x.Position.Z);
+
+        foreach (var sprite in zOrdered)
+        {
+            DrawSprite(sprite, _render2DBatch);
+        }
     }
 
     public readonly record struct RenderError(GlobalTransform.GetPositionRotationScaleError Error);

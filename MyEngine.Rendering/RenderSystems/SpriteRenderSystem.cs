@@ -7,10 +7,10 @@ namespace MyEngine.Rendering.RenderSystems;
 
 public class SpriteRenderSystem : ISystem
 {
-    private IQuery<SpriteComponent, TransformComponent> _query;
+    private IQuery<SpriteComponent, TransformComponent, OptionalComponent<TransparencyComponent>> _query;
     private readonly RenderCommandQueue _commandQueue;
 
-    public SpriteRenderSystem(RenderCommandQueue commandQueue, IQuery<SpriteComponent, TransformComponent> query)
+    public SpriteRenderSystem(RenderCommandQueue commandQueue, IQuery<SpriteComponent, TransformComponent, OptionalComponent<TransparencyComponent>> query)
     {
         _commandQueue = commandQueue;
         _query = query;
@@ -18,9 +18,9 @@ public class SpriteRenderSystem : ISystem
 
     public void Run(double deltaTime)
     {
-        foreach (var (sprite, transform) in _query)
+        foreach (var (sprite, transform, maybeTransparency) in _query)
         {
-            _commandQueue.Enqueue(new RenderSpriteCommand(sprite.Sprite, transform.GlobalTransform));
+            _commandQueue.Enqueue(new RenderSpriteCommand(sprite.Sprite, transform.GlobalTransform, maybeTransparency.Component?.Transparency ?? 1f));
         }
     }
 }
