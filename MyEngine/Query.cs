@@ -72,6 +72,22 @@ internal static class Query
             TryGetForEntityImpl = tryGetForEntity
         };
     }
+
+    public static IQuery<T1, T2, T3, T4, T5, T6> Create<T1, T2, T3, T4, T5, T6>(ComponentCollection componentCollection, ISet<EntityId> entities, Func<EntityId, EntityComponents<T1, T2, T3, T4, T5, T6>?>? tryGetForEntity = null)
+        where T1 : IComponent
+        where T2 : IComponent
+        where T3 : IComponent
+        where T4 : IComponent
+        where T5 : IComponent
+        where T6 : IComponent
+    {
+        tryGetForEntity ??= componentCollection.TryGetComponentsForEntity<T1, T2, T3, T4, T5, T6>;
+        return new Query<T1, T2, T3, T4, T5, T6>()
+        {
+            GetAllImpl = () => entities.Select(tryGetForEntity).WhereNotNull(),
+            TryGetForEntityImpl = tryGetForEntity
+        };
+    }
 }
 
 internal class Query<T> : IQuery<T>
@@ -175,6 +191,33 @@ internal class Query<T1, T2, T3, T4, T5> : IQuery<T1, T2, T3, T4, T5>
     public EntityComponents<T1, T2, T3, T4, T5>? TryGetForEntity(EntityId entityId) => TryGetForEntityImpl(entityId);
 
     public IEnumerator<EntityComponents<T1, T2, T3, T4, T5>> GetEnumerator()
+    {
+        var enumerable = GetAllImpl();
+        return enumerable.GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
+}
+
+
+
+internal class Query<T1, T2, T3, T4, T5, T6> : IQuery<T1, T2, T3, T4, T5, T6>
+    where T1 : IComponent
+    where T2 : IComponent
+    where T3 : IComponent
+    where T4 : IComponent
+    where T5 : IComponent
+    where T6 : IComponent
+{
+    public required Func<IEnumerable<EntityComponents<T1, T2, T3, T4, T5, T6>>> GetAllImpl { get; init; }
+    public required Func<EntityId, EntityComponents<T1, T2, T3, T4, T5, T6>?> TryGetForEntityImpl { get; init; }
+
+    public EntityComponents<T1, T2, T3, T4, T5, T6>? TryGetForEntity(EntityId entityId) => TryGetForEntityImpl(entityId);
+
+    public IEnumerator<EntityComponents<T1, T2, T3, T4, T5, T6>> GetEnumerator()
     {
         var enumerable = GetAllImpl();
         return enumerable.GetEnumerator();

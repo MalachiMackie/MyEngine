@@ -44,3 +44,14 @@ public interface IQuery<T1, T2, T3, T4, T5> : IEnumerable<EntityComponents<T1, T
 {
     EntityComponents<T1, T2, T3, T4, T5>? TryGetForEntity(EntityId entityId);
 }
+
+public interface IQuery<T1, T2, T3, T4, T5, T6> : IEnumerable<EntityComponents<T1, T2, T3, T4, T5, T6>>, IQuery
+    where T1 : IComponent
+    where T2 : IComponent
+    where T3 : IComponent
+    where T4 : IComponent
+    where T5 : IComponent
+    where T6 : IComponent
+{
+    EntityComponents<T1, T2, T3, T4, T5, T6>? TryGetForEntity(EntityId entityId);
+}

@@ -195,4 +195,33 @@ internal class ComponentCollection
 
         return null;
     }
+
+    public EntityComponents<T1, T2, T3, T4, T5, T6>? TryGetComponentsForEntity<T1, T2, T3, T4, T5, T6>(EntityId entityId)
+        where T1 : IComponent
+        where T2 : IComponent
+        where T3 : IComponent
+        where T4 : IComponent
+        where T5 : IComponent
+        where T6 : IComponent
+    {
+        if (TryGetComponent<T1>(entityId, out var component1)
+            && TryGetComponent<T2>(entityId, out var component2)
+            && TryGetComponent<T3>(entityId, out var component3)
+            && TryGetComponent<T4>(entityId, out var component4)
+            && TryGetComponent<T5>(entityId, out var component5)
+            && TryGetComponent<T6>(entityId, out var component6))
+        {
+            return new EntityComponents<T1, T2, T3, T4, T5, T6>(entityId)
+            {
+                Component1 = component1,
+                Component2 = component2,
+                Component3 = component3,
+                Component4 = component4,
+                Component5 = component5,
+                Component6 = component6,
+            };
+        }
+
+        return null;
+    }
 }

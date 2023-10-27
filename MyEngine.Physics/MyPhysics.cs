@@ -25,7 +25,6 @@ internal struct MyPoseIntegratorCallbacks : IPoseIntegratorCallbacks
     {
     }
 
-
     public void IntegrateVelocity(Vector<int> bodyIndices, Vector3Wide position, QuaternionWide orientation, BodyInertiaWide localInertia, Vector<int> integrationMask, int workerIndex, Vector<float> dt, ref BodyVelocityWide velocity)
     {
     }
@@ -195,9 +194,9 @@ public class MyPhysics : IResource
         var oldImpacts = existingImpacts.Except(impacts);
         var continuingImpacts = existingImpacts.Except(oldImpacts);
 
-        newCollisions = newImpacts.Select(ImpactToCollision).Where(x => x is not null).Cast<Collision>();
-        continuingCollisions = continuingImpacts.Select(ImpactToCollision).Where(x => x is not null).Cast<Collision>();
-        oldCollisions = oldImpacts.Select(ImpactToCollision).Where(x => x is not null).Cast<Collision>();
+        newCollisions = newImpacts.Select(ImpactToCollision).WhereNotNull();
+        continuingCollisions = continuingImpacts.Select(ImpactToCollision).WhereNotNull();
+        oldCollisions = oldImpacts.Select(ImpactToCollision).WhereNotNull();
     }
 
     private Collision? ImpactToCollision(Impact impact)

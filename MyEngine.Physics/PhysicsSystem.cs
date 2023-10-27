@@ -261,9 +261,14 @@ public class PhysicsSystem : ISystem
                 case PhysicsResource.UpdateCommand update:
                     {
                         _collisionsResource._newCollisions.Clear();
-                        // todo: continuing collisions and old collisions
-                        _myPhysics.Update(update.dt, out var newCollisions, out _, out _);
+                        _collisionsResource._existingCollisions.Clear();
+                        _collisionsResource._oldCollisions.Clear();
+
+                        _myPhysics.Update(update.dt, out var newCollisions, out var continuingCollisions, out var oldCollisions);
+
                         _collisionsResource._newCollisions.AddRange(newCollisions);
+                        _collisionsResource._existingCollisions.AddRange(continuingCollisions);
+                        _collisionsResource._oldCollisions.AddRange(oldCollisions);
                         break;
                     }
             }
