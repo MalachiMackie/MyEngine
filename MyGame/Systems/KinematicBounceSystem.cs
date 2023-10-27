@@ -10,15 +10,18 @@ namespace MyGame.Systems;
 
 public class KinematicBounceSystem : ISystem
 {
-    private readonly IQuery<KinematicBody2DComponent, OptionalComponent<KinematicReboundComponent>> _kinematicQuery;
+    private readonly IQuery<KinematicBody2DComponent, VelocityComponent, OptionalComponent<KinematicReboundComponent>> _kinematicQuery;
     private readonly CollisionsResource _collisionsResource;
+    private readonly PhysicsResource _physicsResource;
 
     public KinematicBounceSystem(
-        IQuery<KinematicBody2DComponent, OptionalComponent<KinematicReboundComponent>> kinematicQuery,
-        CollisionsResource collisionsResource)
+        IQuery<KinematicBody2DComponent, VelocityComponent, OptionalComponent<KinematicReboundComponent>> kinematicQuery,
+        CollisionsResource collisionsResource,
+        PhysicsResource physicsResource)
     {
         _kinematicQuery = kinematicQuery;
         _collisionsResource = collisionsResource;
+        _physicsResource = physicsResource;
     }
 
     public void Run(double deltaTime)
@@ -38,12 +41,13 @@ public class KinematicBounceSystem : ISystem
             if (kinematicBodyComponentsA is null || kinematicBodyComponentsB is null)
             {
                 // only once is a kinematic body
-                var (kinematicBody, bounce) = (kinematicBodyComponentsA ?? kinematicBodyComponentsB)!;
+                var (kinematicBody, velocityComponent, bounce) = (kinematicBodyComponentsA ?? kinematicBodyComponentsB)!;
 
                 if (bounce.HasComponent)
                 {
                     // only bounce the body if the bounce component exists
-                    kinematicBody.Velocity = GetReboundedVelocity(kinematicBody.Velocity, collision.Normal.XY());
+                    var velocity = GetReboundedVelocity(velocityComponent.Velocity.XY(), collision.Normal.XY());
+                    _physicsResource.SetBody2DVelocity(kinematicBodyComponentsA?.EntityId ?? kinematicBodyComponentsB!.EntityId, velocity);
                 }
 
                 continue;
@@ -51,8 +55,8 @@ public class KinematicBounceSystem : ISystem
 
             // both bodies are kinematic
 
-            var (kinematicBodyA, bounceA) = kinematicBodyComponentsA;
-            var (kinematicBodyB, bounceB) = kinematicBodyComponentsB;
+            var (kinematicBodyA, velocityA, bounceA) = kinematicBodyComponentsA;
+            var (kinematicBodyB, velocityB, bounceB) = kinematicBodyComponentsB;
 
             if (!bounceA.HasComponent && !bounceB.HasComponent)
             {
@@ -63,26 +67,28 @@ public class KinematicBounceSystem : ISystem
             if (bounceA.HasComponent && !bounceB.HasComponent)
             {
                 // A has the bounce component
-                kinematicBodyA.Velocity = GetReboundedVelocity(kinematicBodyA.Velocity, collision.Normal.XY());
+                var velocity = GetReboundedVelocity(velocityA.Velocity.XY(), collision.Normal.XY());
+                _physicsResource.SetBody2DVelocity(kinematicBodyComponentsA.EntityId, velocity);
                 continue;
             }
 
             if (bounceB.HasComponent && !bounceA.HasComponent)
             {
                 // B has the bounce component
-                kinematicBodyB.Velocity = GetReboundedVelocity(kinematicBodyB.Velocity, collision.Normal.XY());
+                var velocity = GetReboundedVelocity(velocityB.Velocity.XY(), collision.Normal.XY());
+                _physicsResource.SetBody2DVelocity(kinematicBodyComponentsB.EntityId, velocity);
                 continue;
             }
 
             // both A and B have bounce component
 
-            // get the rebounded velocities for each body 
+            // get the rebounded velocities for each body
 
-            var aMagnitude = kinematicBodyA.Velocity.Length();
-            var bMagnitude = kinematicBodyB.Velocity.Length();
+            var aMagnitude = velocityA.Velocity.XY().Length();
+            var bMagnitude = velocityB.Velocity.XY().Length();
 
-            var aReboundedVelocity = GetReboundedVelocity(kinematicBodyA.Velocity, collision.Normal.XY());
-            var bReboundedVelocity = GetReboundedVelocity(kinematicBodyB.Velocity, collision.Normal.XY());
+            var aReboundedVelocity = GetReboundedVelocity(velocityA.Velocity.XY(), collision.Normal.XY());
+            var bReboundedVelocity = GetReboundedVelocity(velocityB.Velocity.XY(), collision.Normal.XY());
 
             var aReboundMagnitude = aReboundedVelocity.Length();
             var bReboundMagnitude = bReboundedVelocity.Length();
@@ -91,26 +97,26 @@ public class KinematicBounceSystem : ISystem
             if (aMagnitude >= 0.0001f)
             {
                 aReboundedVelocity.WithMagnitude(bReboundMagnitude).Match(
-                    newVelocity => kinematicBodyA.Velocity = newVelocity,
+                    newVelocity => _physicsResource.SetBody2DVelocity(kinematicBodyComponentsA.EntityId, newVelocity),
                     err => Console.WriteLine("Failed to add set magnitude of vector: {0}", err));
             }
             else
             {
                 // if we were previously still, we now want to be moving in the direction of the normal
-                kinematicBodyA.Velocity = collision.Normal.XY() * bMagnitude;
+                _physicsResource.SetBody2DVelocity(kinematicBodyComponentsA.EntityId, collision.Normal.XY() * bMagnitude);
             }
 
             if (bMagnitude >= 0.0001f)
             {
                 bReboundedVelocity.WithMagnitude(aReboundMagnitude).Match(
-                    newVelocity => kinematicBodyB.Velocity = newVelocity,
+                    newVelocity => _physicsResource.SetBody2DVelocity(kinematicBodyComponentsB.EntityId, newVelocity),
                     err => Console.WriteLine("Failed to add set magnitude of vector: {0}", err));
             }
             else
             {
 
                 // if we were previously still, we now want to be moving in the opposite direction of the normal
-                kinematicBodyB.Velocity = collision.Normal.XY() * -aMagnitude;
+                _physicsResource.SetBody2DVelocity(kinematicBodyComponentsB.EntityId, collision.Normal.XY() * aMagnitude);
             }
         }
     }

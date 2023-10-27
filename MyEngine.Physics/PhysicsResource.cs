@@ -3,6 +3,7 @@ using MyEngine.Core;
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
+using MyEngine.Utils;
 
 namespace MyEngine.Physics;
 
@@ -64,9 +65,9 @@ public class PhysicsResource : IResource
         PhysicsCommands.Enqueue(new SetStaticTransformCommand(entityId, transform));
     }
 
-    internal void UpdateTransformFromPhysics(EntityId entityId, TransformComponent transform, GlobalTransform? parentTransform)
+    internal void PhysicsWriteBack(EntityId entityId, TransformComponent transform, GlobalTransform? parentTransform, VelocityComponent? velocity)
     {
-        PhysicsCommands.Enqueue(new UpdateTransformFromPhysicsCommand(entityId, transform, parentTransform));
+        PhysicsCommands.Enqueue(new PhysicsWriteBackCommand(entityId, transform, parentTransform, velocity));
     }
 
     public void ApplyImpulse(EntityId entityId, Vector3 impulse)
@@ -79,9 +80,15 @@ public class PhysicsResource : IResource
         PhysicsCommands.Enqueue(new ApplyAngularImpulseCommand(entityId, impulse));
     }
 
-    public void SetKinematicBody2DVelocity(EntityId entityId, Vector2 velocity)
+    public void SetBody2DVelocity(EntityId entityId, Vector2 velocity)
     {
-        PhysicsCommands.Enqueue(new SetKinematicBody2DVelocityCommand(entityId, velocity));
+        PhysicsCommands.Enqueue(new SetBody2DVelocityCommand(entityId, velocity));
+    }
+
+    // This is internal because games should instead use VelocityComponent to get the velocity
+    internal Result<Vector3, string> GetCurrentVelocity(EntityId entityId)
+    {
+        return Result.Failure<Vector3, string>("Not Implemented");
     }
 
     internal interface IPhysicsCommand
@@ -98,8 +105,8 @@ public class PhysicsResource : IResource
     internal record RemoveStaticBodyCommand(EntityId entityId) : IPhysicsCommand;
     internal record SetDynamicTransformCommand(EntityId entityId, GlobalTransform transform) : IPhysicsCommand;
     internal record SetStaticTransformCommand(EntityId entityId, GlobalTransform transform) : IPhysicsCommand;
-    internal record SetKinematicBody2DVelocityCommand(EntityId entityId, Vector2 velocity) : IPhysicsCommand;
-    internal record UpdateTransformFromPhysicsCommand(EntityId entityId, TransformComponent transform, GlobalTransform? parentTransform) : IPhysicsCommand;
+    internal record SetBody2DVelocityCommand(EntityId entityId, Vector2 velocity) : IPhysicsCommand;
+    internal record PhysicsWriteBackCommand(EntityId entityId, TransformComponent transform, GlobalTransform? parentTransform, VelocityComponent? velocity) : IPhysicsCommand;
     internal record ApplyImpulseCommand(EntityId entityId, Vector3 impulse) : IPhysicsCommand;
     internal record ApplyAngularImpulseCommand(EntityId entityId, Vector3 impulse) : IPhysicsCommand;
 }

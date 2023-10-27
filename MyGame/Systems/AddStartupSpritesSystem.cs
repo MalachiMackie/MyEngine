@@ -217,6 +217,7 @@ public class AddStartupSpritesSystem : ISystem
             new KinematicBody2DComponent(),
             new Collider2DComponent(new CircleCollider2D(radius: 0.125f)),
             new BallComponent(),
+            new VelocityComponent(),
             new LogPositionComponent { Name = "Ball" },
             new KinematicReboundComponent())
             .MapError(x => new AddBallError(x));

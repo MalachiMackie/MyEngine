@@ -37,8 +37,10 @@ internal struct MyPoseIntegratorCallbacks : IPoseIntegratorCallbacks
 public struct Impact
 {
     public BodyHandle? bodyHandleA;
+    public BodyVelocity? bodyVelocityA;
     public StaticHandle? staticHandleA;
     public BodyHandle? bodyHandleB;
+    public BodyVelocity? bodyVelocityB;
     public StaticHandle? staticHandleB;
 
     public Vector3 normal;
@@ -78,6 +80,7 @@ internal struct SimpleMaterial
 internal struct MyNarrowPhaseCallback : INarrowPhaseCallbacks
 {
     public CollidableProperty<SimpleMaterial> CollidableMaterials;
+    private Simulation _simulation = null!;
 
     public MyNarrowPhaseCallback()
     {
@@ -115,11 +118,26 @@ internal struct MyNarrowPhaseCallback : INarrowPhaseCallbacks
 
         var normal = manifold.GetNormal(ref manifold, contactIndex: 0); // todo: handle multiple collisions
 
+        BodyDescription bodyA = new BodyDescription();
+        BodyDescription bodyB = new BodyDescription();
+
+        if (aIsBody)
+        {
+            _simulation.Bodies.GetDescription(pair.A.BodyHandle, out bodyA);
+        }
+        if (bIsBody)
+        {
+            _simulation.Bodies.GetDescription(pair.B.BodyHandle, out bodyB);
+        }
+
+
         Impacts.Add(new Impact
         {
             bodyHandleA = aIsBody ? pair.A.BodyHandle : null,
+            bodyVelocityA = aIsBody ? bodyA.Velocity : null,
             staticHandleA = aIsBody ? null : pair.A.StaticHandle,
             bodyHandleB = bIsBody ? pair.B.BodyHandle : null,
+            bodyVelocityB = bIsBody ? bodyB.Velocity : null,
             staticHandleB = bIsBody ? null : pair.B.StaticHandle,
             normal = normal
         });
@@ -139,6 +157,7 @@ internal struct MyNarrowPhaseCallback : INarrowPhaseCallbacks
     public void Initialize(Simulation simulation)
     {
         CollidableMaterials.Initialize(simulation);
+        _simulation = simulation;
     }
 }
 
@@ -170,7 +189,7 @@ public class MyPhysics : IResource
         _simulation = Simulation.Create(_bufferPool,
             new MyNarrowPhaseCallback(),
             new MyPoseIntegratorCallbacks(),
-            new SolveDescription(6, 1));
+            new SolveDescription(6, 4));
     }
 
     public void Update(double dt, out IEnumerable<Collision> newCollisions, out IEnumerable<Collision> continuingCollisions, out IEnumerable<Collision> oldCollisions)
@@ -232,7 +251,9 @@ public class MyPhysics : IResource
         return new Collision
         {
             EntityA = entityIdA,
+            EntityAVelocity = impact.bodyVelocityA?.Linear,
             EntityB = entityIdB,
+            EntityBVelocity = impact.bodyVelocityB?.Linear,
             Normal = impact.normal
         };
     }
@@ -345,7 +366,8 @@ public class MyPhysics : IResource
 
         var material = new SimpleMaterial
         {
-            FrictionCoefficient = 1f,
+            // todo: FrictionComponent
+            FrictionCoefficient = 0f,
             MaximumRecoveryVelocity = 2f,
             SpringSettings = new SpringSettings(30f, 1f)
         };
@@ -411,7 +433,7 @@ public class MyPhysics : IResource
 
         var material = new SimpleMaterial
         {
-            FrictionCoefficient = 1f,
+            FrictionCoefficient = 0f,
             MaximumRecoveryVelocity = 2f,
             SpringSettings = new SpringSettings(30f, 1f)
         };
@@ -458,7 +480,7 @@ public class MyPhysics : IResource
 
         var material = new SimpleMaterial
         {
-            FrictionCoefficient = 1f,
+            FrictionCoefficient = 0f,
             MaximumRecoveryVelocity = float.MaxValue,
             SpringSettings = new SpringSettings(5f + 25f * (1f - bounciness), 1f - bounciness)
         };
@@ -533,7 +555,7 @@ public class MyPhysics : IResource
 
         var material = new SimpleMaterial
         {
-            FrictionCoefficient = 1f,
+            FrictionCoefficient = 0f,
             MaximumRecoveryVelocity = float.MaxValue,
             // full bounce target: 5f, 1f
             // zero bounce target: 30f, 0f

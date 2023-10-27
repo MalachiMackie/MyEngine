@@ -11,18 +11,21 @@ namespace MyGame.Systems;
 
 public class LaunchBallSystem : ISystem
 {
-    private readonly IQuery<TransformComponent, BallComponent, KinematicBody2DComponent, ParentComponent> _playerQuery;
+    private readonly IQuery<TransformComponent, BallComponent, KinematicBody2DComponent, VelocityComponent, ParentComponent> _playerQuery;
     private readonly IHierarchyCommands _hierarchyCommands;
     private readonly InputResource _inputResource;
+    private readonly PhysicsResource _physicsResource;
 
     public LaunchBallSystem(
-        IQuery<TransformComponent, BallComponent, KinematicBody2DComponent, ParentComponent> playerQuery,
+        IQuery<TransformComponent, BallComponent, KinematicBody2DComponent, VelocityComponent, ParentComponent> playerQuery,
         InputResource inputResource,
-        IHierarchyCommands hierarchyCommands)
+        IHierarchyCommands hierarchyCommands,
+        PhysicsResource physicsResource)
     {
         _playerQuery = playerQuery;
         _inputResource = inputResource;
         _hierarchyCommands = hierarchyCommands;
+        _physicsResource = physicsResource;
     }
 
     public void Run(double deltaTime)
@@ -35,7 +38,7 @@ public class LaunchBallSystem : ISystem
                 return;
             }
 
-            var (transformComponent, _, kinematicBody, parentComponent) = components;
+            var (transformComponent, _, kinematicBody, velocityComponent, parentComponent) = components;
 
             var globalScale = transformComponent.GlobalTransform.Scale;
             var globalPosition = transformComponent.GlobalTransform.Position;
@@ -45,7 +48,7 @@ public class LaunchBallSystem : ISystem
             transformComponent.LocalTransform.scale = globalScale;
             transformComponent.LocalTransform.position = globalPosition;
 
-            kinematicBody.Velocity += Vector2.Normalize(new Vector2(1f, 1f)) * 2f;
+            _physicsResource.SetBody2DVelocity(components.EntityId, velocityComponent.Velocity + Vector2.Normalize(new Vector2(1f, 1f)) * 2f);
         }
     }
 }
