@@ -310,6 +310,7 @@ internal sealed class Renderer : IDisposable, IResource
     public readonly record struct LineRender(Vector3 Start, Vector3 End);
     public readonly record struct SpriteRender(
         Sprite Sprite,
+        Vector2 Dimensions,
         float Transparency,
         Matrix4x4 ModelMatrix
         )
@@ -363,7 +364,7 @@ internal sealed class Renderer : IDisposable, IResource
         {
             renderBatch.RenderSpriteWorldSpace(
                 sprite.ModelMatrix,
-                sprite.Sprite.WorldDimensions,
+                sprite.Dimensions,
                 sprite.Sprite.Origin,
                 textureCoordinates,
                 textureSlot,

@@ -20,7 +20,7 @@ public class SpriteRenderSystem : ISystem
     {
         foreach (var (sprite, transform, maybeTransparency) in _query)
         {
-            _commandQueue.Enqueue(new RenderSpriteCommand(sprite.Sprite, transform.GlobalTransform, maybeTransparency.Component?.Transparency ?? 1f));
+            _commandQueue.Enqueue(new RenderSpriteCommand(sprite.Sprite, sprite.Dimensions, transform.GlobalTransform, maybeTransparency.Component?.Transparency ?? 1f));
         }
     }
 }

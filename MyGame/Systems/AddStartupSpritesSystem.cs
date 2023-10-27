@@ -188,16 +188,15 @@ public class AddStartupSpritesSystem : ISystem
 
     private Result<Unit, AddPaddleAndBallError> AddPaddleAndBall(Sprite whiteSprite, Sprite ballSprite)
     {
-        var paddleScale = new Vector3(1.5f, 0.15f, 1f);
         var paddleIdResult = _entityCommands.CreateEntity(new Transform
-        {
-            position = new Vector3(0f, -1.25f, DefaultZIndex),
-            rotation = Quaternion.Identity,
-            scale = paddleScale
-        },
-            new SpriteComponent(whiteSprite),
+            {
+                position = new Vector3(0f, -1.25f, DefaultZIndex),
+                rotation = Quaternion.Identity,
+                scale = Vector3.One
+            },
+            new SpriteComponent(whiteSprite, new Vector2(1.5f, 0.15f)),
             new KinematicBody2DComponent(),
-            new Collider2DComponent(new BoxCollider2D(Vector2.One)),
+            new Collider2DComponent(new BoxCollider2D(new Vector2(1.5f, 0.15f))),
             new PaddleComponent())
             .MapError(x => new AddPaddleError(x));
 
@@ -208,19 +207,15 @@ public class AddStartupSpritesSystem : ISystem
 
         Console.WriteLine("PaddleId: {0}", paddleId);
 
-        var worldBallScale = new Vector3(0.25f, 0.25f, 1f);
-
-        var ballScale = new Vector3(1f / paddleScale.X, 1f / paddleScale.Y, 1f / paddleScale.Z);
-
         var ballIdResult = _entityCommands.CreateEntity(new Transform
             {
-                position = new Vector3(0f, 2f, DefaultZIndex),
+                position = new Vector3(0f, 0.3f, DefaultZIndex),
                 rotation = Quaternion.Identity,
-                scale = ballScale
+                scale = Vector3.One
             },
             new SpriteComponent(ballSprite),
             new KinematicBody2DComponent(),
-            new Collider2DComponent(new CircleCollider2D(worldBallScale.X * 0.5f)),
+            new Collider2DComponent(new CircleCollider2D(radius: 0.125f)),
             new BallComponent(),
             new LogPositionComponent { Name = "Ball" },
             new KinematicReboundComponent())

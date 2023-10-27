@@ -91,6 +91,7 @@ internal class RenderSystem : ISystem
                     {
                         sprites.Add(new Renderer.SpriteRender(
                             renderSpriteCommand.Sprite,
+                            renderSpriteCommand.Dimensions,
                             renderSpriteCommand.Transparency,
                             renderSpriteCommand.GlobalTransform.ModelMatrix));
                         break;
@@ -111,6 +112,7 @@ internal class RenderSystem : ISystem
                     {
                         screenSprites.Add(new Renderer.SpriteRender(
                             renderScreenSpaceSpriteCommand.Sprite,
+                            renderScreenSpaceSpriteCommand.Sprite.Dimensions,
                             renderScreenSpaceSpriteCommand.Transparency,
                             Matrix4x4.CreateScale(renderScreenSpaceSpriteCommand.Dimensions.Extend(1f))
                             * Matrix4x4.CreateTranslation(renderScreenSpaceSpriteCommand.Position)

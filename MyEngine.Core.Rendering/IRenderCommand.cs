@@ -6,7 +6,7 @@ public interface IRenderCommand
 {
 }
 
-public record RenderSpriteCommand(Sprite Sprite, GlobalTransform GlobalTransform, float Transparency) : IRenderCommand;
+public record RenderSpriteCommand(Sprite Sprite, Vector2 Dimensions, GlobalTransform GlobalTransform, float Transparency) : IRenderCommand;
 public record RenderLineCommand(Vector3 Start, Vector3 End) : IRenderCommand;
 public record RenderScreenSpaceTextCommand(
     Texture Texture,
