@@ -214,12 +214,12 @@ public class AddStartupSpritesSystem : ISystem
                 scale = Vector3.One
             },
             new SpriteComponent(ballSprite),
-            new KinematicBody2DComponent(),
+            new DynamicBody2DComponent(),
+            new BouncinessComponent(1f),
             new Collider2DComponent(new CircleCollider2D(radius: 0.125f)),
-            new BallComponent(),
+            new BallComponent() { AttachedToPaddle = true },
             new VelocityComponent(),
-            new LogPositionComponent { Name = "Ball" },
-            new KinematicReboundComponent())
+            new LogPositionComponent { Name = "Ball" })
             .MapError(x => new AddBallError(x));
 
         if (!ballIdResult.TryGetValue(out var ballId))

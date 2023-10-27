@@ -40,14 +40,14 @@ public class PhysicsResource : IResource
         PhysicsCommands.Enqueue(new RemoveDynamicBodyCommand(entityId));
     }
 
-    public void AddDynamicBody(EntityId entityId, GlobalTransform transform, float bounciness)
+    public void AddDynamicBody(EntityId entityId, GlobalTransform transform)
     {
-        PhysicsCommands.Enqueue(new AddDynamicBodyCommand(entityId, transform, bounciness));
+        PhysicsCommands.Enqueue(new AddDynamicBodyCommand(entityId, transform));
     }
 
-    public void AddDynamicBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider, float bounciness)
+    public void AddDynamicBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider)
     {
-        PhysicsCommands.Enqueue(new AddDynamicBody2DCommand(entityId, transform, collider, bounciness));
+        PhysicsCommands.Enqueue(new AddDynamicBody2DCommand(entityId, transform, collider));
     }
 
     public void AddKinematicBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider)
@@ -96,8 +96,8 @@ public class PhysicsResource : IResource
     }
 
     internal record UpdateCommand(double dt) : IPhysicsCommand;
-    internal record AddDynamicBodyCommand(EntityId entityId, GlobalTransform transform, float bounciness) : IPhysicsCommand;
-    internal record AddDynamicBody2DCommand(EntityId entityId, GlobalTransform transform, ICollider2D collider, float bounciness) : IPhysicsCommand;
+    internal record AddDynamicBodyCommand(EntityId entityId, GlobalTransform transform) : IPhysicsCommand;
+    internal record AddDynamicBody2DCommand(EntityId entityId, GlobalTransform transform, ICollider2D collider) : IPhysicsCommand;
     internal record AddKinematicBody2DCommand(EntityId entityId, GlobalTransform transform, ICollider2D collider) : IPhysicsCommand;
     internal record AddStaticBodyCommand(EntityId entityId, GlobalTransform transform) : IPhysicsCommand;
     internal record AddStaticBody2DCommand(EntityId entityId, GlobalTransform transform, ICollider2D collider) : IPhysicsCommand;

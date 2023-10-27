@@ -12,7 +12,7 @@ public class PhysicsSystem : ISystem
     private readonly CollisionsResource _collisionsResource;
     private readonly MyPhysics _myPhysics;
     private readonly IQuery<TransformComponent, StaticBody2DComponent, Collider2DComponent> _staticBodiesQuery;
-    private readonly IQuery<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>, OptionalComponent<ParentComponent>, OptionalComponent<VelocityComponent>> _dynamicBodiesQuery;
+    private readonly IQuery<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<ParentComponent>, OptionalComponent<VelocityComponent>> _dynamicBodiesQuery;
     private readonly IQuery<TransformComponent, KinematicBody2DComponent, Collider2DComponent, OptionalComponent<ParentComponent>> _kinematicBodiesQuery;
     private readonly IQuery<TransformComponent, OptionalComponent<ParentComponent>> _transformAndParentQuery;
 
@@ -20,7 +20,7 @@ public class PhysicsSystem : ISystem
         CollisionsResource collisionsResource,
         MyPhysics myPhysics,
         IQuery<TransformComponent, StaticBody2DComponent, Collider2DComponent> staticBodiesQuery,
-        IQuery<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<PhysicsMaterial>, OptionalComponent<ParentComponent>, OptionalComponent<VelocityComponent>> dynamicBodiesQuery,
+        IQuery<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<ParentComponent>, OptionalComponent<VelocityComponent>> dynamicBodiesQuery,
         IQuery<TransformComponent, KinematicBody2DComponent, Collider2DComponent, OptionalComponent<ParentComponent>> kinematicBodiesQuery,
         IQuery<TransformComponent, OptionalComponent<ParentComponent>> transformAndParentQuery)
     {
@@ -59,12 +59,12 @@ public class PhysicsSystem : ISystem
         }
         foreach (var components in _dynamicBodiesQuery)
         {
-            var (transform, _, collider, material, parent, velocity) = components;
+            var (transform, _, collider, parent, velocity) = components;
 
             if (!extraDynamicBodies.Remove(components.EntityId))
             {
                 // this is a new dynamic body
-                _physicsResource.AddDynamicBody2D(components.EntityId, transform.GlobalTransform, collider.Collider, material.Component?.Bounciness ?? 0f);
+                _physicsResource.AddDynamicBody2D(components.EntityId, transform.GlobalTransform, collider.Collider);
             }
 
             GlobalTransform? parentTransform = null;
@@ -224,7 +224,7 @@ public class PhysicsSystem : ISystem
                     }
                 case PhysicsResource.AddDynamicBodyCommand addDynamicBody:
                     {
-                        var result = _myPhysics.AddDynamicBody(addDynamicBody.entityId, addDynamicBody.transform, addDynamicBody.bounciness);
+                        var result = _myPhysics.AddDynamicBody(addDynamicBody.entityId, addDynamicBody.transform);
                         if (result.TryGetError(out var error))
                         {
                             Console.WriteLine("Failed to add dynamic body: {0}", error.Error.Error);
@@ -233,7 +233,7 @@ public class PhysicsSystem : ISystem
                     }
                 case PhysicsResource.AddDynamicBody2DCommand addDynamicBody2D:
                     {
-                        var result = _myPhysics.AddDynamicBody2D(addDynamicBody2D.entityId, addDynamicBody2D.transform, addDynamicBody2D.collider, addDynamicBody2D.bounciness);
+                        var result = _myPhysics.AddDynamicBody2D(addDynamicBody2D.entityId, addDynamicBody2D.transform, addDynamicBody2D.collider);
                         if (result.TryGetError(out var error))
                         {
                             Console.WriteLine("Failed to add dynamic body 2D: {0}", error.Error.Error);

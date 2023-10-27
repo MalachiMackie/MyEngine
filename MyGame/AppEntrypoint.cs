@@ -20,7 +20,6 @@ public class AppEntrypoint : IAppEntrypoint
             .AddSystem<AddStartupSpritesSystem>(PostUpdateSystemStage.Instance)
             .AddSystem<QuitOnEscapeSystem>(UpdateSystemStage.Instance)
             .AddSystem<LaunchBallSystem>(UpdateSystemStage.Instance)
-            .AddSystem<KinematicBounceSystem>(UpdateSystemStage.Instance)
             .AddSystem<ResetBallSystem>(UpdateSystemStage.Instance)
             .AddSystem<MovePaddleSystem>(UpdateSystemStage.Instance)
             .AddSystem<BrickCollisionSystem>(UpdateSystemStage.Instance)

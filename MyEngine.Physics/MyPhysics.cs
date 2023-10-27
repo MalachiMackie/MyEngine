@@ -456,7 +456,7 @@ public class MyPhysics : IResource
 
     public readonly record struct AddDynamicBodyError(GlobalTransform.GetPositionRotationScaleError Error);
 
-    public Result<Unit, AddDynamicBodyError> AddDynamicBody(EntityId entityId, GlobalTransform transform, float bounciness)
+    public Result<Unit, AddDynamicBodyError> AddDynamicBody(EntityId entityId, GlobalTransform transform)
     {
         var positionRotationScaleResult = transform.GetPositionRotationScale()
             .MapError(err => new AddDynamicBodyError(err));
@@ -482,7 +482,7 @@ public class MyPhysics : IResource
         {
             FrictionCoefficient = 0f,
             MaximumRecoveryVelocity = float.MaxValue,
-            SpringSettings = new SpringSettings(5f + 25f * (1f - bounciness), 1f - bounciness)
+            SpringSettings = new SpringSettings(30f, 1f)
         };
 
         NarrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
@@ -523,7 +523,7 @@ public class MyPhysics : IResource
 
     public readonly record struct AddDynamicBody2DError(GlobalTransform.GetPositionRotationScaleError Error);
 
-    public Result<Unit, AddDynamicBody2DError> AddDynamicBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider, float bounciness)
+    public Result<Unit, AddDynamicBody2DError> AddDynamicBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider)
     {
         var (shapeIndex, inertia, shapeType) = AddColliderAsShape(collider, transform.Scale, 10f);
         var inverseInertiaTensor = inertia.InverseInertiaTensor;
@@ -559,7 +559,7 @@ public class MyPhysics : IResource
             MaximumRecoveryVelocity = float.MaxValue,
             // full bounce target: 5f, 1f
             // zero bounce target: 30f, 0f
-            SpringSettings = new SpringSettings(5f + 25f * (1f - bounciness), 1f - bounciness)
+            SpringSettings = new SpringSettings(30f, 1f)
         };
 
         NarrowPhase.Callbacks.CollidableMaterials.Allocate(handle) = material;
@@ -585,13 +585,13 @@ public class MyPhysics : IResource
         bodyReference.ApplyAngularImpulse(impulse);
     }
 
-    public (Vector3 Position, Quaternion Rotation) GetDynamicPhysicsTransform(EntityId entityId)
+    public (Vector3 Position, Quaternion Rotation, Vector3 Velocity) GetDynamicPhysicsInfo(EntityId entityId)
     {
         var (handle, _, _) = _dynamicHandles[entityId];
         var body = _simulation.Bodies[handle];
         var pose = body.Pose;
 
-        return (pose.Position, pose.Orientation);
+        return (pose.Position, pose.Orientation, body.Velocity.Linear);
     }
 
     public readonly record struct ApplyDynamicPhysicsTransformError(GlobalTransform.GetPositionRotationScaleError Error);

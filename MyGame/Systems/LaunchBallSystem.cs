@@ -11,13 +11,13 @@ namespace MyGame.Systems;
 
 public class LaunchBallSystem : ISystem
 {
-    private readonly IQuery<TransformComponent, BallComponent, KinematicBody2DComponent, VelocityComponent, ParentComponent> _playerQuery;
+    private readonly IQuery<TransformComponent, BallComponent, DynamicBody2DComponent, ParentComponent> _playerQuery;
     private readonly IHierarchyCommands _hierarchyCommands;
     private readonly InputResource _inputResource;
     private readonly PhysicsResource _physicsResource;
 
     public LaunchBallSystem(
-        IQuery<TransformComponent, BallComponent, KinematicBody2DComponent, VelocityComponent, ParentComponent> playerQuery,
+        IQuery<TransformComponent, BallComponent, DynamicBody2DComponent, ParentComponent> playerQuery,
         InputResource inputResource,
         IHierarchyCommands hierarchyCommands,
         PhysicsResource physicsResource)
@@ -38,7 +38,7 @@ public class LaunchBallSystem : ISystem
                 return;
             }
 
-            var (transformComponent, _, kinematicBody, velocityComponent, parentComponent) = components;
+            var (transformComponent, ball, dynamicBody, parentComponent) = components;
 
             var globalScale = transformComponent.GlobalTransform.Scale;
             var globalPosition = transformComponent.GlobalTransform.Position;
@@ -48,7 +48,9 @@ public class LaunchBallSystem : ISystem
             transformComponent.LocalTransform.scale = globalScale;
             transformComponent.LocalTransform.position = globalPosition;
 
-            _physicsResource.SetBody2DVelocity(components.EntityId, velocityComponent.Velocity + Vector2.Normalize(new Vector2(1f, 1f)) * 2f);
+            _physicsResource.ApplyImpulse(components.EntityId, new Vector3(1f, 1f, 0f) * 12f);
+
+            ball.AttachedToPaddle = false;
         }
     }
 }
