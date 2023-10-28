@@ -8,13 +8,13 @@ namespace MyEngine.Physics;
 
 public class ColliderDebugDisplaySystem : ISystem
 {
-    private readonly MyPhysics _myPhysics;
+    private readonly BepuPhysicsAdapter _physicsAdapter;
     private readonly DebugColliderDisplayResource _debugColliderDisplayResource;
     private readonly ILineRenderResource _lineRenderResource;
 
-    public ColliderDebugDisplaySystem(MyPhysics myPhysics, ILineRenderResource lineRenderResource, DebugColliderDisplayResource debugColliderDisplayResource)
+    public ColliderDebugDisplaySystem(BepuPhysicsAdapter physicsAdapter, ILineRenderResource lineRenderResource, DebugColliderDisplayResource debugColliderDisplayResource)
     {
-        _myPhysics = myPhysics;
+        _physicsAdapter = physicsAdapter;
         _lineRenderResource = lineRenderResource;
         _debugColliderDisplayResource = debugColliderDisplayResource;
     }
@@ -26,7 +26,7 @@ public class ColliderDebugDisplaySystem : ISystem
             return;
         }
 
-        var colliderPositions = _myPhysics.GetAllColliderPositions();
+        var colliderPositions = _physicsAdapter.GetAllColliderPositions();
         foreach (var collider in colliderPositions)
         {
             collider.Collider.Match(

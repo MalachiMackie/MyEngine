@@ -13,23 +13,23 @@ using System.Numerics;
 
 namespace MyEngine.Physics;
 
-internal struct MyPoseIntegratorCallbacks : IPoseIntegratorCallbacks
+internal struct PoseIntegratorCallbacks : IPoseIntegratorCallbacks
 {
-    public AngularIntegrationMode AngularIntegrationMode => AngularIntegrationMode.Nonconserving;
+    public readonly AngularIntegrationMode AngularIntegrationMode => AngularIntegrationMode.Nonconserving;
 
-    public bool AllowSubstepsForUnconstrainedBodies => false;
+    public readonly bool AllowSubstepsForUnconstrainedBodies => false;
 
-    public bool IntegrateVelocityForKinematics => false;
+    public readonly bool IntegrateVelocityForKinematics => false;
 
-    public void Initialize(Simulation simulation)
+    public readonly void Initialize(Simulation simulation)
     {
     }
 
-    public void IntegrateVelocity(Vector<int> bodyIndices, Vector3Wide position, QuaternionWide orientation, BodyInertiaWide localInertia, Vector<int> integrationMask, int workerIndex, Vector<float> dt, ref BodyVelocityWide velocity)
+    public readonly void IntegrateVelocity(Vector<int> bodyIndices, Vector3Wide position, QuaternionWide orientation, BodyInertiaWide localInertia, Vector<int> integrationMask, int workerIndex, Vector<float> dt, ref BodyVelocityWide velocity)
     {
     }
 
-    public void PrepareForIntegration(float dt)
+    public readonly void PrepareForIntegration(float dt)
     {
     }
 }
@@ -45,7 +45,7 @@ public struct Impact
 
     public Vector3 normal;
 
-    public override bool Equals(object? obj)
+    public readonly override bool Equals(object? obj)
     {
         return obj is Impact impact &&
                EqualityComparer<BodyHandle?>.Default.Equals(bodyHandleA, impact.bodyHandleA) &&
@@ -54,7 +54,7 @@ public struct Impact
                EqualityComparer<StaticHandle?>.Default.Equals(staticHandleB, impact.staticHandleB);
     }
 
-    public override int GetHashCode()
+    public override readonly int GetHashCode()
     {
         return HashCode.Combine(bodyHandleA, staticHandleA, bodyHandleB, staticHandleB);
     }
@@ -77,12 +77,12 @@ internal struct SimpleMaterial
     public float MaximumRecoveryVelocity;
 }
 
-internal struct MyNarrowPhaseCallback : INarrowPhaseCallbacks
+internal struct NarrowPhaseCallback : INarrowPhaseCallbacks
 {
     public CollidableProperty<SimpleMaterial> CollidableMaterials;
     private Simulation _simulation = null!;
 
-    public MyNarrowPhaseCallback()
+    public NarrowPhaseCallback()
     {
         Impacts = new();
         CollidableMaterials = new();
@@ -90,12 +90,12 @@ internal struct MyNarrowPhaseCallback : INarrowPhaseCallbacks
 
     public List<Impact> Impacts;
 
-    public bool AllowContactGeneration(int workerIndex, CollidableReference a, CollidableReference b, ref float speculativeMargin)
+    public readonly bool AllowContactGeneration(int workerIndex, CollidableReference a, CollidableReference b, ref float speculativeMargin)
     {
         return a.Mobility != CollidableMobility.Static || b.Mobility != CollidableMobility.Static;
     }
 
-    public bool AllowContactGeneration(int workerIndex, CollidablePair pair, int childIndexA, int childIndexB)
+    public readonly bool AllowContactGeneration(int workerIndex, CollidablePair pair, int childIndexA, int childIndexB)
     {
         return true;
     }
@@ -145,12 +145,12 @@ internal struct MyNarrowPhaseCallback : INarrowPhaseCallbacks
         return true;
     }
 
-    public bool ConfigureContactManifold(int workerIndex, CollidablePair pair, int childIndexA, int childIndexB, ref ConvexContactManifold manifold)
+    public readonly bool ConfigureContactManifold(int workerIndex, CollidablePair pair, int childIndexA, int childIndexB, ref ConvexContactManifold manifold)
     {
         return true;
     }
 
-    public void Dispose()
+    public readonly void Dispose()
     {
     }
 
@@ -161,7 +161,7 @@ internal struct MyNarrowPhaseCallback : INarrowPhaseCallbacks
     }
 }
 
-public class MyPhysics : IResource
+public class BepuPhysicsAdapter : IResource
 {
     private readonly Simulation _simulation;
     private readonly BufferPool _bufferPool;
@@ -170,11 +170,11 @@ public class MyPhysics : IResource
     private readonly Dictionary<EntityId, (StaticHandle Handle, TypedIndex ShapeIndex, ShapeType ShapeType)> _staticHandles = new();
     private readonly Dictionary<EntityId, (BodyHandle Handle, TypedIndex ShapeIndex, ShapeType ShapeType)> _dynamicHandles = new();
 
-    private NarrowPhase<MyNarrowPhaseCallback> NarrowPhase
+    private NarrowPhase<NarrowPhaseCallback> NarrowPhase
     {
         get
         {
-            if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
+            if (_simulation.NarrowPhase is not NarrowPhase<NarrowPhaseCallback> narrowPhase)
             {
                 throw new UnreachableException();
             }
@@ -183,18 +183,18 @@ public class MyPhysics : IResource
         }
     }
 
-    public MyPhysics()
+    public BepuPhysicsAdapter()
     {
         _bufferPool = new BufferPool();
         _simulation = Simulation.Create(_bufferPool,
-            new MyNarrowPhaseCallback(),
-            new MyPoseIntegratorCallbacks(),
+            new NarrowPhaseCallback(),
+            new PoseIntegratorCallbacks(),
             new SolveDescription(6, 4));
     }
 
     public void Update(double dt, out IEnumerable<Collision> newCollisions, out IEnumerable<Collision> continuingCollisions, out IEnumerable<Collision> oldCollisions)
     {
-        if (_simulation.NarrowPhase is not NarrowPhase<MyNarrowPhaseCallback> narrowPhase)
+        if (_simulation.NarrowPhase is not NarrowPhase<NarrowPhaseCallback> narrowPhase)
         {
             newCollisions = null!;
             continuingCollisions = null!;

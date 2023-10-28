@@ -10,7 +10,7 @@ public class PhysicsSystem : ISystem
 {
     private readonly PhysicsResource _physicsResource;
     private readonly CollisionsResource _collisionsResource;
-    private readonly MyPhysics _myPhysics;
+    private readonly BepuPhysicsAdapter _physicsAdapter;
     private readonly IQuery<TransformComponent, StaticBody2DComponent, Collider2DComponent> _staticBodiesQuery;
     private readonly IQuery<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<ParentComponent>, OptionalComponent<VelocityComponent>> _dynamicBodiesQuery;
     private readonly IQuery<TransformComponent, KinematicBody2DComponent, Collider2DComponent, OptionalComponent<ParentComponent>> _kinematicBodiesQuery;
@@ -18,7 +18,7 @@ public class PhysicsSystem : ISystem
 
     public PhysicsSystem(PhysicsResource physicsResource,
         CollisionsResource collisionsResource,
-        MyPhysics myPhysics,
+        BepuPhysicsAdapter physicsAdapter,
         IQuery<TransformComponent, StaticBody2DComponent, Collider2DComponent> staticBodiesQuery,
         IQuery<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<ParentComponent>, OptionalComponent<VelocityComponent>> dynamicBodiesQuery,
         IQuery<TransformComponent, KinematicBody2DComponent, Collider2DComponent, OptionalComponent<ParentComponent>> kinematicBodiesQuery,
@@ -26,7 +26,7 @@ public class PhysicsSystem : ISystem
     {
         _physicsResource = physicsResource;
         _collisionsResource = collisionsResource;
-        _myPhysics = myPhysics;
+        _physicsAdapter = physicsAdapter;
         _staticBodiesQuery = staticBodiesQuery;
         _dynamicBodiesQuery = dynamicBodiesQuery;
         _kinematicBodiesQuery = kinematicBodiesQuery;
@@ -36,8 +36,8 @@ public class PhysicsSystem : ISystem
     // todo: split into systems: writeToPhysics, physicsStep, writeBackPhysics
     public void Run(double deltaTime)
     {
-        var staticBodies = _myPhysics.GetStaticBodies();
-        var dynamicBodies = _myPhysics.GetDynamicBodies();
+        var staticBodies = _physicsAdapter.GetStaticBodies();
+        var dynamicBodies = _physicsAdapter.GetDynamicBodies();
 
         var extraStaticBodies = new HashSet<EntityId>(staticBodies);
         var extraDynamicBodies = new HashSet<EntityId>(dynamicBodies);
@@ -135,14 +135,14 @@ public class PhysicsSystem : ISystem
             switch (cmd)
             {
                 case PhysicsResource.ApplyImpulseCommand applyImpulse:
-                    _myPhysics.ApplyImpulse(applyImpulse.entityId, applyImpulse.impulse);
+                    _physicsAdapter.ApplyImpulse(applyImpulse.entityId, applyImpulse.impulse);
                     break;
                 case PhysicsResource.ApplyAngularImpulseCommand applyAngularImpulse:
-                    _myPhysics.ApplyAngularImpulse(applyAngularImpulse.entityId, applyAngularImpulse.impulse);
+                    _physicsAdapter.ApplyAngularImpulse(applyAngularImpulse.entityId, applyAngularImpulse.impulse);
                     break;
                 case PhysicsResource.SetDynamicTransformCommand updateDynamicTransform:
                     {
-                        var result = _myPhysics.ApplyDynamicPhysicsTransform(updateDynamicTransform.entityId, updateDynamicTransform.transform);
+                        var result = _physicsAdapter.ApplyDynamicPhysicsTransform(updateDynamicTransform.entityId, updateDynamicTransform.transform);
                         if (result.TryGetError(out var error))
                         {
                             Console.WriteLine("Failed to apply dynamic physics transform: {0}", error.Error.Error);
@@ -151,7 +151,7 @@ public class PhysicsSystem : ISystem
                     }
                 case PhysicsResource.SetStaticTransformCommand updateStaticTransform:
                     {
-                        var result = _myPhysics.ApplyStaticPhysicsTransform(updateStaticTransform.entityId, updateStaticTransform.transform);
+                        var result = _physicsAdapter.ApplyStaticPhysicsTransform(updateStaticTransform.entityId, updateStaticTransform.transform);
                         if (result.TryGetError(out var error))
                         {
                             Console.WriteLine("Failed to set static transform: {0}", error.Error.Error);
@@ -161,7 +161,7 @@ public class PhysicsSystem : ISystem
                 case PhysicsResource.PhysicsWriteBackCommand updateTransformFromPhysics:
                     {
                         var entityTransform = updateTransformFromPhysics.transform;
-                        var (physicsPosition, physicsRotation, physicsVelocity) = _myPhysics.GetDynamicPhysicsInfo(updateTransformFromPhysics.entityId);
+                        var (physicsPosition, physicsRotation, physicsVelocity) = _physicsAdapter.GetDynamicPhysicsInfo(updateTransformFromPhysics.entityId);
 
                         entityTransform.GlobalTransform.SetComponents(physicsPosition, physicsRotation, entityTransform.GlobalTransform.Scale);
 
@@ -206,7 +206,7 @@ public class PhysicsSystem : ISystem
                     }
                 case PhysicsResource.AddStaticBodyCommand addStaticBody:
                     {
-                        var result = _myPhysics.AddStaticBody(addStaticBody.entityId, addStaticBody.transform);
+                        var result = _physicsAdapter.AddStaticBody(addStaticBody.entityId, addStaticBody.transform);
                         if (result.TryGetError(out var error))
                         {
                             Console.WriteLine("Failed to add static body: {0}", error.Error.Error);
@@ -215,7 +215,7 @@ public class PhysicsSystem : ISystem
                     }
                 case PhysicsResource.AddStaticBody2DCommand addStaticBody2D:
                     {
-                        var result = _myPhysics.AddStaticBody2D(addStaticBody2D.entityId, addStaticBody2D.transform, addStaticBody2D.collider);
+                        var result = _physicsAdapter.AddStaticBody2D(addStaticBody2D.entityId, addStaticBody2D.transform, addStaticBody2D.collider);
                         if (result.TryGetError(out var error))
                         {
                             Console.WriteLine("Failed to add static body 2D: {0}", error.Error.Error);
@@ -224,7 +224,7 @@ public class PhysicsSystem : ISystem
                     }
                 case PhysicsResource.AddDynamicBodyCommand addDynamicBody:
                     {
-                        var result = _myPhysics.AddDynamicBody(addDynamicBody.entityId, addDynamicBody.transform);
+                        var result = _physicsAdapter.AddDynamicBody(addDynamicBody.entityId, addDynamicBody.transform);
                         if (result.TryGetError(out var error))
                         {
                             Console.WriteLine("Failed to add dynamic body: {0}", error.Error.Error);
@@ -233,7 +233,7 @@ public class PhysicsSystem : ISystem
                     }
                 case PhysicsResource.AddDynamicBody2DCommand addDynamicBody2D:
                     {
-                        var result = _myPhysics.AddDynamicBody2D(addDynamicBody2D.entityId, addDynamicBody2D.transform, addDynamicBody2D.collider);
+                        var result = _physicsAdapter.AddDynamicBody2D(addDynamicBody2D.entityId, addDynamicBody2D.transform, addDynamicBody2D.collider);
                         if (result.TryGetError(out var error))
                         {
                             Console.WriteLine("Failed to add dynamic body 2D: {0}", error.Error.Error);
@@ -242,7 +242,7 @@ public class PhysicsSystem : ISystem
                     }
                 case PhysicsResource.AddKinematicBody2DCommand addKinematicBody2D:
                     {
-                        var result = _myPhysics.AddKinematicBody2D(addKinematicBody2D.entityId, addKinematicBody2D.transform, addKinematicBody2D.collider);
+                        var result = _physicsAdapter.AddKinematicBody2D(addKinematicBody2D.entityId, addKinematicBody2D.transform, addKinematicBody2D.collider);
                         if (result.TryGetError(out var error))
                         {
                             Console.WriteLine("Failed to add kinematic body 2D: {0}", error.Error.Error);
@@ -250,13 +250,13 @@ public class PhysicsSystem : ISystem
                     }
                     break;
                 case PhysicsResource.RemoveStaticBodyCommand removeStaticBody:
-                    _myPhysics.RemoveStaticBody(removeStaticBody.entityId);
+                    _physicsAdapter.RemoveStaticBody(removeStaticBody.entityId);
                     break;
                 case PhysicsResource.RemoveDynamicBodyCommand removeDynamicBody:
-                    _myPhysics.RemoveDynamicBody(removeDynamicBody.entityId);
+                    _physicsAdapter.RemoveDynamicBody(removeDynamicBody.entityId);
                     break;
                 case PhysicsResource.SetBody2DVelocityCommand setKinematicBody2DVelocityCommand:
-                    _myPhysics.SetDynamicBody2DVelocity(setKinematicBody2DVelocityCommand.entityId, setKinematicBody2DVelocityCommand.velocity);
+                    _physicsAdapter.SetDynamicBody2DVelocity(setKinematicBody2DVelocityCommand.entityId, setKinematicBody2DVelocityCommand.velocity);
                     break;
                 case PhysicsResource.UpdateCommand update:
                     {
@@ -264,7 +264,7 @@ public class PhysicsSystem : ISystem
                         _collisionsResource._existingCollisions.Clear();
                         _collisionsResource._oldCollisions.Clear();
 
-                        _myPhysics.Update(update.dt, out var newCollisions, out var continuingCollisions, out var oldCollisions);
+                        _physicsAdapter.Update(update.dt, out var newCollisions, out var continuingCollisions, out var oldCollisions);
 
                         _collisionsResource._newCollisions.AddRange(newCollisions);
                         _collisionsResource._existingCollisions.AddRange(continuingCollisions);

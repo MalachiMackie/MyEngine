@@ -12,7 +12,7 @@ public class Physics2DPlugin : IPlugin
             .AddSystem<ColliderDebugDisplaySystem>(PostUpdateSystemStage.Instance)
             .AddSystem<BounceSystem>(PhysicsSystemStage.Instance) // todo: make sure this runs directly after PhysicsSystem
             .AddResource(new DebugColliderDisplayResource())
-            .AddResource(new MyPhysics())
+            .AddResource(new BepuPhysicsAdapter())
             .AddResource(new CollisionsResource())
             .AddResource(new PhysicsResource());
     }
