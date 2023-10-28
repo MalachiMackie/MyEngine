@@ -141,7 +141,10 @@ internal partial class EcsEngine
 
     private void AddQueuedResources()
     {
-        Debug.Assert(_resourceContainer.TryGetResource<ResourceRegistrationResource>(out var resourceRegistration));
+        if (!_resourceContainer.TryGetResource<ResourceRegistrationResource>(out var resourceRegistration))
+        {
+            throw new UnreachableException();
+        }
         while (resourceRegistration.Registrations.TryDequeue(out var resource))
         {
             RegisterResource(resource.Key, resource.Value);

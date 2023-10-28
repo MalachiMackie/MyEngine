@@ -87,31 +87,58 @@ public static class MathHelper
         return Vector2.Normalize(v);
     }
 
-    public enum Vector2WithMagnitudeError
+    public static Vector3 Normalize(this Vector3 v)
+    {
+        return Vector3.Normalize(v);
+    }
+
+    public enum VectorWithMagnitudeError
     {
         MagnitudeLessThan0
     }
 
-    public static Result<Vector2, Vector2WithMagnitudeError> WithMagnitude(this Vector2 v, float magnitude)
+    public static Result<Vector2, VectorWithMagnitudeError> WithMagnitude(this Vector2 v, float magnitude)
     {
         if (magnitude < 0)
         {
-            return Result.Failure<Vector2, Vector2WithMagnitudeError>(Vector2WithMagnitudeError.MagnitudeLessThan0);
+            return Result.Failure<Vector2, VectorWithMagnitudeError>(VectorWithMagnitudeError.MagnitudeLessThan0);
         }
 
         if (magnitude < 0.00001f)
         {
             // setting magnitude to zero removes all data 
-            return Result.Success<Vector2, Vector2WithMagnitudeError>(Vector2.Zero);
+            return Result.Success<Vector2, VectorWithMagnitudeError>(Vector2.Zero);
         }
 
         if (v.Length() < 0.00001f)
         {
             // if current magnitude is zero, then we just keep it at zero 
-            return Result.Success<Vector2, Vector2WithMagnitudeError>(Vector2.Zero);
+            return Result.Success<Vector2, VectorWithMagnitudeError>(Vector2.Zero);
         }
 
-        return Result.Success<Vector2, Vector2WithMagnitudeError>(v.Normalize() * magnitude);
+        return Result.Success<Vector2, VectorWithMagnitudeError>(v.Normalize() * magnitude);
+    }
+
+    public static Result<Vector3, VectorWithMagnitudeError> WithMagnitude(this Vector3 v, float magnitude)
+    {
+        if (magnitude < 0)
+        {
+            return Result.Failure<Vector3, VectorWithMagnitudeError>(VectorWithMagnitudeError.MagnitudeLessThan0);
+        }
+
+        if (magnitude < 0.00001f)
+        {
+            // setting magnitude to zero removes all data 
+            return Result.Success<Vector3, VectorWithMagnitudeError>(Vector3.Zero);
+        }
+
+        if (v.Length() < 0.00001f)
+        {
+            // if current magnitude is zero, then we just keep it at zero 
+            return Result.Success<Vector3, VectorWithMagnitudeError>(Vector3.Zero);
+        }
+
+        return Result.Success<Vector3, VectorWithMagnitudeError>(v.Normalize() * magnitude);
     }
 
     // https://gist.github.com/vpenades/9e6248bf8558aa1d802885c2ab984e14 
