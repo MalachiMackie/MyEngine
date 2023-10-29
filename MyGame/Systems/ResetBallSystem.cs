@@ -15,20 +15,20 @@ public class ResetBallSystem : ISystem
     private readonly IQuery<TransformComponent, BallComponent> _ballQuery;
     private readonly IQuery<PaddleComponent, TransformComponent> _paddleQuery;
     private readonly WorldSizeResource _worldSizeResource;
-    private readonly IHierarchyCommands _hierarchyCommands;
+    private readonly ICommands _commands;
     private readonly PhysicsResource _physicsResource;
 
     public ResetBallSystem(
         IQuery<TransformComponent, BallComponent> ballQuery,
         WorldSizeResource worldSizeResource,
         IQuery<PaddleComponent, TransformComponent> paddleQuery,
-        IHierarchyCommands hierarchyCommands,
+        ICommands commands,
         PhysicsResource physicsResource)
     {
         _ballQuery = ballQuery;
         _worldSizeResource = worldSizeResource;
         _paddleQuery = paddleQuery;
-        _hierarchyCommands = hierarchyCommands;
+        _commands = commands;
         _physicsResource = physicsResource;
     }
 
@@ -58,7 +58,7 @@ public class ResetBallSystem : ISystem
 
         var (_, paddleTransform) = paddleComponents; 
 
-        var result = _hierarchyCommands.AddChild(paddleComponents.EntityId, ballId);
+        var result = _commands.AddChild(paddleComponents.EntityId, ballId);
         if (result.TryGetError(out var error))
         {
             Console.WriteLine("Could not reset ball: {0}", error);

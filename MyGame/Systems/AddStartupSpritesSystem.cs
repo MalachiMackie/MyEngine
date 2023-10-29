@@ -1,5 +1,4 @@
-﻿using MyEngine.Assets;
-using MyEngine.Core;
+﻿using MyEngine.Core;
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
@@ -11,18 +10,12 @@ using MyGame.Components;
 using MyGame.Resources;
 using System.Numerics;
 
-using AddPaddleAndBallError = MyEngine.Utils.OneOf<
-    MyGame.Systems.AddStartupSpritesSystem.AddPaddleError,
-    MyGame.Systems.AddStartupSpritesSystem.AddBallError,
-    MyGame.Systems.AddStartupSpritesSystem.AddBallAsPaddleChildError>;
-
 namespace MyGame.Systems;
 
 public class AddStartupSpritesSystem : ISystem
 {
     private readonly ICommands _entityCommands;
     private readonly ResourceRegistrationResource _resourceRegistrationResource;
-    private readonly IHierarchyCommands _hierarchyCommands;
     private readonly GameAssets _gameAssets;
     private readonly BrickSizeResource _brickSizeResource = new() { Dimensions = new Vector2(0.5f, 0.2f) };
 
@@ -30,12 +23,10 @@ public class AddStartupSpritesSystem : ISystem
 
     public AddStartupSpritesSystem(ICommands entityContainerResource,
         ResourceRegistrationResource resourceRegistrationResource,
-        IHierarchyCommands hierarchyCommands,
         GameAssets gameAssets)
     {
         _entityCommands = entityContainerResource;
         _resourceRegistrationResource = resourceRegistrationResource;
-        _hierarchyCommands = hierarchyCommands;
         _gameAssets = gameAssets;
     }
 
@@ -66,12 +57,8 @@ public class AddStartupSpritesSystem : ISystem
             return;
         }
 
-        if (AddPaddleAndBall(whiteSprite, ballSprite).TryGetError(out var addPaddleAndBallError))
+        if (AddPaddleAndBall(whiteSprite, ballSprite).IsFailure)
         {
-            addPaddleAndBallError.Match(
-                addPaddleError => Console.WriteLine("Failed to add paddle: {0}", addPaddleError.Error),
-                addBallError => Console.WriteLine("Failed to add ball: {0}", addBallError.Error),
-                addBallAsPaddleChildError => Console.WriteLine("Failed to add ball as paddle child: {0}", addBallAsPaddleChildError.Error));
             return;
         }
 
@@ -186,64 +173,32 @@ public class AddStartupSpritesSystem : ISystem
     }
 
 
-    private Result<Unit, AddPaddleAndBallError> AddPaddleAndBall(Sprite whiteSprite, Sprite ballSprite)
+    private Result<Unit, Unit> AddPaddleAndBall(Sprite whiteSprite, Sprite ballSprite)
     {
-        var paddleIdResult = _entityCommands.CreateEntity(new Transform
-            {
-                position = new Vector3(0f, -1.25f, DefaultZIndex),
-                rotation = Quaternion.Identity,
-                scale = Vector3.One
-            },
-            new SpriteComponent(whiteSprite, new Vector2(1.5f, 0.15f)),
-            new KinematicBody2DComponent(),
-            new Collider2DComponent(new BoxCollider2D(new Vector2(1.5f, 0.15f))),
-            new PaddleComponent())
-            .MapError(x => new AddPaddleError(x));
+        var result = _entityCommands.CreateEntity(x => x
+            .WithDefaultTransform(new Vector3(0f, -1.25f, DefaultZIndex))
+            .WithComponents(
+                new SpriteComponent(whiteSprite, dimensions: new Vector2(1.5f, 0.15f)),
+                new KinematicBody2DComponent(),
+                new Collider2DComponent(new BoxCollider2D(new Vector2(1.5f, 0.15f))),
+                new PaddleComponent())
+            .WithChild(x => x
+                .WithDefaultTransform(new Vector3(0f, 0.3f, DefaultZIndex))
+                .WithComponents(
+                    new SpriteComponent(ballSprite),
+                    new DynamicBody2DComponent(),
+                    new BouncinessComponent(1f),
+                    new Collider2DComponent(new CircleCollider2D(radius: 0.125f)),
+                    new BallComponent { AttachedToPaddle = true},
+                    new VelocityComponent(),
+                    new LogPositionComponent { Name = "Ball"})));
 
-        if (!paddleIdResult.TryGetValue(out var paddleId))
+        if (result.TryGetError(out var error))
         {
-            return Result.Failure<Unit, AddPaddleAndBallError>(new AddPaddleAndBallError(paddleIdResult.UnwrapError()));
+            Console.WriteLine("Failed to create paddle and ball: {0}", result.UnwrapError());
         }
 
-        Console.WriteLine("PaddleId: {0}", paddleId);
-
-        var ballIdResult = _entityCommands.CreateEntity(new Transform
-            {
-                position = new Vector3(0f, 0.3f, DefaultZIndex),
-                rotation = Quaternion.Identity,
-                scale = Vector3.One
-            },
-            new SpriteComponent(ballSprite),
-            new DynamicBody2DComponent(),
-            new BouncinessComponent(1f),
-            new Collider2DComponent(new CircleCollider2D(radius: 0.125f)),
-            new BallComponent() { AttachedToPaddle = true },
-            new VelocityComponent(),
-            new LogPositionComponent { Name = "Ball" })
-            .MapError(x => new AddBallError(x));
-
-        if (!ballIdResult.TryGetValue(out var ballId))
-        {
-            _entityCommands.RemoveEntity(paddleId).Expect("We checked the success of add paddle");
-            return Result.Failure<Unit, AddPaddleAndBallError>(new AddPaddleAndBallError(ballIdResult.UnwrapError()));
-        }
-
-        Console.WriteLine("BallId: {0}", ballId);
-
-        var addChildResult = _hierarchyCommands.AddChild(paddleId, ballId);
-        if (addChildResult.TryGetError(out var error))
-        {
-            _entityCommands.RemoveEntity(paddleId).Expect("We checked the success of add paddle");
-            _entityCommands.RemoveEntity(ballId).Expect("We checked the success of add ball");
-
-            return Result.Failure<Unit, AddPaddleAndBallError>(new AddPaddleAndBallError(new AddBallAsPaddleChildError(error)));
-        }
-
-        return Result.Success<Unit, AddPaddleAndBallError>(Unit.Value);
+        return result;
     }
-
-    public readonly record struct AddPaddleError(AddEntityCommandError Error);
-    public readonly record struct AddBallError(AddEntityCommandError Error);
-    public readonly record struct AddBallAsPaddleChildError(AddChildError Error);
 }
 

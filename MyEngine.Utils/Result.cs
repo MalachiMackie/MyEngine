@@ -121,4 +121,19 @@ public readonly struct Result<T, TError>
             onError(_error);
         }
     }
+
+    public static implicit operator Result<Unit, Unit>(Result<T, TError> result)
+    {
+        return result.Map(_ => Unit.Value).MapError(_ => Unit.Value);
+    }
+
+    public static implicit operator Result<T, Unit>(Result<T, TError> result)
+    {
+        return result.MapError(_ => Unit.Value);
+    }
+
+    public static implicit operator Result<Unit, TError>(Result<T, TError> result)
+    {
+        return result.Map(_ => Unit.Value);
+    }
 }

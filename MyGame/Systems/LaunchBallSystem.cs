@@ -12,20 +12,20 @@ namespace MyGame.Systems;
 public class LaunchBallSystem : ISystem
 {
     private readonly IQuery<TransformComponent, BallComponent, DynamicBody2DComponent, ParentComponent> _playerQuery;
-    private readonly IHierarchyCommands _hierarchyCommands;
     private readonly InputResource _inputResource;
     private readonly PhysicsResource _physicsResource;
+    private readonly ICommands _commands;
 
     public LaunchBallSystem(
         IQuery<TransformComponent, BallComponent, DynamicBody2DComponent, ParentComponent> playerQuery,
         InputResource inputResource,
-        IHierarchyCommands hierarchyCommands,
-        PhysicsResource physicsResource)
+        PhysicsResource physicsResource,
+        ICommands commands)
     {
         _playerQuery = playerQuery;
         _inputResource = inputResource;
-        _hierarchyCommands = hierarchyCommands;
         _physicsResource = physicsResource;
+        _commands = commands;
     }
 
     public void Run(double deltaTime)
@@ -43,7 +43,7 @@ public class LaunchBallSystem : ISystem
             var globalScale = transformComponent.GlobalTransform.Scale;
             var globalPosition = transformComponent.GlobalTransform.Position;
 
-            _hierarchyCommands.RemoveChild(parentComponent.Parent, components.EntityId);
+            _commands.RemoveChild(parentComponent.Parent, components.EntityId);
 
             transformComponent.LocalTransform.scale = globalScale;
             transformComponent.LocalTransform.position = globalPosition;

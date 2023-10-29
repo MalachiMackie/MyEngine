@@ -90,7 +90,6 @@ internal partial class EcsEngine
 
     private void RegisterAppResources()
     {
-        RegisterResource<IHierarchyCommands>(new HierarchyCommands(_components));
         RegisterResource(new ResourceRegistrationResource());
         RegisterResource<ICommands>(new Commands(_components, _entities));
 
