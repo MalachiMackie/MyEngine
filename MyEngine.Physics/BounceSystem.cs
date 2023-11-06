@@ -303,8 +303,33 @@ public class BounceSystem : ISystem
             return;
         }
 
+
+
         var reboundedVelocityA = GetReboundedVelocity(dynamicVelocityA, normal);
         var reboundedVelocityB = GetReboundedVelocity(dynamicVelocityB, normal);
+
+        if (dynamicVelocityA.Length() < 0.001f)
+        {
+            _physicsResource.SetBody2DVelocity(
+                dynamicPropsA.EntityId,
+                -reboundedVelocityB.XY());
+
+            _physicsResource.SetBody2DVelocity(
+                dynamicPropsB.EntityId,
+                Vector2.Zero);
+            return;
+        }
+        if (dynamicVelocityB.Length() < 0.001f)
+        {
+            _physicsResource.SetBody2DVelocity(
+                dynamicPropsA.EntityId,
+                Vector2.Zero);
+
+            _physicsResource.SetBody2DVelocity(
+                dynamicPropsB.EntityId,
+                -reboundedVelocityA.XY());
+            return;
+        }
 
         _physicsResource.SetBody2DVelocity(
             dynamicPropsA.EntityId,

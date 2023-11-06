@@ -34,7 +34,10 @@ internal class RenderSystem : ISystem
 
         if (!TryRender3D())
         {
-            TryRender2D();
+            if (!TryRender2D())
+            {
+                Console.WriteLine("No Camera was found");
+            }
         }
 
     }

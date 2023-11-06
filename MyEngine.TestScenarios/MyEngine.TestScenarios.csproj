@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MyEngine.Core\MyEngine.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+      <ProjectReference Include="../MyEngine.SourceGenerator/MyEngine.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+      <ProjectReference Include="..\MyEngine.ImGui\MyEngine.ImGui.csproj" />
+      <ProjectReference Include="..\MyEngine.Input\MyEngine.Input.csproj" />
+      <ProjectReference Include="..\MyEngine.Physics\MyEngine.Physics.csproj" />
+      <ProjectReference Include="..\MyEngine.UI\MyEngine.UI.csproj" />
+  </ItemGroup>
+
+</Project>

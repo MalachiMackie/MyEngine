@@ -69,6 +69,19 @@ public class FontAsset : ICreatableAsset<FontAsset, CreateFontFromLoadedTexture>
                 new('X', new Vector2(31, 43), new Vector2(17, 26)),
                 new('Y', new Vector2(164, 75), new Vector2(17, 26)),
                 new('Z', new Vector2(187, 75), new Vector2(17, 26)),
+                new('0', new Vector2(96, 171), new Vector2(17, 26)),
+                new('1', new Vector2(182, 171), new Vector2(14, 26)),
+                new('2', new Vector2(118, 139), new Vector2(17, 26)),
+                new('3', new Vector2(72, 139), new Vector2(17, 26)),
+                new('4', new Vector2(187, 107), new Vector2(17, 26)),
+                new('5', new Vector2(210, 107), new Vector2(17, 26)),
+                new('6', new Vector2(233, 107), new Vector2(17, 26)),
+                new('7', new Vector2(3, 139), new Vector2(17, 26)),
+                new('8', new Vector2(26, 139), new Vector2(17, 26)),
+                new('9', new Vector2(49, 139), new Vector2(17, 26)),
+                new('.', new Vector2(62, 251), new Vector2(8, 8)),
+                new('-', new Vector2(183, 223), new Vector2(17, 13)),
+                new(',', new Vector2(22, 251), new Vector2(8, 13)),
             }));
     }
 

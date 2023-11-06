@@ -33,7 +33,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.ImGui", "MyEngine.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.UI", "MyEngine.UI\MyEngine.UI.csproj", "{B8F68B78-E6BC-4961-8BA3-973BF1BE5CFB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Core.Rendering", "MyEngine.Core.Rendering\MyEngine.Core.Rendering.csproj", "{55EFDA22-8454-4B34-AAC1-0F24F462BA0A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.Core.Rendering", "MyEngine.Core.Rendering\MyEngine.Core.Rendering.csproj", "{55EFDA22-8454-4B34-AAC1-0F24F462BA0A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.TestScenarios", "MyEngine.TestScenarios\MyEngine.TestScenarios.csproj", "{3E60973C-C86F-4765-9DC0-AAC89E6DBD21}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -101,6 +103,10 @@ Global
 		{55EFDA22-8454-4B34-AAC1-0F24F462BA0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{55EFDA22-8454-4B34-AAC1-0F24F462BA0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{55EFDA22-8454-4B34-AAC1-0F24F462BA0A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E60973C-C86F-4765-9DC0-AAC89E6DBD21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E60973C-C86F-4765-9DC0-AAC89E6DBD21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E60973C-C86F-4765-9DC0-AAC89E6DBD21}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E60973C-C86F-4765-9DC0-AAC89E6DBD21}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
