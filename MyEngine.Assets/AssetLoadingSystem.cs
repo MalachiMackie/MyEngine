@@ -35,7 +35,6 @@ public class AssetLoadingSystem : ISystem
                     {
                         var result = createAssetCommand.createFunc();
                         _editableAssetCollection.AddAsset(result);
-                        //_completedAssets.Enqueue(result);
                         break;
                 }
             }
