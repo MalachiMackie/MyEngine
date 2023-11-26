@@ -37,7 +37,20 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.Core.Rendering", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.TestScenarios", "MyEngine.TestScenarios\MyEngine.TestScenarios.csproj", "{3E60973C-C86F-4765-9DC0-AAC89E6DBD21}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Assets.Tests", "Tests\MyEngine.Assets.Tests\MyEngine.Assets.Tests.csproj", "{F3A2D5F2-518D-4374-A983-0035A66C8F58}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.Assets.Tests", "Tests\MyEngine.Assets.Tests\MyEngine.Assets.Tests.csproj", "{F3A2D5F2-518D-4374-A983-0035A66C8F58}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{09A3309D-7C1A-483A-A947-629AC214B285}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		.config\dotnet-tools.json = .config\dotnet-tools.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{B47C24C2-69BF-4982-8A50-85159006492A}"
+	ProjectSection(SolutionItems) = preProject
+		Tools\TestCoverage.ps1 = Tools\TestCoverage.ps1
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Utils.Tests", "Tests\MyEngine.Utils.Tests\MyEngine.Utils.Tests.csproj", "{49B3A985-6C51-44F2-ADE4-9E03E3B90DCD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -113,6 +126,10 @@ Global
 		{F3A2D5F2-518D-4374-A983-0035A66C8F58}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F3A2D5F2-518D-4374-A983-0035A66C8F58}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F3A2D5F2-518D-4374-A983-0035A66C8F58}.Release|Any CPU.Build.0 = Release|Any CPU
+		{49B3A985-6C51-44F2-ADE4-9E03E3B90DCD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49B3A985-6C51-44F2-ADE4-9E03E3B90DCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49B3A985-6C51-44F2-ADE4-9E03E3B90DCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49B3A985-6C51-44F2-ADE4-9E03E3B90DCD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -123,6 +140,7 @@ Global
 		{AF346F38-BEF3-445C-AC36-109EE09AAD09} = {3EAC168D-DFE5-4960-9B56-F9592DABE617}
 		{3E60973C-C86F-4765-9DC0-AAC89E6DBD21} = {3EAC168D-DFE5-4960-9B56-F9592DABE617}
 		{F3A2D5F2-518D-4374-A983-0035A66C8F58} = {3EAC168D-DFE5-4960-9B56-F9592DABE617}
+		{49B3A985-6C51-44F2-ADE4-9E03E3B90DCD} = {3EAC168D-DFE5-4960-9B56-F9592DABE617}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AFF7B083-474C-4C13-8E07-C7FFC9DC727B}
