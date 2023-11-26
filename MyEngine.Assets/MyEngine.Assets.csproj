@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.IO.Abstractions" Version="19.2.87" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\MyEngine.Core\MyEngine.Core.csproj" />
   </ItemGroup>
 

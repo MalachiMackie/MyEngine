@@ -12,14 +12,11 @@ public class InitUiSystem : ISystem
 
     private readonly GameAssets _gameAssets;
     private readonly ICommands _commands;
-    private readonly AssetCollection _assetCollection;
 
     public InitUiSystem(ICommands commands,
-        AssetCollection assetCollection,
         GameAssets gameAssets)
     {
         _commands = commands;
-        _assetCollection = assetCollection;
         _gameAssets = gameAssets;
     }
 

@@ -1,16 +1,17 @@
-﻿using MyEngine.Core.Ecs.Resources;
+﻿using System.IO.Abstractions;
+using MyEngine.Core.Ecs.Resources;
 
 namespace MyEngine.Assets;
 
 public interface IAssetCommands : IResource
 {
-    AssetId LoadAsset<TAsset, TLoadAssetData>(string assetPath, TLoadAssetData loadAssetData)
+    public AssetId LoadAsset<TAsset, TLoadAssetData>(string assetPath, TLoadAssetData loadAssetData)
         where TAsset : ILoadableAsset<TAsset, TLoadAssetData>;
 
-    AssetId LoadAsset<TAsset>(string assetPath)
+    public AssetId LoadAsset<TAsset>(string assetPath)
         where TAsset : ILoadableAsset<TAsset>;
 
-    AssetId CreateAsset<TAsset, TCreateAssetData>(TCreateAssetData createAssetData)
+    public AssetId CreateAsset<TAsset, TCreateAssetData>(TCreateAssetData createAssetData)
         where TAsset : ICreatableAsset<TAsset, TCreateAssetData>;
 
     internal interface IAssetCommand { }
@@ -23,6 +24,18 @@ public interface IAssetCommands : IResource
 
 internal class AssetCommands : IAssetCommands
 {
+    private readonly IFileSystem _fileSystem;
+
+    public AssetCommands(IFileSystem fileSystem)
+    {
+        _fileSystem = fileSystem;
+    }
+
+    public AssetCommands()
+    {
+        _fileSystem = new FileSystem();
+    }
+
     private readonly Queue<IAssetCommands.IAssetCommand> _commandQueue = new();
     public AssetId LoadAsset<TAsset, TLoadAssetData>(string assetPath, TLoadAssetData loadAssetData) where TAsset : ILoadableAsset<TAsset, TLoadAssetData>
     {
@@ -31,7 +44,7 @@ internal class AssetCommands : IAssetCommands
             id,
             async () =>
             {
-                using var fileStream = File.OpenRead(assetPath);
+                using var fileStream = _fileSystem.File.OpenRead(assetPath);
                 return await TAsset.LoadAsync(id, fileStream, loadAssetData);
             }));
 
@@ -67,7 +80,7 @@ internal class AssetCommands : IAssetCommands
             id,
             async () =>
             {
-                using var fileStream = File.OpenRead(assetPath);
+                using var fileStream = _fileSystem.File.OpenRead(assetPath);
                 return await TAsset.LoadAsync(id, fileStream);
             }));
 

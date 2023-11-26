@@ -11,12 +11,12 @@ public class LoadResourcesSystem : ISystem
 {
     private readonly ResourceRegistrationResource _resourceRegistrationResource;
     private readonly IAssetCommands _assetCommands;
-    private readonly AssetCollection _assetCollection;
+    private readonly IAssetCollection _assetCollection;
 
     public LoadResourcesSystem(
         ResourceRegistrationResource resourceRegistrationResource,
         IAssetCommands assetCommands,
-        AssetCollection assetCollection)
+        IAssetCollection assetCollection)
     {
         _resourceRegistrationResource = resourceRegistrationResource;
         _assetCommands = assetCommands;

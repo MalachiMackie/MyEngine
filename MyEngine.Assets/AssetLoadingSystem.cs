@@ -1,19 +1,17 @@
-﻿using System.Collections.Concurrent;
-using MyEngine.Core.Ecs.Systems;
+﻿using MyEngine.Core.Ecs.Systems;
 
 namespace MyEngine.Assets;
 
 public class AssetLoadingSystem : ISystem
 {
     private readonly IAssetCommands _assetCommands;
-    private readonly AssetCollection _assetCollection;
+    private readonly IEditableAssetCollection _editableAssetCollection;
 
-    private readonly ConcurrentQueue<IAsset> _completedAssets = new();
 
-    public AssetLoadingSystem(IAssetCommands assetCommands, AssetCollection assetCollection)
+    internal AssetLoadingSystem(IAssetCommands assetCommands, IEditableAssetCollection editableAssetCollection)
     {
         _assetCommands = assetCommands;
-        _assetCollection = assetCollection;
+        _editableAssetCollection = editableAssetCollection;
     }
 
     public void Run(double _)
@@ -25,19 +23,22 @@ public class AssetLoadingSystem : ISystem
             {
                 case IAssetCommands.LoadAssetCommand loadAssetCommand:
                     {
-                        loadAssetCommand.loadFunc().ContinueWith(loadedAsset =>
+                        Task.Run(async () =>
                         {
                             // todo: handle failure
-                            _completedAssets.Enqueue(loadedAsset.Result);
+                            var loadedAsset = await loadAssetCommand.loadFunc();
+                            _editableAssetCollection.AddAsset(loadedAsset);
                         });
                         break;
                     }
+                case IAssetCommands.CreateAssetCommand createAssetCommand:
+                    {
+                        var result = createAssetCommand.createFunc();
+                        _editableAssetCollection.AddAsset(result);
+                        //_completedAssets.Enqueue(result);
+                        break;
+                }
             }
-        }
-
-        while (_completedAssets.TryDequeue(out var completedAsset))
-        {
-            _assetCollection.AddAsset(completedAsset);
         }
     }
 }
