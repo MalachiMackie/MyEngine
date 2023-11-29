@@ -57,6 +57,40 @@ namespace MyEngine.SourceGenerator.Generators
             return false;
         }
 
+        public IEnumerable<ConstructorDeclarationSyntax> FilterConstructorsToAccessible(
+            SemanticModel semanticModel,
+            ClassDeclarationSyntax classNode,
+            IEnumerable<ConstructorDeclarationSyntax> constructors)
+        {
+            var classSymbol = semanticModel.GetDeclaredSymbol(classNode)!;
+
+            var internalsAccessible = DoesAssemblyGiveEngineRuntimeAccessToInternals(classSymbol.ContainingAssembly);
+
+            return constructors
+                .Where(x =>
+                {
+                    var isAccessible = false;
+                    foreach (var token in x.Modifiers)
+                    {
+                        if (token.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.PublicKeyword))
+                        {
+                            isAccessible = true;
+                        }
+                        else if (token.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.InternalKeyword))
+                        {
+                            isAccessible = internalsAccessible;
+                        }
+
+                        if (isAccessible)
+                        {
+                            break;
+                        }
+                    }
+
+                    return isAccessible;
+                });
+        }
+
         public bool DoesClassNodeImplementInterface(SemanticModel semanticModel, ClassDeclarationSyntax classNode, string interfaceFullyQualifiedName)
         {
             if (classNode.BaseList is null)

@@ -80,17 +80,9 @@ namespace MyEngine.SourceGenerator.Generators
                 return StartupSystemConstructor.NoConstructor;
             }
 
-            var publicConstructors = constructorDeclarations
-                .Where(x => x.ChildTokens().Any(y => y.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.PublicKeyword)))
-                .ToArray();
+            var accessibleConstructors = _helpers.FilterConstructorsToAccessible(semanticModel, classNode, constructorDeclarations);
 
-            // todo: add analyzer that reports these warnings
-            if (publicConstructors.Length == 0)
-            {
-                return null;
-            }
-
-            foreach (var constructor in publicConstructors)
+            foreach (var constructor in accessibleConstructors)
             {
                 var parameterList = constructor.ChildNodes().OfType<ParameterListSyntax>().First();
                 var isValid = true;
@@ -128,6 +120,7 @@ namespace MyEngine.SourceGenerator.Generators
                 }
             }
 
+            // todo: add analyzer that reports these warnings
             return null;
         }
 
@@ -143,17 +136,9 @@ namespace MyEngine.SourceGenerator.Generators
                 return new SystemConstructor();
             }
 
-            var publicConstructors = constructorDeclarations
-                .Where(x => x.ChildTokens().Any(y => y.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.PublicKeyword)))
-                .ToArray();
+            var accessibleConstructors = _helpers.FilterConstructorsToAccessible(semanticModel, classNode, constructorDeclarations);
 
-            // todo: add analyzer that reports these warnings
-            if (publicConstructors.Length == 0)
-            {
-                return null;
-            }
-
-            foreach (var constructorNode in publicConstructors)
+            foreach (var constructorNode in accessibleConstructors)
             {
                 var parameterList = constructorNode.ChildNodes().OfType<ParameterListSyntax>().First();
                 var isValid = true;
@@ -186,6 +171,7 @@ namespace MyEngine.SourceGenerator.Generators
                 }
             }
 
+            // todo: add analyzer that reports these warnings
             return null;
         }
 

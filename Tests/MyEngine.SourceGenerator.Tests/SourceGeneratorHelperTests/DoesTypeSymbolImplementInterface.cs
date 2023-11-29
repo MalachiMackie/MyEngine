@@ -34,7 +34,7 @@ public class DoesTypeSymbolImplementInterface
     }
 
     [Fact]
-    public void ymbolImplementInterface_Should_ReturnFalse()
+    public void SymbolImplementInterface_Should_ReturnFalse()
     {
         var source = """
             public class MyClass
