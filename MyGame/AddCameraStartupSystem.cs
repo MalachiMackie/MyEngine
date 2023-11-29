@@ -21,9 +21,9 @@ public class AddCameraStartupSystem : IStartupSystem
         // todo: detect screen aspect ratio
         var entityResult = _entityCommands.CreateEntity(new MyEngine.Core.Transform(), new IComponent[] { new Camera2DComponent(new Vector2(8f, 6f)) });
 
-        if (entityResult.TryGetError(out var addEntityCommandError))
+        if (entityResult.TryGetErrors(out var addEntityCommandError))
         {
-            Console.WriteLine("Failed to add camera: {0}", addEntityCommandError);
+            Console.WriteLine("Failed to add camera: {0}", string.Join(";", addEntityCommandError));
         }
     }
 }

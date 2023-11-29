@@ -28,28 +28,40 @@ public class SuccessfulResultErrorRetrievalException : Exception
 
 public static class Result
 {
-    public static Result<T, TError> Success<T, TError>(T value) => Result<T, TError>.Success(value);
-    public static Result<T, TError> Failure<T, TError>(TError error) => Result<T, TError>.Failure(error);
+    public static Result<T> Success<T>(T value) => Result<T>.Success(value);
+    public static Result<T> Failure<T>(params string[] errors) => Result<T>.Failure(errors);
+    public static Result<T> Failure<T>(IEnumerable<string> errors) => Result<T>.Failure(errors as string[] ?? errors.ToArray());
+
+    // todo: try and get rid of T2
+    public static Result<T> Failure<T, T2>(Result<T2> failedResult)
+    {
+        if (!failedResult.TryGetErrors(out var errors))
+        {
+            throw new InvalidOperationException("Tried to create a failed result from a successful one");
+        }
+
+        return Failure<T>(errors);
+    }
 }
 
-public readonly struct Result<T, TError>
+public readonly struct Result<T>
 {
     [MemberNotNullWhen(true, nameof(_value))]
-    [MemberNotNullWhen(false, nameof(_error))]
+    [MemberNotNullWhen(false, nameof(_errors))]
     public bool IsSuccess { get; }
 
     [MemberNotNullWhen(false, nameof(_value))]
-    [MemberNotNullWhen(true, nameof(_error))]
+    [MemberNotNullWhen(true, nameof(_errors))]
     public bool IsFailure => !IsSuccess;
 
     private readonly T? _value;
 
-    private readonly TError? _error;
+    private readonly string[]? _errors;
 
-    private Result(T? value, TError? error, bool isSuccess)
+    private Result(T? value, string[]? errors, bool isSuccess)
     {
         _value = value;
-        _error = error;
+        _errors = errors;
         IsSuccess = isSuccess;
     }
 
@@ -67,17 +79,11 @@ public readonly struct Result<T, TError>
             : _value;
     }
 
-    public TError UnwrapError()
+    public IEnumerable<string> GetErrors()
     {
         return IsSuccess
             ? throw new SuccessfulResultErrorRetrievalException()
-            : _error;
-    }
-
-    public bool TryGetError([NotNullWhen(true)] out TError? error)
-    {
-        error = _error;
-        return IsFailure;
+            : _errors;
     }
 
     public bool TryGetValue([NotNullWhen(true)] out T? value)
@@ -86,53 +92,27 @@ public readonly struct Result<T, TError>
         return IsSuccess;
     }
 
-    public Result<TMapped, TError> Map<TMapped>(Func<T, TMapped> mapFunc)
+    public bool TryGetErrors([NotNullWhen(true)] out IEnumerable<string>? errors)
+    {
+        errors = _errors;
+        return IsFailure;
+    }
+
+    public Result<TMapped> Map<TMapped>(Func<T, TMapped> mapFunc)
     {
         if (IsSuccess)
         {
-            return Result<TMapped, TError>.Success(mapFunc(_value));
+            return Result<TMapped>.Success(mapFunc(_value));
         }
 
-        return Result<TMapped, TError>.Failure(_error);
+        return Result<TMapped>.Failure(_errors);
     }
 
-    public Result<T, TMappedError> MapError<TMappedError>(Func<TError, TMappedError> mapErrorFunc)
-    {
-        if (IsFailure)
-        {
-            return Result<T, TMappedError>.Failure(mapErrorFunc(_error));
-        }
+    public static Result<T> Success(T value) => new(value, default, true);
 
-        return Result<T, TMappedError>.Success(_value);
-    }
+    public static Result<T> Failure(params string[] errors) => new(default, errors, false);
 
-    public static Result<T, TError> Success(T value) => new(value, default, true);
-
-    public static Result<T, TError> Failure(TError error) => new(default, error, false);
-
-    public void Match(Action<T> onSuccess, Action<TError> onError)
-    {
-        if (IsSuccess)
-        {
-            onSuccess(_value);
-        }
-        else
-        {
-            onError(_error);
-        }
-    }
-
-    public static implicit operator Result<Unit, Unit>(Result<T, TError> result)
-    {
-        return result.Map(_ => Unit.Value).MapError(_ => Unit.Value);
-    }
-
-    public static implicit operator Result<T, Unit>(Result<T, TError> result)
-    {
-        return result.MapError(_ => Unit.Value);
-    }
-
-    public static implicit operator Result<Unit, TError>(Result<T, TError> result)
+    public static implicit operator Result<Unit>(Result<T> result)
     {
         return result.Map(_ => Unit.Value);
     }

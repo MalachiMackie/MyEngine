@@ -150,7 +150,6 @@ public class MathHelperTests
     {
         var result = new Vector2(0f, 0f).WithMagnitude(-1f);
         result.IsFailure.Should().BeTrue();
-        result.UnwrapError().Should().Be(MathHelper.VectorWithMagnitudeError.MagnitudeLessThan0);
     }
 
     [Fact]
@@ -188,7 +187,6 @@ public class MathHelperTests
     {
         var result = new Vector3(0f, 0f, 0f).WithMagnitude(-1f);
         result.IsFailure.Should().BeTrue();
-        result.UnwrapError().Should().Be(MathHelper.VectorWithMagnitudeError.MagnitudeLessThan0);
     }
 
     [Fact]

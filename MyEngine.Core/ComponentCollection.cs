@@ -6,11 +6,6 @@ using MyEngine.Utils;
 
 namespace MyEngine.Core;
 
-internal enum AddComponentError
-{
-    DuplicateComponent
-}
-
 internal class ComponentCollection
 {
     private readonly Dictionary<Type, Dictionary<EntityId, IComponent>> _components = new();
@@ -22,7 +17,7 @@ internal class ComponentCollection
             && components.ContainsKey(entityId);
     }
 
-    public Result<Unit, AddComponentError> AddComponent(EntityId entityId, IComponent component)
+    public Result<Unit> AddComponent(EntityId entityId, IComponent component)
     {
         var type = component.GetType();
         if (!_components.TryGetValue(type, out var components))
@@ -33,11 +28,11 @@ internal class ComponentCollection
 
         if (components.ContainsKey(entityId))
         {
-            return Result.Failure<Unit, AddComponentError>(AddComponentError.DuplicateComponent);
+            return Result.Failure<Unit>($"Entity {entityId} already contains a component of type {type.Name}");
         }
 
         components.Add(entityId, component);
-        return Result.Success<Unit, AddComponentError>(Unit.Value);
+        return Result.Success<Unit>(Unit.Value);
     }
 
     public void DeleteAllComponentsForEntity(EntityId entityId)

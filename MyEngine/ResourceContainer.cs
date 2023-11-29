@@ -4,12 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace MyEngine.Runtime;
 
-internal enum RegisterResourceError
-{
-    ResourceAlreadyAdded,
-    ResourceDoesNotImplementIResourceInterface
-}
-
 internal class ResourceContainer
 {
     private readonly Dictionary<Type, object> _resources = new();
@@ -26,28 +20,29 @@ internal class ResourceContainer
         return resource is not null;
     }
 
-    public Result<Unit, RegisterResourceError> RegisterResource<T>(T resource) where T : IResource
+    public Result<Unit> RegisterResource<T>(T resource) where T : IResource
     {
-        if (!_resources.TryAdd(typeof(T), resource))
+        var resourceType = typeof(T);
+        if (!_resources.TryAdd(resourceType, resource))
         {
-            return Result.Failure<Unit, RegisterResourceError>(RegisterResourceError.ResourceAlreadyAdded);
+            return Result.Failure<Unit>($"Resource of type {resourceType.Name} has already been added to the resource container");
         }
 
-        return Result.Success<Unit, RegisterResourceError>(Unit.Value);
+        return Result.Success<Unit>(Unit.Value);
     }
 
-    public Result<Unit, RegisterResourceError> RegisterResource(Type resourceType, IResource resource)
+    public Result<Unit> RegisterResource(Type resourceType, IResource resource)
     {
         if (!resourceType.IsAssignableTo(typeof(IResource)))
         {
-            return Result.Failure<Unit, RegisterResourceError>(RegisterResourceError.ResourceDoesNotImplementIResourceInterface);
+            return Result.Failure<Unit>($"Resource of type {resourceType.Name} does not implement {nameof(IResource)}");
         }
 
         if (!_resources.TryAdd(resourceType, resource))
         {
-            return Result.Failure<Unit, RegisterResourceError>(RegisterResourceError.ResourceAlreadyAdded);
+            return Result.Failure<Unit>($"Resource of type {resourceType.Name} has already been added to the resource container");
         }
 
-        return Result.Success<Unit, RegisterResourceError>(Unit.Value);
+        return Result.Success<Unit>(Unit.Value);
     }
 }

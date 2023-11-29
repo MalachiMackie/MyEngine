@@ -33,12 +33,9 @@ public class InitializeRenderingSystem : IStartupSystem
     {
         var rendererResult = Renderer.Create(openGL);
 
-        if (rendererResult.TryGetError(out var error))
+        if (rendererResult.TryGetErrors(out var error))
         {
-            error.Match(
-                x => Console.WriteLine("Fragment shader failed to compile: {0}", x.CompilationError),
-                x => Console.WriteLine("Vertex shader failed to compile: {0}", x.CompilationError),
-                x => Console.WriteLine("Shader linking failed: {0}", x.LinkError));
+            Console.WriteLine("Failed to create renderer: {0}", string.Join(";", error));
             return;
         }
 

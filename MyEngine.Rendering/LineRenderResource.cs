@@ -20,11 +20,11 @@ internal class LineRenderResource : ILineRenderResource
         }
     }
 
-    public Result<Unit, ILineRenderResource.RenderLineCircleError> RenderLineCircle(Vector3 center, float radius, uint? segments = null)
+    public Result<Unit> RenderLineCircle(Vector3 center, float radius, uint? segments = null)
     {
         if (segments is < 3)
         {
-            return Result.Failure<Unit, ILineRenderResource.RenderLineCircleError>(ILineRenderResource.RenderLineCircleError.InvalidSegmentCount);
+            return Result.Failure<Unit>("Cannot have less than 3 segments for a circle line render");
         }
 
         segments ??= 15;
@@ -54,6 +54,6 @@ internal class LineRenderResource : ILineRenderResource
         }
         _lines.Enqueue(new ILineRenderResource.Line(previous!.Value, first!.Value));
 
-        return Result.Success<Unit, ILineRenderResource.RenderLineCircleError>(Unit.Value);
+        return Result.Success<Unit>(Unit.Value);
     }
 }

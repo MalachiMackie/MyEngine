@@ -2,11 +2,10 @@
 
 namespace MyEngine.Assets;
 
-public class AssetLoadingSystem : ISystem
+internal class AssetLoadingSystem : ISystem
 {
     private readonly IAssetCommands _assetCommands;
     private readonly IEditableAssetCollection _editableAssetCollection;
-
 
     internal AssetLoadingSystem(IAssetCommands assetCommands, IEditableAssetCollection editableAssetCollection)
     {

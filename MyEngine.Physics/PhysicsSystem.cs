@@ -143,18 +143,18 @@ public class PhysicsSystem : ISystem
                 case PhysicsResource.SetDynamicTransformCommand updateDynamicTransform:
                     {
                         var result = _physicsAdapter.ApplyDynamicPhysicsTransform(updateDynamicTransform.entityId, updateDynamicTransform.transform);
-                        if (result.TryGetError(out var error))
+                        if (result.TryGetErrors(out var error))
                         {
-                            Console.WriteLine("Failed to apply dynamic physics transform: {0}", error.Error.Error);
+                            Console.WriteLine("Failed to apply dynamic physics transform: {0}", string.Join(',', error));
                         }
                         break;
                     }
                 case PhysicsResource.SetStaticTransformCommand updateStaticTransform:
                     {
                         var result = _physicsAdapter.ApplyStaticPhysicsTransform(updateStaticTransform.entityId, updateStaticTransform.transform);
-                        if (result.TryGetError(out var error))
+                        if (result.TryGetErrors(out var error))
                         {
-                            Console.WriteLine("Failed to set static transform: {0}", error.Error.Error);
+                            Console.WriteLine("Failed to set static transform: {0}", string.Join(';', error));
                         }
                         break;
                     }
@@ -207,45 +207,46 @@ public class PhysicsSystem : ISystem
                 case PhysicsResource.AddStaticBodyCommand addStaticBody:
                     {
                         var result = _physicsAdapter.AddStaticBody(addStaticBody.entityId, addStaticBody.transform);
-                        if (result.TryGetError(out var error))
+                        if (result.TryGetErrors(out var error))
                         {
-                            Console.WriteLine("Failed to add static body: {0}", error.Error.Error);
+                            // todo: add centralized logging
+                            Console.WriteLine("Failed to add static body: {0}", string.Join(';', error));
                         }
                         break;
                     }
                 case PhysicsResource.AddStaticBody2DCommand addStaticBody2D:
                     {
                         var result = _physicsAdapter.AddStaticBody2D(addStaticBody2D.entityId, addStaticBody2D.transform, addStaticBody2D.collider);
-                        if (result.TryGetError(out var error))
+                        if (result.TryGetErrors(out var error))
                         {
-                            Console.WriteLine("Failed to add static body 2D: {0}", error.Error.Error);
+                            Console.WriteLine("Failed to add static body 2D: {0}", string.Join(";", error));
                         }
                         break;
                     }
                 case PhysicsResource.AddDynamicBodyCommand addDynamicBody:
                     {
                         var result = _physicsAdapter.AddDynamicBody(addDynamicBody.entityId, addDynamicBody.transform);
-                        if (result.TryGetError(out var error))
+                        if (result.TryGetErrors(out var error))
                         {
-                            Console.WriteLine("Failed to add dynamic body: {0}", error.Error.Error);
+                            Console.WriteLine("Failed to add dynamic body: {0}", string.Join(", ", error));
                         }
                         break;
                     }
                 case PhysicsResource.AddDynamicBody2DCommand addDynamicBody2D:
                     {
                         var result = _physicsAdapter.AddDynamicBody2D(addDynamicBody2D.entityId, addDynamicBody2D.transform, addDynamicBody2D.collider);
-                        if (result.TryGetError(out var error))
+                        if (result.TryGetErrors(out var error))
                         {
-                            Console.WriteLine("Failed to add dynamic body 2D: {0}", error.Error.Error);
+                            Console.WriteLine("Failed to add dynamic body 2D: {0}", string.Join(", ", error));
                         }
                         break;
                     }
                 case PhysicsResource.AddKinematicBody2DCommand addKinematicBody2D:
                     {
                         var result = _physicsAdapter.AddKinematicBody2D(addKinematicBody2D.entityId, addKinematicBody2D.transform, addKinematicBody2D.collider);
-                        if (result.TryGetError(out var error))
+                        if (result.TryGetErrors(out var error))
                         {
-                            Console.WriteLine("Failed to add kinematic body 2D: {0}", error.Error.Error);
+                            Console.WriteLine("Failed to add kinematic body 2D: {0}", string.Join(", ", error));
                         }
                     }
                     break;

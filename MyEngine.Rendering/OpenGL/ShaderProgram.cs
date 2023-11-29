@@ -2,16 +2,7 @@
 using Silk.NET.OpenGL;
 using System.Numerics;
 
-using CreateShaderProgramError = MyEngine.Utils.OneOf<
-    MyEngine.Rendering.OpenGL.VertexShaderCompilationFailed,
-    MyEngine.Rendering.OpenGL.FragmentShaderCompilationFailed,
-    MyEngine.Rendering.OpenGL.ShaderProgramLinkFailed>;
-
 namespace MyEngine.Rendering.OpenGL;
-
-internal readonly record struct VertexShaderCompilationFailed(string CompilationError);
-internal readonly record struct FragmentShaderCompilationFailed(string CompilationError);
-internal readonly record struct ShaderProgramLinkFailed(string LinkError);
 
 internal class ShaderProgram : IDisposable
 {
@@ -48,7 +39,7 @@ internal class ShaderProgram : IDisposable
         _gl.DeleteProgram(_handle);
     }
 
-    private static Result<uint, string> LoadShader(GL gl, ShaderType shaderType, string source)
+    private static Result<uint> LoadShader(GL gl, ShaderType shaderType, string source)
     {
         var handle = gl.CreateShader(shaderType);
         gl.ShaderSource(handle, source);
@@ -57,29 +48,27 @@ internal class ShaderProgram : IDisposable
         gl.GetShader(handle, ShaderParameterName.CompileStatus, out var status);
         if (status != (int)GLEnum.True)
         {
-            return Result.Failure<uint, string>($"{shaderType} shader failed to compile: {gl.GetShaderInfoLog(handle)}");
+            return Result.Failure<uint>($"{shaderType} shader failed to compile: {gl.GetShaderInfoLog(handle)}");
         }
 
-        return Result.Success<uint, string>(handle);
+        return Result.Success<uint>(handle);
     }
 
-    public static Result<ShaderProgram, CreateShaderProgramError> Create(GL gl, string vertexSource, string fragmentSource)
+    public static Result<ShaderProgram> Create(GL gl, string vertexSource, string fragmentSource)
     {
 
-        var vertexResult = LoadShader(gl, ShaderType.VertexShader, vertexSource)
-            .MapError(err => new CreateShaderProgramError(new VertexShaderCompilationFailed(err)));
+        var vertexResult = LoadShader(gl, ShaderType.VertexShader, vertexSource);
 
         if (!vertexResult.TryGetValue(out var vertexHandle))
         {
-            return Result.Failure<ShaderProgram, CreateShaderProgramError>(vertexResult.UnwrapError());
+            return Result.Failure<ShaderProgram, uint>(vertexResult);
         }
 
-        var fragmentResult = LoadShader(gl, ShaderType.FragmentShader, fragmentSource)
-            .MapError(err => new CreateShaderProgramError(new FragmentShaderCompilationFailed(err)));
+        var fragmentResult = LoadShader(gl, ShaderType.FragmentShader, fragmentSource);
 
         if (!fragmentResult.TryGetValue(out var fragmentHandle))
         {
-            return Result.Failure<ShaderProgram, CreateShaderProgramError>(fragmentResult.UnwrapError());
+            return Result.Failure<ShaderProgram, uint>(fragmentResult);
         }
 
         var handle = gl.CreateProgram();
@@ -93,7 +82,7 @@ internal class ShaderProgram : IDisposable
         gl.GetProgram(handle, ProgramPropertyARB.LinkStatus, out var lStatus);
         if (lStatus != (int)GLEnum.True)
         {
-            return Result.Failure<ShaderProgram, CreateShaderProgramError>(new CreateShaderProgramError(new ShaderProgramLinkFailed(gl.GetProgramInfoLog(handle))));
+            return Result.Failure<ShaderProgram>($"Faled to link shader program: {gl.GetProgramInfoLog(handle)}");
         }
 
         gl.DetachShader(handle, vertexHandle);
@@ -101,7 +90,7 @@ internal class ShaderProgram : IDisposable
         gl.DeleteShader(vertexHandle);
         gl.DeleteShader(fragmentHandle);
 
-        return Result.Success<ShaderProgram, CreateShaderProgramError>(shader);
+        return Result.Success<ShaderProgram>(shader);
 
     }
 }

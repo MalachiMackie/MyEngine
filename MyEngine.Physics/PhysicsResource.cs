@@ -85,12 +85,6 @@ public class PhysicsResource : IResource
         PhysicsCommands.Enqueue(new SetBody2DVelocityCommand(entityId, velocity));
     }
 
-    // This is internal because games should instead use VelocityComponent to get the velocity
-    internal Result<Vector3, string> GetCurrentVelocity(EntityId entityId)
-    {
-        return Result.Failure<Vector3, string>("Not Implemented");
-    }
-
     internal interface IPhysicsCommand
     {
     }

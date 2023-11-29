@@ -59,9 +59,9 @@ public class ResetBallSystem : ISystem
         var (_, paddleTransform) = paddleComponents; 
 
         var result = _commands.AddChild(paddleComponents.EntityId, ballId);
-        if (result.TryGetError(out var error))
+        if (result.TryGetErrors(out var error))
         {
-            Console.WriteLine("Could not reset ball: {0}", error);
+            Console.WriteLine("Could not reset ball: {0}", string.Join(", ", error));
         }
 
         _physicsResource.SetBody2DVelocity(ballId, Vector2.Zero);

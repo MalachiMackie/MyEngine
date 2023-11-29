@@ -34,7 +34,6 @@ public class AssetCollectionTests
     {
         var result = _assetCollection.TryGetAsset<OtherAsset>(_asset.Id);
         result.IsFailure.Should().BeTrue();
-        result.UnwrapError().Should().Be(IAssetCollection.GetAssetError.IncorrectAssetType);
     }
 
     [Fact]
@@ -51,7 +50,6 @@ public class AssetCollectionTests
     {
         var result = _assetCollection.AddAsset(_asset);
         result.IsFailure.Should().BeTrue();
-        result.UnwrapError().Should().Be(IEditableAssetCollection.AddAssetError.AssetIdAlreadyAdded);
     }
 }
 

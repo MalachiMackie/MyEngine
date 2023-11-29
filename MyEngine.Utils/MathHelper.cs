@@ -97,48 +97,48 @@ public static class MathHelper
         MagnitudeLessThan0
     }
 
-    public static Result<Vector2, VectorWithMagnitudeError> WithMagnitude(this Vector2 v, float magnitude)
+    public static Result<Vector2> WithMagnitude(this Vector2 v, float magnitude)
     {
         if (magnitude < 0)
         {
-            return Result.Failure<Vector2, VectorWithMagnitudeError>(VectorWithMagnitudeError.MagnitudeLessThan0);
+            return Result.Failure<Vector2>("Magnitude cannot be less than 0");
         }
 
         if (magnitude < 0.00001f)
         {
             // setting magnitude to zero removes all data 
-            return Result.Success<Vector2, VectorWithMagnitudeError>(Vector2.Zero);
+            return Result.Success<Vector2>(Vector2.Zero);
         }
 
         if (v.Length() < 0.00001f)
         {
             // if current magnitude is zero, then we just keep it at zero 
-            return Result.Success<Vector2, VectorWithMagnitudeError>(Vector2.Zero);
+            return Result.Success<Vector2>(Vector2.Zero);
         }
 
-        return Result.Success<Vector2, VectorWithMagnitudeError>(v.Normalize() * magnitude);
+        return Result.Success<Vector2>(v.Normalize() * magnitude);
     }
 
-    public static Result<Vector3, VectorWithMagnitudeError> WithMagnitude(this Vector3 v, float magnitude)
+    public static Result<Vector3> WithMagnitude(this Vector3 v, float magnitude)
     {
         if (magnitude < 0)
         {
-            return Result.Failure<Vector3, VectorWithMagnitudeError>(VectorWithMagnitudeError.MagnitudeLessThan0);
+            return Result.Failure<Vector3>("Magnitude cannot be less than 0");
         }
 
         if (magnitude < 0.00001f)
         {
             // setting magnitude to zero removes all data 
-            return Result.Success<Vector3, VectorWithMagnitudeError>(Vector3.Zero);
+            return Result.Success<Vector3>(Vector3.Zero);
         }
 
         if (v.Length() < 0.00001f)
         {
             // if current magnitude is zero, then we just keep it at zero 
-            return Result.Success<Vector3, VectorWithMagnitudeError>(Vector3.Zero);
+            return Result.Success<Vector3>(Vector3.Zero);
         }
 
-        return Result.Success<Vector3, VectorWithMagnitudeError>(v.Normalize() * magnitude);
+        return Result.Success<Vector3>(v.Normalize() * magnitude);
     }
 
     // https://gist.github.com/vpenades/9e6248bf8558aa1d802885c2ab984e14 

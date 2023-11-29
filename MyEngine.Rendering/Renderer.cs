@@ -8,11 +8,6 @@ using MyEngine.Rendering.OpenGL;
 using MyEngine.Utils;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
-using RendererLoadError = MyEngine.Utils.OneOf<
-    MyEngine.Rendering.OpenGL.FragmentShaderCompilationFailed,
-    MyEngine.Rendering.OpenGL.VertexShaderCompilationFailed,
-    MyEngine.Rendering.OpenGL.ShaderProgramLinkFailed
-    >;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
 
@@ -129,7 +124,7 @@ internal sealed class Renderer : IDisposable, IResource
     private uint _width;
     private uint _height;
 
-    internal static Result<Renderer, RendererLoadError> Create(GL openGL)
+    internal static Result<Renderer> Create(GL openGL)
     {
         Span<uint> spriteIndices = stackalloc uint[]
         {
@@ -198,34 +193,20 @@ internal sealed class Renderer : IDisposable, IResource
         var textVertexCode = File.ReadAllText(Path.Join("Shaders", "textShader.vert"));
         var textFragmentCode = File.ReadAllText(Path.Join("Shaders", "textShader.frag"));
 
-        var spriteShaderResult = ShaderProgram.Create(openGL, vertexCode, fragmentCode)
-            .MapError(err =>
-            {
-                return err.Match(
-                    vertexShaderCompilationError => new RendererLoadError(vertexShaderCompilationError),
-                    fragmentShaderCompilationError => new RendererLoadError(fragmentShaderCompilationError),
-                    shaderLinkError => new RendererLoadError(shaderLinkError));
-            });
+        var spriteShaderResult = ShaderProgram.Create(openGL, vertexCode, fragmentCode);
         if (!spriteShaderResult.TryGetValue(out var shader))
         {
-            return Result.Failure<Renderer, RendererLoadError>(spriteShaderResult.UnwrapError());
+            return Result.Failure<Renderer, ShaderProgram>(spriteShaderResult);
         }
 
         openGL.Enable(EnableCap.Blend);
         openGL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
-        var textShaderResult = ShaderProgram.Create(openGL, textVertexCode, textFragmentCode)
-            .MapError(err =>
-           {
-                return err.Match(
-                    vertexShaderCompilationError => new RendererLoadError(vertexShaderCompilationError),
-                    fragmentShaderCompilationError => new RendererLoadError(fragmentShaderCompilationError),
-                    shaderLinkError => new RendererLoadError(shaderLinkError));
-           });
+        var textShaderResult = ShaderProgram.Create(openGL, textVertexCode, textFragmentCode);
 
         if (!textShaderResult.TryGetValue(out var textShader))
         {
-            return Result.Failure<Renderer, RendererLoadError>(textShaderResult.UnwrapError());
+            return Result.Failure<Renderer, ShaderProgram>(textShaderResult);
         }
 
         var textSpriteInstanceBuffer = BufferObject<TextInstanceData>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw);
@@ -266,17 +247,10 @@ internal sealed class Renderer : IDisposable, IResource
         lineVertexArray.AttachBuffer(lineVertexBuffer);
         lineVertexArray.VertexArrayAttribute(0, 3, VertexAttribPointerType.Float, sizeof(float), false, 3, 0); // location
 
-        var lineShaderResult = ShaderProgram.Create(openGL, lineVertexCode, lineFragmentCode)
-            .MapError(err =>
-            {
-                return err.Match(
-                    vertexShaderCompilationError => new RendererLoadError(vertexShaderCompilationError),
-                    fragmentShaderCompilationError => new RendererLoadError(fragmentShaderCompilationError),
-                    shaderLinkError => new RendererLoadError(shaderLinkError));
-            });
+        var lineShaderResult = ShaderProgram.Create(openGL, lineVertexCode, lineFragmentCode);
         if (!lineShaderResult.TryGetValue(out var lineShader))
         {
-            return Result.Failure<Renderer, RendererLoadError>(lineShaderResult.UnwrapError());
+            return Result.Failure<Renderer, ShaderProgram>(lineShaderResult);
         }
 
         lineVertexArray.Unbind();
@@ -297,7 +271,7 @@ internal sealed class Renderer : IDisposable, IResource
             textShader,
             spriteInstanceBuffer);
 
-        return Result.Success<Renderer, RendererLoadError>(renderer);
+        return Result.Success<Renderer>(renderer);
     }
 
     public void Resize(Vector2D<int> size)
@@ -776,17 +750,29 @@ internal sealed class Renderer : IDisposable, IResource
         return new RendererStats(_render2DBatch.DrawCalls);
     }
 
+    private readonly record struct SpriteRenderOrTextRender(SpriteRender? SpriteRender, TextRender? TextRender)
+    {
+        public float ZPosition => SpriteRender.HasValue ? SpriteRender.Value.Position.Z
+            : TextRender is not null ? TextRender.Position.Z
+            : default;
+    }
+
     private void DrawScreenSpaceEntities(IEnumerable<SpriteRender> spriteRenders, IEnumerable<TextRender> textRenders)
     {
-        var zOrdered = spriteRenders.Select(x => new OneOf<SpriteRender, TextRender>(x))
-            .Concat(textRenders.Select(x => new OneOf<SpriteRender, TextRender>(x)))
-            .OrderBy(x => x.Match(y => y.Position.Z, y => y.Position.Z));
+        var zOrdered = spriteRenders.Select(x => new SpriteRenderOrTextRender(x, null))
+            .Concat(textRenders.Select(x => new SpriteRenderOrTextRender(null, x)))
+            .OrderBy(x => x.ZPosition);
 
         foreach (var spriteOrText in zOrdered)
         {
-            spriteOrText.Match(
-                sprite => DrawSprite(sprite, _render2DBatch, screenSpace: true),
-                text => DrawText(text, _render2DBatch));
+            if (spriteOrText.SpriteRender is { } spriteRender)
+            {
+                DrawSprite(spriteRender, _render2DBatch, screenSpace: true);
+            }
+            else if (spriteOrText.TextRender is { } textRender)
+            {
+                DrawText(textRender, _render2DBatch);
+            }
         }
     }
 
@@ -800,9 +786,7 @@ internal sealed class Renderer : IDisposable, IResource
         }
     }
 
-    public readonly record struct RenderError(GlobalTransform.GetPositionRotationScaleError Error);
-
-    public Result<Unit, RenderError> Render(GlobalTransform cameraTransform, IEnumerable<GlobalTransform> transforms)
+    public Result<Unit> Render(GlobalTransform cameraTransform, IEnumerable<GlobalTransform> transforms)
     {
         OpenGL.Clear(ClearBufferMask.ColorBufferBit);
 
@@ -810,12 +794,11 @@ internal sealed class Renderer : IDisposable, IResource
 
         _spriteShader.UseProgram();
 
-        var positionRotationScaleResult = cameraTransform.GetPositionRotationScale()
-            .MapError(err => new RenderError(err));
+        var positionRotationScaleResult = cameraTransform.GetPositionRotationScale();
 
         if (!positionRotationScaleResult.TryGetValue(out var positionRotationScale))
         {
-            return Result.Failure<Unit, RenderError>(positionRotationScaleResult.UnwrapError());
+            return Result.Failure<Unit, GlobalTransform.PositionRotationScale>(positionRotationScaleResult);
         }
 
         var (cameraPosition, cameraRotation, _) = positionRotationScale;
@@ -839,7 +822,7 @@ internal sealed class Renderer : IDisposable, IResource
             OpenGL.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, ReadOnlySpan<uint>.Empty);
         }
 
-        return Result.Success<Unit, RenderError>(Unit.Value);
+        return Result.Success<Unit>(Unit.Value);
     }
 
     public void Dispose()

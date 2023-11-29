@@ -51,9 +51,9 @@ public class AddStartupSpritesSystem : ISystem
         });
         _resourceRegistrationResource.AddResource(_brickSizeResource);
 
-        if (AddWalls(whiteSprite).TryGetError(out var addWallsError))
+        if (AddWalls(whiteSprite).TryGetErrors(out var addWallsError))
         {
-            Console.WriteLine("Failed to add wall: {0}", addWallsError);
+            Console.WriteLine("Failed to add wall: {0}", string.Join(";", addWallsError));
             return;
         }
 
@@ -62,9 +62,9 @@ public class AddStartupSpritesSystem : ISystem
             return;
         }
 
-        if (AddBricks(whiteSprite).TryGetError(out var addBricksError))
+        if (AddBricks(whiteSprite).TryGetErrors(out var addBricksError))
         {
-            Console.WriteLine("Failed to add brick: {0}", addBricksError);
+            Console.WriteLine("Failed to add brick: {0}", string.Join(';', addBricksError));
         }
     }
 
@@ -75,7 +75,7 @@ public class AddStartupSpritesSystem : ISystem
         return Origin + new Vector2(x * _brickSizeResource.Dimensions.X, y * _brickSizeResource.Dimensions.Y);
     }
 
-    private Result<Unit, AddEntityCommandError> AddBricks(Sprite whiteSprite)
+    private Result<Unit> AddBricks(Sprite whiteSprite)
     {
         var brickPositions = new[]
         {
@@ -121,10 +121,10 @@ public class AddStartupSpritesSystem : ISystem
             }
         }
 
-        return Result.Success<Unit, AddEntityCommandError>(Unit.Value);
+        return Result.Success<Unit>(Unit.Value);
     }
 
-    private Result<Unit, AddEntityCommandError> AddWalls(Sprite whiteSprite)
+    private Result<Unit> AddWalls(Sprite whiteSprite)
     {
         // 8 x 6
         var walls = new[]
@@ -165,15 +165,15 @@ public class AddStartupSpritesSystem : ISystem
                     _entityCommands.RemoveEntity(wall).Expect("We checked success of add wall");
                 }
 
-                return addWallResult.Map(_ => Unit.Value);
+                return Result.Failure<Unit, EntityId>(addWallResult);
             }
         }
 
-        return Result.Success<Unit, AddEntityCommandError>(Unit.Value);
+        return Result.Success<Unit>(Unit.Value);
     }
 
 
-    private Result<Unit, Unit> AddPaddleAndBall(Sprite whiteSprite, Sprite ballSprite)
+    private Result<Unit> AddPaddleAndBall(Sprite whiteSprite, Sprite ballSprite)
     {
         var result = _entityCommands.CreateEntity(x => x
             .WithDefaultTransform(new Vector3(0f, -1.25f, DefaultZIndex))
@@ -193,9 +193,9 @@ public class AddStartupSpritesSystem : ISystem
                     new VelocityComponent(),
                     new LogPositionComponent { Name = "Ball"})));
 
-        if (result.TryGetError(out var error))
+        if (result.TryGetErrors(out var errors))
         {
-            Console.WriteLine("Failed to create paddle and ball: {0}", result.UnwrapError());
+            Console.WriteLine("Failed to create paddle and ball: {0}", string.Join(";", errors));
         }
 
         return result;

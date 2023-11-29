@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using MyEngine.Core;
 
+[assembly: InternalsVisibleTo("MyEngine.Runtime")]
 [assembly: InternalsVisibleTo("MyEngine.Assets.Tests")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 

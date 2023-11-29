@@ -283,14 +283,16 @@ public class BepuPhysicsAdapter : IResource
         Sphere3D
     }
 
+    public readonly record struct ColliderPositionCollider(BoxCollider2D? BoxCollider2D, CircleCollider2D? CircleCollider2D);
+
     public readonly record struct ColliderPosition(
         Vector3 Position,
         Quaternion Rotation,
-        OneOf<BoxCollider2D, CircleCollider2D> Collider,
+        ColliderPositionCollider Collider,
         RigidBodyType RigidBodyType
         );
 
-    private OneOf<BoxCollider2D, CircleCollider2D> GetColliderShape(TypedIndex shapeIndex, ShapeType shapeType)
+    private ColliderPositionCollider GetColliderShape(TypedIndex shapeIndex, ShapeType shapeType)
     {
         switch (shapeType)
         {
@@ -298,13 +300,13 @@ public class BepuPhysicsAdapter : IResource
             case ShapeType.Box2D:
                 {
                     var shape = _simulation.Shapes.GetShape<Box>(shapeIndex.Index);
-                    return new OneOf<BoxCollider2D, CircleCollider2D>(new BoxCollider2D(new Vector2(shape.Width, shape.Height)));
+                    return new ColliderPositionCollider(new BoxCollider2D(new Vector2(shape.Width, shape.Height)), null);
                 }
             case ShapeType.Circle2D:
             case ShapeType.Sphere3D:
                 {
                     var shape = _simulation.Shapes.GetShape<Sphere>(shapeIndex.Index);
-                    return new OneOf<BoxCollider2D, CircleCollider2D>(new CircleCollider2D(shape.Radius));
+                    return new ColliderPositionCollider(null, new CircleCollider2D(shape.Radius));
                 }
             default:
                 {
@@ -346,15 +348,12 @@ public class BepuPhysicsAdapter : IResource
         _simulation.Shapes.Remove(shape);
     }
 
-    public readonly record struct AddStaticBodyError(GlobalTransform.GetPositionRotationScaleError Error);
-
-    public Result<Unit, AddStaticBodyError> AddStaticBody(EntityId entityId, GlobalTransform transform)
+    public Result<Unit> AddStaticBody(EntityId entityId, GlobalTransform transform)
     {
-        var positionRotationScaleResult = transform.GetPositionRotationScale()
-            .MapError(err => new AddStaticBodyError(err));
+        var positionRotationScaleResult = transform.GetPositionRotationScale();
         if (!positionRotationScaleResult.TryGetValue(out var positionRotationScale))
         {
-            return Result.Failure<Unit, AddStaticBodyError>(positionRotationScaleResult.UnwrapError());
+            return Result.Failure<Unit, GlobalTransform.PositionRotationScale>(positionRotationScaleResult);
         }
 
         var (position, rotation, _) = positionRotationScale;
@@ -376,7 +375,7 @@ public class BepuPhysicsAdapter : IResource
 
         _staticHandles[entityId] = (handle, shape, shapeType);
 
-        return Result.Success<Unit, AddStaticBodyError>(Unit.Value);
+        return Result.Success<Unit>(Unit.Value);
     }
 
     private (TypedIndex ShapeIndex, BodyInertia ShapeInertia, ShapeType ShapeType) AddColliderAsShape(ICollider2D collider2D, Vector3 scale, float mass)
@@ -414,16 +413,13 @@ public class BepuPhysicsAdapter : IResource
         currentVelocity.Linear = velocity.Extend(currentVelocity.Linear.Z);
     }
 
-    public readonly record struct AddStaticBody2DError(GlobalTransform.GetPositionRotationScaleError Error);
-
-    public Result<Unit, AddStaticBody2DError> AddStaticBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider2D)
+    public Result<Unit> AddStaticBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider2D)
     {
-        var positionRotationScaleResult = transform.GetPositionRotationScale()
-            .MapError(err => new AddStaticBody2DError(err));
+        var positionRotationScaleResult = transform.GetPositionRotationScale();
 
         if (!positionRotationScaleResult.TryGetValue(out var positionRotationScale))
         {
-            return Result.Failure<Unit, AddStaticBody2DError>(positionRotationScaleResult.UnwrapError());
+            return Result.Failure<Unit, GlobalTransform.PositionRotationScale>(positionRotationScaleResult);
         }
         var (position, rotation, _) = positionRotationScale;
 
@@ -443,7 +439,7 @@ public class BepuPhysicsAdapter : IResource
 
         _staticHandles[entityId] = (handle, shape, shapeType);
 
-        return Result.Success<Unit, AddStaticBody2DError>(Unit.Value);
+        return Result.Success<Unit>(Unit.Value);
     }
 
     public void RemoveDynamicBody(EntityId entityId)
@@ -454,16 +450,13 @@ public class BepuPhysicsAdapter : IResource
         _simulation.Shapes.Remove(shape);
     }
 
-    public readonly record struct AddDynamicBodyError(GlobalTransform.GetPositionRotationScaleError Error);
-
-    public Result<Unit, AddDynamicBodyError> AddDynamicBody(EntityId entityId, GlobalTransform transform)
+    public Result<Unit> AddDynamicBody(EntityId entityId, GlobalTransform transform)
     {
-        var positionRotationScaleResult = transform.GetPositionRotationScale()
-            .MapError(err => new AddDynamicBodyError(err));
+        var positionRotationScaleResult = transform.GetPositionRotationScale();
 
         if (!positionRotationScaleResult.TryGetValue(out var positionRotationScale))
         {
-            return Result.Failure<Unit, AddDynamicBodyError>(positionRotationScaleResult.UnwrapError());
+            return Result.Failure<Unit, GlobalTransform.PositionRotationScale>(positionRotationScaleResult);
         }
 
         var (position, rotation, _) = positionRotationScale;
@@ -489,21 +482,18 @@ public class BepuPhysicsAdapter : IResource
 
         _dynamicHandles.Add(entityId, (handle, shapeIndex, shapeType));
 
-        return Result.Success<Unit, AddDynamicBodyError>(Unit.Value);
+        return Result.Success<Unit>(Unit.Value);
     }
 
-    public readonly record struct AddKinematicbody2DError(GlobalTransform.GetPositionRotationScaleError Error);
-
-    public Result<Unit, AddKinematicbody2DError> AddKinematicBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider)
+    public Result<Unit> AddKinematicBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider)
     {
         var (shapeIndex, _, shapeType) = AddColliderAsShape(collider, transform.Scale, 10f);
 
-        var positionRotationScaleResult = transform.GetPositionRotationScale()
-            .MapError(err => new AddKinematicbody2DError(err));
+        var positionRotationScaleResult = transform.GetPositionRotationScale();
 
         if (!positionRotationScaleResult.TryGetValue(out var positionRotationScale))
         {
-            return Result.Failure<Unit, AddKinematicbody2DError>(positionRotationScaleResult.UnwrapError());
+            return Result.Failure<Unit, GlobalTransform.PositionRotationScale>(positionRotationScaleResult);
         }
 
         var (position, rotation, _) = positionRotationScale;
@@ -518,12 +508,10 @@ public class BepuPhysicsAdapter : IResource
 
         _dynamicHandles.Add(entityId, (handle, shapeIndex, shapeType));
 
-        return Result.Success<Unit, AddKinematicbody2DError>(Unit.Value);
+        return Result.Success<Unit>(Unit.Value);
     }
 
-    public readonly record struct AddDynamicBody2DError(GlobalTransform.GetPositionRotationScaleError Error);
-
-    public Result<Unit, AddDynamicBody2DError> AddDynamicBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider)
+    public Result<Unit> AddDynamicBody2D(EntityId entityId, GlobalTransform transform, ICollider2D collider)
     {
         var (shapeIndex, inertia, shapeType) = AddColliderAsShape(collider, transform.Scale, 10f);
         var inverseInertiaTensor = inertia.InverseInertiaTensor;
@@ -534,12 +522,11 @@ public class BepuPhysicsAdapter : IResource
 
         inertia.InverseInertiaTensor = inverseInertiaTensor;
 
-        var positionRotationScaleResult = transform.GetPositionRotationScale()
-            .MapError(err => new AddDynamicBody2DError(err));
+        var positionRotationScaleResult = transform.GetPositionRotationScale();
 
         if (!positionRotationScaleResult.TryGetValue(out var positionRotationScale))
         {
-            return Result.Failure<Unit, AddDynamicBody2DError>(positionRotationScaleResult.UnwrapError());
+            return Result.Failure<Unit, GlobalTransform.PositionRotationScale>(positionRotationScaleResult);
         }
 
         var (position, rotation, _) = positionRotationScale;
@@ -566,7 +553,7 @@ public class BepuPhysicsAdapter : IResource
 
         _dynamicHandles.Add(entityId, (handle, shapeIndex, shapeType));
 
-        return Result.Success<Unit, AddDynamicBody2DError>(Unit.Value);
+        return Result.Success<Unit>(Unit.Value);
     }
 
     public void ApplyImpulse(EntityId entityId, Vector3 impulse)
@@ -594,21 +581,18 @@ public class BepuPhysicsAdapter : IResource
         return (pose.Position, pose.Orientation, body.Velocity.Linear);
     }
 
-    public readonly record struct ApplyDynamicPhysicsTransformError(GlobalTransform.GetPositionRotationScaleError Error);
-
-    public Result<Unit, ApplyDynamicPhysicsTransformError> ApplyDynamicPhysicsTransform(EntityId entityId, GlobalTransform transform)
+    public Result<Unit> ApplyDynamicPhysicsTransform(EntityId entityId, GlobalTransform transform)
     {
         var (handle, _, _) = _dynamicHandles[entityId];
         var body = _simulation.Bodies[handle];
 
         body.GetDescription(out var description);
 
-        var positionRotationScaleResult = transform.GetPositionRotationScale()
-            .MapError(err => new ApplyDynamicPhysicsTransformError(err));
+        var positionRotationScaleResult = transform.GetPositionRotationScale();
 
         if (!positionRotationScaleResult.TryGetValue(out var positionRotationScale))
         {
-            return Result.Failure<Unit, ApplyDynamicPhysicsTransformError>(positionRotationScaleResult.UnwrapError());
+            return Result.Failure<Unit, GlobalTransform.PositionRotationScale>(positionRotationScaleResult);
         }
 
         var (position, rotation, _) = positionRotationScale;
@@ -618,22 +602,19 @@ public class BepuPhysicsAdapter : IResource
         description.Pose.Orientation = rotation;
         body.ApplyDescription(description);
 
-        return Result.Success<Unit, ApplyDynamicPhysicsTransformError>(Unit.Value);
+        return Result.Success<Unit>(Unit.Value);
     }
 
-    public readonly record struct ApplyStaticPhysicsTransformError(GlobalTransform.GetPositionRotationScaleError Error);
-
-    public Result<Unit, ApplyStaticPhysicsTransformError> ApplyStaticPhysicsTransform(EntityId entityId, GlobalTransform transform)
+    public Result<Unit> ApplyStaticPhysicsTransform(EntityId entityId, GlobalTransform transform)
     {
         var (handle, _, _) = _staticHandles[entityId];
         var body = _simulation.Statics[handle];
 
-        var positionRotationScaleResult = transform.GetPositionRotationScale()
-            .MapError(err => new ApplyStaticPhysicsTransformError(err));
+        var positionRotationScaleResult = transform.GetPositionRotationScale();
 
         if (!positionRotationScaleResult.TryGetValue(out var positionRotationScale))
         {
-            return Result.Failure<Unit, ApplyStaticPhysicsTransformError>(positionRotationScaleResult.UnwrapError());
+            return Result.Failure<Unit, GlobalTransform.PositionRotationScale>(positionRotationScaleResult);
         }
 
         var (position, rotation, _) = positionRotationScale;
@@ -644,6 +625,6 @@ public class BepuPhysicsAdapter : IResource
         description.Pose.Orientation = rotation;
         body.ApplyDescription(description);
 
-        return Result.Success<Unit, ApplyStaticPhysicsTransformError>(Unit.Value);
+        return Result.Success<Unit>(Unit.Value);
     }
 }

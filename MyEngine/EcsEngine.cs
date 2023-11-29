@@ -177,9 +177,9 @@ internal partial class EcsEngine
     private void RegisterResource(Type resourceType, IResource resource)
     {
         // validate we haven't already added this resource
-        if (_resourceContainer.RegisterResource(resourceType, resource).TryGetError(out var error))
+        if (_resourceContainer.RegisterResource(resourceType, resource).TryGetErrors(out var error))
         {
-            Console.WriteLine("Failed to register resource: {0}", error);
+            Console.WriteLine("Failed to register resource: {0}", string.Join(";", error));
             return;
         }
 

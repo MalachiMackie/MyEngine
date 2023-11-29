@@ -29,9 +29,14 @@ public class ColliderDebugDisplaySystem : ISystem
         var colliderPositions = _physicsAdapter.GetAllColliderPositions();
         foreach (var collider in colliderPositions)
         {
-            collider.Collider.Match(
-                x => RenderBox2D(x, collider.Position.XY(), collider.Rotation),
-                x => RenderCircle2D(x, collider.Position.XY()));
+            if (collider.Collider.BoxCollider2D is { } boxCollider)
+            {
+                RenderBox2D(boxCollider, collider.Position.XY(), collider.Rotation);
+            }
+            else if (collider.Collider.CircleCollider2D is { } circleCollider)
+            {
+                RenderCircle2D(circleCollider, collider.Position.XY());
+            }
         }
     }
 
@@ -60,9 +65,9 @@ public class ColliderDebugDisplaySystem : ISystem
     private void RenderCircle2D(CircleCollider2D circleCollider, Vector2 position)
     {
         var result = _lineRenderResource.RenderLineCircle(position.Extend(1f), circleCollider.Radius);
-        if (result.TryGetError(out var error))
+        if (result.TryGetErrors(out var errors))
         {
-            Console.WriteLine("Failed to render circle collider: {0}", error);
+            Console.WriteLine("Failed to render circle collider: {0}", string.Join(';', errors));
         }
     }
 }

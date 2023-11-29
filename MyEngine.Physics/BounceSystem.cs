@@ -84,6 +84,26 @@ public class BounceSystem : ISystem
         }
     }
 
+    private readonly record struct Properties(
+        DynamicProperties? DynamicProperties, KinematicProperties? KinematicProperties, StaticProperties? StaticProperties)
+    {
+        public void Match(Action<DynamicProperties> dynamicMatch, Action<KinematicProperties> kinematicMatch, Action<StaticProperties> staticMatch)
+        {
+            if (DynamicProperties.HasValue)
+            {
+                dynamicMatch(DynamicProperties.Value);
+            }
+            else if (KinematicProperties.HasValue)
+            {
+                kinematicMatch(KinematicProperties.Value);
+            }
+            else if (StaticProperties.HasValue)
+            {
+                staticMatch(StaticProperties.Value);
+            }
+        }
+    };
+
     private void HandleDynamicCollision(DynamicProperties dynamicBody, IEnumerable<Collision> collisions)
     {
         Vector3? dynamicVelocity = null;
@@ -95,24 +115,28 @@ public class BounceSystem : ISystem
                 var (maybeDynamic, maybeKinematic, maybeStatic, maybeBounciness) = x.queryResult!;
                 if (maybeDynamic.HasComponent)
                 {
-                    return (new OneOf<DynamicProperties, KinematicProperties, StaticProperties>(
+                    return (new Properties(
                         new DynamicProperties(
                             x.queryResult.EntityId,
                             maybeDynamic.Component,
-                            maybeBounciness.Component?.Bounciness)), x.collision);
+                            maybeBounciness.Component?.Bounciness), null, null), x.collision);
                 }
 
                 if (maybeKinematic.HasComponent)
                 {
-                    return (new OneOf<DynamicProperties, KinematicProperties, StaticProperties>(
+                    return (new Properties(
+                        null,
                         new KinematicProperties(
                             maybeKinematic.Component,
-                            maybeBounciness.Component?.Bounciness)), x.collision);
+                            maybeBounciness.Component?.Bounciness),
+                        null), x.collision);
                 }
 
                 if (maybeStatic.HasComponent)
                 {
-                    return (new OneOf<DynamicProperties, KinematicProperties, StaticProperties>(
+                    return (new Properties(
+                        null,
+                        null,
                         new StaticProperties(
                             maybeStatic.Component,
                             maybeBounciness.Component?.Bounciness)), x.collision);
@@ -342,7 +366,7 @@ public class BounceSystem : ISystem
 
     private void HandleDynamicToManyCollisions(
         DynamicProperties dynamicProps,
-        IReadOnlyList<(OneOf<DynamicProperties, KinematicProperties, StaticProperties> Body, Collision Collision)> otherBodies)
+        IReadOnlyList<(Properties Body, Collision Collision)> otherBodies)
     {
         // todo: don't only generate bounce on first collision
         var (body, collision) = otherBodies[0];

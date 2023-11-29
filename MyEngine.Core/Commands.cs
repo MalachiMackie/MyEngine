@@ -17,57 +17,50 @@ internal class Commands : ICommands
         _entities = entities;
     }
 
-    public Result<Unit, AddComponentCommandError> AddComponent(EntityId entityId, IComponent component)
+    public Result<Unit> AddComponent(EntityId entityId, IComponent component)
     {
         if (!_entities.Contains(entityId))
         {
-            return Result.Failure<Unit, AddComponentCommandError>(AddComponentCommandError.EntityDoesNotExist);
+            return Result.Failure<Unit>($"Entity with id {entityId} does not exist");
         }
 
-        return _componentCollection.AddComponent(entityId, component)
-            .MapError(err => err switch
-            {
-                AddComponentError.DuplicateComponent => AddComponentCommandError.DuplicateComponent,
-                _ => throw new UnreachableException()
-            });
+        return _componentCollection.AddComponent(entityId, component);
     }
 
-    public Result<EntityId, AddEntityCommandError> CreateEntity(Transform transform, params IComponent[] components)
+    public Result<EntityId> CreateEntity(Transform transform, params IComponent[] components)
     {
         return CreateEntity(components.Append(new TransformComponent(transform)));
     }
 
-    private Result<EntityId, AddEntityCommandError> CreateEntity(IEnumerable<IComponent> components)
+    private Result<EntityId> CreateEntity(IEnumerable<IComponent> components)
     {
         var entityId = EntityId.Generate();
         foreach (var component in components)
         {
-            if (_componentCollection.AddComponent(entityId, component).TryGetError(out var addComponentError))
+            var addResult = _componentCollection.AddComponent(entityId, component);
+            if (addResult.IsFailure)
             {
+                // clean up any components that were already added
                 _componentCollection.DeleteAllComponentsForEntity(entityId);
-                return addComponentError switch
-                {
-                    AddComponentError.DuplicateComponent => Result.Failure<EntityId, AddEntityCommandError>(AddEntityCommandError.DuplicateComponent),
-                    _ => throw new UnreachableException()
-                };
+                return Result.Failure<EntityId, Unit>(addResult);
             }
         }
 
         _entities.Add(entityId);
 
-        return Result.Success<EntityId, AddEntityCommandError>(entityId);
+        return Result.Success<EntityId>(entityId);
     }
 
-    public Result<Unit, RemoveEntityCommandError> RemoveEntity(EntityId entityId)
+    public Result<Unit> RemoveEntity(EntityId entityId)
     {
         if (!_entities.Remove(entityId))
         {
-            return Result.Failure<Unit, RemoveEntityCommandError>(RemoveEntityCommandError.EntityDoesNotExist);
+            return Result.Failure<Unit>($"Entity with id {entityId} does not exist");
         }
 
         // todo: check and remove entity as parent or child
 
-        return Result.Success<Unit, RemoveEntityCommandError>(Unit.Value);
+        return Result.Success<Unit>(Unit.Value);
     }
 
     public bool RemoveComponent<T>(EntityId entityId) where T : IComponent
@@ -76,11 +69,11 @@ internal class Commands : ICommands
         return _componentCollection.DeleteComponent<T>(entityId);
     }
 
-    public Result<Unit, AddChildError> AddChild(EntityId parentId, EntityId childId)
+    public Result<Unit> AddChild(EntityId parentId, EntityId childId)
     {
         if (_componentCollection.TryGetComponent<ParentComponent>(childId, out _))
         {
-            return Result.Failure<Unit, AddChildError>(AddChildError.ChildAlreadyHasParent);
+            return Result.Failure<Unit>($"Cannot add {parentId} as a parent to {childId}, as {childId} already has a parent");
         }
 
         if (!_componentCollection.TryGetComponent<ChildrenComponent>(parentId, out var childrenComponent))
@@ -92,7 +85,7 @@ internal class Commands : ICommands
         var validateResult = ValidateCircularReference(parentId, childId);
         if (validateResult.IsFailure)
         {
-            return validateResult.MapError(_ => AddChildError.CircularReference);
+            return Result.Failure<Unit>($"Cannot add {parentId} as a parent to {childId} due to a circular reference");
         }
 
         childrenComponent.AddChild(childId);
@@ -104,92 +97,23 @@ internal class Commands : ICommands
 
         childTransform!.GlobalTransform.SetWithParentTransform(parentTransform!.GlobalTransform, childTransform.LocalTransform);
 
-        return Result.Success<Unit, AddChildError>(Unit.Value);
+        return Result.Success<Unit>(Unit.Value);
     }
 
-    private Result<Unit, Unit> ValidateCircularReference(EntityId parentId, EntityId childId)
+    private Result<Unit> ValidateCircularReference(EntityId parentId, EntityId childId)
     {
         if (!_componentCollection.TryGetComponent<ParentComponent>(parentId, out var parentComponent))
         {
             // parent has no parent, so no circular reference found
-            return Result.Success<Unit, Unit>(Unit.Value);
+            return Result.Success<Unit>(Unit.Value);
         }
 
         if (parentComponent.Parent == childId)
         {
-            return Result.Failure<Unit, Unit>(Unit.Value);
+            return Result.Failure<Unit>();
         }
 
         return ValidateCircularReference(parentComponent.Parent, childId);
-    }
-
-    /// <summary>
-    /// Add child to the parent, while keeping its global transform in the same position. If there is non-uniform scaling, this won't produce expected results
-    /// </summary>
-    /// <param name="parentId"></param>
-    /// <param name="childId"></param>
-    /// <exception cref="InvalidOperationException"></exception>
-    public Result<Unit, AddChildInPlaceError> AddChildInPlace(EntityId parentId, EntityId childId)
-    {
-        if (_componentCollection.TryGetComponent<ParentComponent>(childId, out _))
-        {
-            return Result.Failure<Unit, AddChildInPlaceError>(AddChildInPlaceError.ChildAlreadyHasParent);
-        }
-
-        if (!_componentCollection.TryGetComponent<ChildrenComponent>(parentId, out var childrenComponent))
-        {
-            childrenComponent = new ChildrenComponent();
-            _componentCollection.AddComponent(parentId, childrenComponent);
-        }
-
-        var validateResult = ValidateCircularReference(parentId, childId);
-        if (validateResult.IsFailure)
-        {
-            return validateResult.MapError(_ => AddChildInPlaceError.CircularReference);
-        }
-
-        childrenComponent.AddChild(childId);
-
-        _componentCollection.AddComponent(childId, new ParentComponent(parentId));
-        AddChild(parentId, childId);
-
-        // update local transform to keep global transform in place
-        if (!_componentCollection.TryGetComponent<TransformComponent>(parentId, out var parentTransformComponent))
-        {
-            throw new InvalidOperationException("Entity is missing a transform");
-        }
-
-        if (!_componentCollection.TryGetComponent<TransformComponent>(childId, out var childTransformComponent))
-        {
-            throw new InvalidOperationException("Entity is missing a transform");
-        }
-
-        // child can't have any parent, so treat its transform as global
-        var desiredGlobal = GlobalTransform.FromTransform(childTransformComponent.LocalTransform);
-
-        var parentGlobal = parentTransformComponent.GlobalTransform;
-
-        if (!Matrix4x4.Invert(parentGlobal.ModelMatrix, out var inverseParent))
-        {
-            return Result.Failure<Unit, AddChildInPlaceError>(AddChildInPlaceError.UnableToCalculateRelativeLocalTransform);
-        }
-
-        var local = desiredGlobal.ModelMatrix * inverseParent;
-
-        if (!Matrix4x4.Decompose(local, out var localScale, out var localRotation, out var localPosition))
-        {
-            MathHelper.NormalizeMatrix(ref local);
-            if (!Matrix4x4.Decompose(local, out localScale, out localRotation, out localPosition))
-            {
-                return Result.Failure<Unit, AddChildInPlaceError>(AddChildInPlaceError.UnableToCalculateRelativeLocalTransform);
-            }
-        }
-
-        childTransformComponent.LocalTransform.position = localPosition;
-        childTransformComponent.LocalTransform.rotation = localRotation;
-        childTransformComponent.LocalTransform.scale = localScale;
-
-        return Result.Success<Unit, AddChildInPlaceError>(Unit.Value);
     }
 
     /// <summary>
@@ -207,32 +131,32 @@ internal class Commands : ICommands
         childTransform!.GlobalTransform.SetWithTransform(childTransform.LocalTransform);
     }
 
-    public Result<EntityId, OneOf<AddEntityCommandError, AddChildError>> CreateEntity(Transform transform, IEnumerable<IComponent> components, IEnumerable<EntityId> children)
+    public Result<EntityId> CreateEntity(Transform transform, IEnumerable<IComponent> components, IEnumerable<EntityId> children)
     {
         var addEntityResult = CreateEntity(components.Append(new TransformComponent(transform)));
         if (!addEntityResult.TryGetValue(out var entityId))
         {
-            return Result.Failure<EntityId, OneOf<AddEntityCommandError, AddChildError>>(new (addEntityResult.UnwrapError()));
+            return Result.Failure<EntityId, EntityId>(addEntityResult);
         }
 
         foreach (var child in children)
         {
             var addChildResult = AddChild(entityId, child);
-            if (addChildResult.TryGetError(out var error))
+            if (addChildResult.IsFailure)
             {
-                return Result.Failure<EntityId, OneOf<AddEntityCommandError, AddChildError>>(new (error));
+                return Result.Failure<EntityId, Unit>(addChildResult);
             }
         }
 
-        return Result.Success<EntityId, OneOf<AddEntityCommandError, AddChildError>>(entityId);
+        return Result.Success<EntityId>(entityId);
     }
 
-    public Result<EntityId, AddEntityCommandError> CreateEntity(Func<ITransformStepEntityBuilder, ICompleteStepEntityBuilder> entityBuilder)
+    public Result<EntityId> CreateEntity(Func<ITransformStepEntityBuilder, ICompleteStepEntityBuilder> entityBuilder)
     {
         return CreateEntity(entityBuilder(EntityBuilder.Create()).Build(), new());
     }
 
-    private Result<EntityId, AddEntityCommandError> CreateEntity(ICompleteStepEntityBuilder.BuildResult buildResult, List<EntityId> createdEntities)
+    private Result<EntityId> CreateEntity(ICompleteStepEntityBuilder.BuildResult buildResult, List<EntityId> createdEntities)
     {
         var createResult = CreateEntity(buildResult.Components);
         if (!createResult.TryGetValue(out var entityId))
@@ -241,21 +165,21 @@ internal class Commands : ICommands
         }
         createdEntities.Add(entityId);
 
-        AddEntityCommandError? error = null;
+        Result<EntityId>? failedResult = null;
 
         foreach (var child in buildResult.Children.Select(x => x.Build()))
         {
             var createChildResult = CreateEntity(child, createdEntities);
-            if (createChildResult.TryGetError(out var childError))
+            if (createChildResult.IsFailure)
             {
-                error = childError;
+                failedResult = createChildResult;
                 break;
             }
             AddChild(entityId, createChildResult.Unwrap())
                 .Expect("Creating child should not fail as entity builder can only be used with new entities");
         }
 
-        if (!error.HasValue)
+        if (failedResult is null)
         {
             return createResult;
         }
@@ -268,6 +192,6 @@ internal class Commands : ICommands
             _entities.Remove(createdEntity);
         }
 
-        return Result.Failure<EntityId, AddEntityCommandError>(error.Value);
+        return Result.Failure<EntityId, EntityId>(failedResult.Value);
     }
 }
