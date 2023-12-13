@@ -2,9 +2,8 @@
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
-using MyEngine.Core.Rendering;
-using MyEngine.Physics;
 using MyEngine.Rendering;
+using MyEngine.Physics;
 using MyEngine.Utils;
 using MyGame.Components;
 using MyGame.Resources;

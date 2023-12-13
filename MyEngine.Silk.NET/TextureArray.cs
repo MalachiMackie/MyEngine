@@ -41,15 +41,13 @@ internal class TextureArray
         _gl.TexParameterI(_target, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
     }
 
-    public unsafe uint AddTexture(Span<byte> data, uint xOffset, uint yOffset, uint width, uint height, bool newTexture)
+    public uint AddTexture(Span<byte> data, uint xOffset, uint yOffset, uint width, uint height, bool newTexture)
     {
         var slot = _textureCount;
 
         if (newTexture)
         {
-            fixed (byte* ptr = _clearData)
-            {
-                _gl.TexSubImage3D(
+            _gl.TexSubImage3D<byte>(
                 _target,
                 level: 0,
                 xoffset: 0,
@@ -60,8 +58,7 @@ internal class TextureArray
                 depth: 1,
                 PixelFormat.Rgba,
                 PixelType.UnsignedByte,
-                ptr);
-            }
+                _clearData.AsSpan());
 
             _textureCount++;
         }

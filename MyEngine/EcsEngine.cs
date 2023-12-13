@@ -116,12 +116,12 @@ internal partial class EcsEngine
 
     private void StartUpdate()
     {
-        if (!_resourceContainer.TryGetResource<MyWindow>(out var myWindow))
+        if (!_resourceContainer.TryGetResource<IEcsUpdateRunner>(out var updateRunner))
         {
-            throw new InvalidOperationException("Cannot start engine without a window");
+            throw new InvalidOperationException("Cannot start engine without an updateRunner");
         }
-        myWindow!.Update += Update;
-        myWindow!.Run();
+        updateRunner.AddUpdateHandler(Update);
+        updateRunner.Run();
     }
 
     private void RunStartupSystems()

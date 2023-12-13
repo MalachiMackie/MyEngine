@@ -1,6 +1,5 @@
-﻿using MyEngine.Assets;
-using MyEngine.Core.Ecs.Resources;
-using MyEngine.Core.Rendering;
+﻿using MyEngine.Core.Ecs.Resources;
+using MyEngine.Rendering;
 using MyEngine.UI;
 
 namespace MyGame.Resources;

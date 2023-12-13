@@ -5,18 +5,18 @@ using MyEngine.Physics;
 namespace MyGame.Systems;
 public class ToggleColliderDebugDisplaySystem : ISystem
 {
-    private readonly InputResource _inputResource;
     private readonly DebugColliderDisplayResource _debugColliderDisplayResource;
+    private readonly IKeyboard _keyboard;
 
-    public ToggleColliderDebugDisplaySystem(DebugColliderDisplayResource debugColliderDisplayResource, InputResource inputResource)
+    public ToggleColliderDebugDisplaySystem(DebugColliderDisplayResource debugColliderDisplayResource, IKeyboard keyboard)
     {
         _debugColliderDisplayResource = debugColliderDisplayResource;
-        _inputResource = inputResource;
+        _keyboard = keyboard;
     }
 
     public void Run(double deltaTime)
     {
-        if (_inputResource.Keyboard.IsKeyPressed(MyKey.F1))
+        if (_keyboard.IsKeyPressed(MyKey.F1))
         {
             _debugColliderDisplayResource.DisplayColliders = !_debugColliderDisplayResource.DisplayColliders;
         }

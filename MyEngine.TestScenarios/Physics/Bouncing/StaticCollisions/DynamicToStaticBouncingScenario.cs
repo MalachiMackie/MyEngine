@@ -5,7 +5,6 @@ using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
-using MyEngine.Core.Rendering;
 using MyEngine.Input;
 using MyEngine.Physics;
 using MyEngine.Rendering;
@@ -141,18 +140,18 @@ public class LaunchBallsSystem : ISystem
 {
     private readonly IQuery<TransformComponent, BouncinessComponent, BallComponent> _ball;
     private readonly PhysicsResource _physicsResource;
-    private readonly InputResource _inputResource;
+    private readonly IKeyboard _keyboard;
     private readonly NextTestResource _nextTestResource;
 
     public LaunchBallsSystem(
         IQuery<TransformComponent, BouncinessComponent, BallComponent> ball,
         PhysicsResource physicsResource,
-        InputResource inputResource,
+        IKeyboard keyboard,
         NextTestResource nextTestResource)
     {
         _ball = ball;
         _physicsResource = physicsResource;
-        _inputResource = inputResource;
+        _keyboard = keyboard;
         _nextTestResource = nextTestResource;
     }
 
@@ -166,7 +165,7 @@ public class LaunchBallsSystem : ISystem
             throw new InvalidOperationException("There should be 2 balls");
         }
 
-        if (_inputResource.Keyboard.IsKeyPressed(MyKey.Space))
+        if (_keyboard.IsKeyPressed(MyKey.Space))
         {
             var (position, velocity, bounciness) = BallProperties.Balls[_nextTestResource.NextTest];
             var (transform, bouncinessComponent, _) = balls[0];

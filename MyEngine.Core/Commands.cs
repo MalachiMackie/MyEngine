@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using MyEngine.Core.Ecs;
+﻿using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Utils;

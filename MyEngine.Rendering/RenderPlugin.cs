@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using MyEngine.Core;
-using MyEngine.Core.Rendering;
+using MyEngine.Core.Ecs.Resources;
 using MyEngine.Rendering.RenderSystems;
 
 [assembly: InternalsVisibleTo("MyEngine.Input")]
@@ -8,6 +8,8 @@ using MyEngine.Rendering.RenderSystems;
 [assembly: InternalsVisibleTo("MyEngine.Runtime")]
 
 namespace MyEngine.Rendering;
+
+public record InitialWindowProps(string WindowTitle, uint Width, uint Height) : IResource;
 
 public class RenderPlugin : IPlugin
 {
@@ -26,7 +28,6 @@ public class RenderPlugin : IPlugin
     {
         return builder
             .AddResource(new InitialWindowProps(_windowTitle, _width, _height))
-            .AddStartupSystem<InitializeRenderingSystem>()
             .AddSystemStage(PreRenderSystemStage.Instance, 6)
             .AddSystemStage(RenderSystemStage.Instance, 5)
             .AddResource<ILineRenderResource>(new LineRenderResource())

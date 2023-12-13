@@ -2,7 +2,6 @@
 using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Systems;
-using MyEngine.Core.Rendering;
 using MyEngine.UI;
 
 namespace MyEngine.Rendering.RenderSystems;

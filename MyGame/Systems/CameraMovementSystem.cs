@@ -10,18 +10,21 @@ namespace MyGame.Systems;
 
 public class CameraMovementSystem : ISystem
 {
-    private readonly InputResource _inputResource;
     private readonly IQuery<Camera3DComponent, TransformComponent> _camera3DQuery;
     private readonly IQuery<Camera2DComponent, TransformComponent> _camera2DQuery;
+    private readonly IKeyboard _keyboard;
+    private readonly IMouse _mouse;
 
     public CameraMovementSystem(
-        InputResource inputResource,
         IQuery<Camera3DComponent, TransformComponent> camera3dQuery,
-        IQuery<Camera2DComponent, TransformComponent> camera2dQuery)
+        IQuery<Camera2DComponent, TransformComponent> camera2dQuery,
+        IKeyboard keyboard,
+        IMouse mouse)
     {
-        _inputResource = inputResource;
         _camera3DQuery = camera3dQuery;
         _camera2DQuery = camera2dQuery;
+        _keyboard = keyboard;
+        _mouse = mouse;
     }
 
     public void Run(double deltaTime)
@@ -47,25 +50,25 @@ public class CameraMovementSystem : ISystem
         var cameraFront = Vector3.Normalize(cameraDirection);
 
         var speed = 5.0f * (float)deltaTime;
-        if (_inputResource.Keyboard.IsKeyDown(MyKey.W))
+        if (_keyboard.IsKeyDown(MyKey.W))
         {
             cameraTransform.position += speed * cameraFront;
         }
-        if (_inputResource.Keyboard.IsKeyDown(MyKey.S))
+        if (_keyboard.IsKeyDown(MyKey.S))
         {
             cameraTransform.position -= speed * cameraFront;
         }
-        if (_inputResource.Keyboard.IsKeyDown(MyKey.A))
+        if (_keyboard.IsKeyDown(MyKey.A))
         {
             cameraTransform.position -= speed * Vector3.Normalize(Vector3.Cross(cameraFront, Vector3.UnitY));
         }
-        if (_inputResource.Keyboard.IsKeyDown(MyKey.D))
+        if (_keyboard.IsKeyDown(MyKey.D))
         {
             cameraTransform.position += speed * Vector3.Normalize(Vector3.Cross(cameraFront, Vector3.UnitY));
         }
 
         var lookSensitivity = 0.1f;
-        var mouseDelta = _inputResource.MouseDelta;
+        var mouseDelta = _mouse.Delta;
 
         cameraDirection.X += mouseDelta.X * lookSensitivity;
         cameraDirection.Y -= mouseDelta.Y * lookSensitivity;
@@ -86,19 +89,19 @@ public class CameraMovementSystem : ISystem
         var cameraTransform = components.Component2.LocalTransform;
 
         var speed = 5.0f * (float)deltaTime;
-        if (_inputResource.Keyboard.IsKeyDown(MyKey.W))
+        if (_keyboard.IsKeyDown(MyKey.W))
         {
             cameraTransform.position += speed * Vector3.UnitY;
         }
-        if (_inputResource.Keyboard.IsKeyDown(MyKey.S))
+        if (_keyboard.IsKeyDown(MyKey.S))
         {
             cameraTransform.position -= speed * Vector3.UnitY;
         }
-        if (_inputResource.Keyboard.IsKeyDown(MyKey.A))
+        if (_keyboard.IsKeyDown(MyKey.A))
         {
             cameraTransform.position -= speed * Vector3.UnitX;
         }
-        if (_inputResource.Keyboard.IsKeyDown(MyKey.D))
+        if (_keyboard.IsKeyDown(MyKey.D))
         {
             cameraTransform.position += speed * Vector3.UnitX;
         }

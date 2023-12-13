@@ -1,27 +1,27 @@
-﻿using MyEngine.Core;
+﻿//using MyEngine.Core;
 
-namespace MyEngine.Rendering;
+//namespace MyEngine.Rendering;
 
-public class RenderSystemStage : ISystemStage
-{
-    public static RenderSystemStage Instance { get; } = new RenderSystemStage();
+//public class RenderSystemStage : ISystemStage
+//{
+//    public static RenderSystemStage Instance { get; } = new RenderSystemStage();
 
-    private RenderSystemStage() { }
+//    private RenderSystemStage() { }
 
-    public bool Equals(ISystemStage? other)
-    {
-        return other is RenderSystemStage;
-    }
-}
+//    public bool Equals(ISystemStage? other)
+//    {
+//        return other is RenderSystemStage;
+//    }
+//}
 
-public class PreRenderSystemStage : ISystemStage
-{
-    public static PreRenderSystemStage Instance { get; } = new ();
+//public class PreRenderSystemStage : ISystemStage
+//{
+//    public static PreRenderSystemStage Instance { get; } = new ();
 
-    private PreRenderSystemStage() { }
+//    private PreRenderSystemStage() { }
 
-    public bool Equals(ISystemStage? other)
-    {
-        return other is PreRenderSystemStage;
-    }
-}
+//    public bool Equals(ISystemStage? other)
+//    {
+//        return other is PreRenderSystemStage;
+//    }
+//}

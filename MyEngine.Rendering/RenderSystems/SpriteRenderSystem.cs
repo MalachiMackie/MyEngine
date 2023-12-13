@@ -1,13 +1,12 @@
 ﻿using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Core.Ecs.Systems;
-using MyEngine.Core.Rendering;
 
 namespace MyEngine.Rendering.RenderSystems;
 
 public class SpriteRenderSystem : ISystem
 {
-    private IQuery<SpriteComponent, TransformComponent, OptionalComponent<TransparencyComponent>> _query;
+    private readonly IQuery<SpriteComponent, TransformComponent, OptionalComponent<TransparencyComponent>> _query;
     private readonly RenderCommandQueue _commandQueue;
 
     public SpriteRenderSystem(RenderCommandQueue commandQueue, IQuery<SpriteComponent, TransformComponent, OptionalComponent<TransparencyComponent>> query)

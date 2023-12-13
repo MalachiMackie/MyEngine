@@ -1,25 +1,26 @@
-﻿using MyEngine.Core.Ecs.Systems;
+﻿using MyEngine.Core;
+using MyEngine.Core.Ecs.Resources;
+using MyEngine.Core.Ecs.Systems;
 using MyEngine.Input;
-using MyEngine.Rendering;
 
 namespace MyGame;
 
 public class QuitOnEscapeSystem : ISystem
 {
-    private readonly MyWindow _window;
-    private readonly InputResource _inputResource;
+    private readonly IKeyboard _keyboard;
+    private readonly IView _view;
 
-    public QuitOnEscapeSystem(MyWindow window, InputResource inputResource)
+    public QuitOnEscapeSystem(IKeyboard keyboard, IView view)
     {
-        _window = window;
-        _inputResource = inputResource;
+        _keyboard = keyboard;
+        _view = view;
     }
 
     public void Run(double deltaTime)
     {
-        if (_inputResource.Keyboard.IsKeyDown(MyKey.Escape))
+        if (_keyboard.IsKeyPressed(MyKey.Escape))
         {
-            _window.Close();
+            _view.Exit();
         }
     }
 }

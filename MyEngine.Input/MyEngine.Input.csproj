@@ -7,16 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Silk.NET.Input" Version="2.17.1" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\MyEngine.Core\MyEngine.Core.csproj" />
-    <ProjectReference Include="..\MyEngine.Rendering\MyEngine.Rendering.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="MyEngine.Input.Tests"/>
+    <InternalsVisibleTo Include="MyEngine.Input.Tests" />
   </ItemGroup>
 
   <ItemGroup>

@@ -9,12 +9,12 @@ namespace MyGame.Systems;
 public class MovePaddleSystem : ISystem
 {
     private readonly IQuery<TransformComponent, PaddleComponent> _query;
-    private readonly InputResource _inputResource;
+    private readonly IKeyboard _keyboard;
 
-    public MovePaddleSystem(IQuery<TransformComponent, PaddleComponent> query, InputResource inputResource)
+    public MovePaddleSystem(IQuery<TransformComponent, PaddleComponent> query, IKeyboard keyboard)
     {
         _query = query;
-        _inputResource = inputResource;
+        _keyboard = keyboard;
     }
 
 
@@ -29,11 +29,11 @@ public class MovePaddleSystem : ISystem
         var (transformComponent, _) = paddleComponents;
 
         ref var position = ref transformComponent.LocalTransform.position; 
-        if (_inputResource.Keyboard.IsKeyDown(MyKey.A))
+        if (_keyboard.IsKeyDown(MyKey.A))
         {
             position.X -= 1.5f * (float)deltaTime;
         }
-        if (_inputResource.Keyboard.IsKeyDown(MyKey.D))
+        if (_keyboard.IsKeyDown(MyKey.D))
         {
             position.X += 1.5f * (float)deltaTime;
         }

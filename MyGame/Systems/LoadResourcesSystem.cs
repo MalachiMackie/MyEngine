@@ -1,7 +1,7 @@
 ﻿using MyEngine.Assets;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
-using MyEngine.Core.Rendering;
+using MyEngine.Rendering;
 using MyEngine.UI;
 using MyGame.Resources;
 

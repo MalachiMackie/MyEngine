@@ -12,25 +12,25 @@ namespace MyGame.Systems;
 public class LaunchBallSystem : ISystem
 {
     private readonly IQuery<TransformComponent, BallComponent, DynamicBody2DComponent, ParentComponent> _playerQuery;
-    private readonly InputResource _inputResource;
     private readonly PhysicsResource _physicsResource;
     private readonly ICommands _commands;
+    private readonly IKeyboard _keyboard;
 
     public LaunchBallSystem(
         IQuery<TransformComponent, BallComponent, DynamicBody2DComponent, ParentComponent> playerQuery,
-        InputResource inputResource,
         PhysicsResource physicsResource,
-        ICommands commands)
+        ICommands commands,
+        IKeyboard keyboard)
     {
         _playerQuery = playerQuery;
-        _inputResource = inputResource;
         _physicsResource = physicsResource;
         _commands = commands;
+        _keyboard = keyboard;
     }
 
     public void Run(double deltaTime)
     {
-        if (_inputResource.Keyboard.IsKeyPressed(MyKey.T))
+        if (_keyboard.IsKeyPressed(MyKey.T))
         {
             var components = _playerQuery.FirstOrDefault();
             if (components is null)

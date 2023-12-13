@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
 using MyEngine.Core.Ecs.Components;
-using MyEngine.Core.Rendering;
+using MyEngine.Rendering;
 
 namespace MyEngine.UI;
 

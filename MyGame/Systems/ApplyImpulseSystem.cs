@@ -10,19 +10,19 @@ namespace MyGame.Systems;
 public class ApplyImpulseSystem : ISystem
 {
     private readonly PhysicsResource _physicsResource;
-    private readonly InputResource _inputResource;
     private readonly IQuery<BallComponent> _query;
+    private readonly IKeyboard _keyboard;
 
-    public ApplyImpulseSystem(PhysicsResource physicsResource, InputResource inputResource, IQuery<BallComponent> query)
+    public ApplyImpulseSystem(PhysicsResource physicsResource, IQuery<BallComponent> query, IKeyboard keyboard)
     {
         _physicsResource = physicsResource;
-        _inputResource = inputResource;
         _query = query;
+        _keyboard = keyboard;
     }
 
     public void Run(double deltaTime)
     {
-        if (_inputResource.Keyboard.IsKeyPressed(MyKey.T))
+        if (_keyboard.IsKeyPressed(MyKey.T))
         {
             var player = _query.FirstOrDefault();
             if (player is not null)

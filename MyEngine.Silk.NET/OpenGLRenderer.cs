@@ -1,21 +1,17 @@
-﻿using System.Drawing;
+﻿using System.ComponentModel;
+using System.Drawing;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using MyEngine.Assets;
 using MyEngine.Core;
-using MyEngine.Core.Rendering;
-using MyEngine.Core.Ecs.Resources;
+using MyEngine.Rendering;
 using MyEngine.Rendering.OpenGL;
 using MyEngine.Utils;
-using Silk.NET.Maths;
 using Silk.NET.OpenGL;
-using System.Runtime.InteropServices;
-using System.ComponentModel;
 
-namespace MyEngine.Rendering;
-
-internal sealed class Renderer : IDisposable, IResource
+internal sealed class OpenGLRenderer : IRenderer
 {
-    private Renderer(GL openGL,
+    private OpenGLRenderer(GL openGL,
         BufferObject<Vector3> spriteVertexBuffer,
         BufferObject<uint> spriteElementBuffer,
         VertexArrayObject spriteVertexArrayObject,
@@ -107,7 +103,7 @@ internal sealed class Renderer : IDisposable, IResource
     private readonly TextureArray _textureArray;
     private readonly Dictionary<AssetId, uint> _textureArrayTextures = new();
 
-    private uint GetTextureSlot(Core.Rendering.Texture texture)
+    private uint GetTextureSlot(MyEngine.Rendering.Texture texture)
     {
         if (_textureArrayTextures.TryGetValue(texture.Id, out var slot))
         {
@@ -124,7 +120,7 @@ internal sealed class Renderer : IDisposable, IResource
     private uint _width;
     private uint _height;
 
-    internal static Result<Renderer> Create(GL openGL)
+    internal static Result<OpenGLRenderer> Create(GL openGL)
     {
         Span<uint> spriteIndices = stackalloc uint[]
         {
@@ -196,7 +192,7 @@ internal sealed class Renderer : IDisposable, IResource
         var spriteShaderResult = ShaderProgram.Create(openGL, vertexCode, fragmentCode);
         if (!spriteShaderResult.TryGetValue(out var shader))
         {
-            return Result.Failure<Renderer, ShaderProgram>(spriteShaderResult);
+            return Result.Failure<OpenGLRenderer, ShaderProgram>(spriteShaderResult);
         }
 
         openGL.Enable(EnableCap.Blend);
@@ -206,7 +202,7 @@ internal sealed class Renderer : IDisposable, IResource
 
         if (!textShaderResult.TryGetValue(out var textShader))
         {
-            return Result.Failure<Renderer, ShaderProgram>(textShaderResult);
+            return Result.Failure<OpenGLRenderer, ShaderProgram>(textShaderResult);
         }
 
         var textSpriteInstanceBuffer = BufferObject<TextInstanceData>.CreateAndBind(openGL, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw);
@@ -250,13 +246,13 @@ internal sealed class Renderer : IDisposable, IResource
         var lineShaderResult = ShaderProgram.Create(openGL, lineVertexCode, lineFragmentCode);
         if (!lineShaderResult.TryGetValue(out var lineShader))
         {
-            return Result.Failure<Renderer, ShaderProgram>(lineShaderResult);
+            return Result.Failure<OpenGLRenderer, ShaderProgram>(lineShaderResult);
         }
 
         lineVertexArray.Unbind();
         lineVertexBuffer.Unbind();
 
-        var renderer = new Renderer(openGL,
+        var renderer = new OpenGLRenderer(openGL,
             vertexBuffer,
             elementBuffer,
             vertexArrayObject,
@@ -271,26 +267,15 @@ internal sealed class Renderer : IDisposable, IResource
             textShader,
             spriteInstanceBuffer);
 
-        return Result.Success<Renderer>(renderer);
+        return Result.Success<OpenGLRenderer>(renderer);
     }
 
-    public void Resize(Vector2D<int> size)
+    public void Resize(uint width, uint height)
     {
-        OpenGL.Viewport(0, 0, (uint)size.X, (uint)size.Y);
-        _width = (uint)size.X;
-        _height = (uint)size.Y;
+        OpenGL.Viewport(0, 0, width, height);
+        _width = width;
+        _height = height;
     }
-
-    public readonly record struct LineRender(Vector3 Start, Vector3 End);
-    public readonly record struct SpriteRender(
-        Sprite Sprite,
-        Vector2 Dimensions,
-        float Transparency,
-        Matrix4x4 ModelMatrix
-        )
-    {
-        public Vector3 Position => ModelMatrix.Translation;
-    };
 
     private static (float LeftEdge, float RightEdge, float BottomEdge, float TopEdge) GetRectEdges(Vector2 dimensions, SpriteOrigin origin)
     {
@@ -305,7 +290,7 @@ internal sealed class Renderer : IDisposable, IResource
         };
     }
 
-    private void DrawSprite(SpriteRender sprite, Render2DBatch renderBatch, bool screenSpace = false)
+    private void DrawSprite(IRenderer.SpriteRender sprite, Render2DBatch renderBatch, bool screenSpace = false)
     {
         var textureSlot = GetTextureSlot(sprite.Sprite.Texture);
         Span<Vector2> textureCoordinates = stackalloc Vector2[]
@@ -347,7 +332,7 @@ internal sealed class Renderer : IDisposable, IResource
         
     }
 
-    private void DrawLines(IEnumerable<LineRender> lines, Matrix4x4 viewProjection)
+    private void DrawLines(IEnumerable<IRenderer.LineRender> lines, Matrix4x4 viewProjection)
     {
         var linePoints = lines.SelectMany(x => new[] { x.Start.X, x.Start.Y, x.Start.Z, x.End.X, x.End.Y, x.End.Z }).ToArray();
         if (linePoints.Length == 0)
@@ -365,15 +350,9 @@ internal sealed class Renderer : IDisposable, IResource
         OpenGL.DrawArrays(GLEnum.Lines, 0, (uint)(linePoints.Length / 3));
     }
 
-    public sealed record TextRender(Vector3 Position,
-        string Text,
-        float Transparency,
-        Core.Rendering.Texture Texture,
-        float LineHeight,
-        float SpaceWidth,
-        IReadOnlyDictionary<char, Sprite> CharacterSprites);
+    
 
-    private void DrawText(TextRender textRender, Render2DBatch renderBatch)
+    private void DrawText(IRenderer.TextRender textRender, Render2DBatch renderBatch)
     {
         var position = textRender.Position;
         foreach (var character in textRender.Text)
@@ -710,15 +689,14 @@ internal sealed class Renderer : IDisposable, IResource
         }
     }
 
-    public record struct RendererStats(uint DrawCalls);
 
-    public RendererStats RenderOrthographic(
+    public IRenderer.RendererStats RenderOrthographic(
         Vector3 cameraPosition,
         Vector2 viewSize,
-        IEnumerable<SpriteRender> sprites,
-        IEnumerable<SpriteRender> screenSprites,
-        IEnumerable<LineRender> lines,
-        IEnumerable<TextRender> textRenders)
+        IEnumerable<IRenderer.SpriteRender> sprites,
+        IEnumerable<IRenderer.SpriteRender> screenSprites,
+        IEnumerable<IRenderer.LineRender> lines,
+        IEnumerable<IRenderer.TextRender> textRenders)
     {
         _render2DBatch.ClearStats();
         OpenGL.Clear(ClearBufferMask.ColorBufferBit);
@@ -747,17 +725,17 @@ internal sealed class Renderer : IDisposable, IResource
 
         _render2DBatch.Flush();
         
-        return new RendererStats(_render2DBatch.DrawCalls);
+        return new IRenderer.RendererStats(_render2DBatch.DrawCalls);
     }
 
-    private readonly record struct SpriteRenderOrTextRender(SpriteRender? SpriteRender, TextRender? TextRender)
+    private readonly record struct SpriteRenderOrTextRender(IRenderer.SpriteRender? SpriteRender, IRenderer.TextRender? TextRender)
     {
         public float ZPosition => SpriteRender.HasValue ? SpriteRender.Value.Position.Z
             : TextRender is not null ? TextRender.Position.Z
             : default;
     }
 
-    private void DrawScreenSpaceEntities(IEnumerable<SpriteRender> spriteRenders, IEnumerable<TextRender> textRenders)
+    private void DrawScreenSpaceEntities(IEnumerable<IRenderer.SpriteRender> spriteRenders, IEnumerable<IRenderer.TextRender> textRenders)
     {
         var zOrdered = spriteRenders.Select(x => new SpriteRenderOrTextRender(x, null))
             .Concat(textRenders.Select(x => new SpriteRenderOrTextRender(null, x)))
@@ -776,7 +754,7 @@ internal sealed class Renderer : IDisposable, IResource
         }
     }
 
-    private void DrawWorldSpaceEntities(IEnumerable<SpriteRender> spriteRenders)
+    private void DrawWorldSpaceEntities(IEnumerable<IRenderer.SpriteRender> spriteRenders)
     {
         var zOrdered = spriteRenders.OrderBy(x => x.Position.Z);
 

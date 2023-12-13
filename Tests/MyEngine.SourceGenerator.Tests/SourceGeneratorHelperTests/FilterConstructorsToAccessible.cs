@@ -14,7 +14,7 @@ public class FilterConstructorsToAccessible
     private readonly SourceGeneratorHelpers _helper = new();
 
     [Fact]
-    public async Task Should_FilterAllNonPublicConstructors_When_InternalsVisibleIsFalse()
+    public void Should_FilterAllNonPublicConstructors_When_InternalsVisibleIsFalse()
     {
         var source = """
             public class MyClass

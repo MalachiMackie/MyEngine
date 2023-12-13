@@ -21,12 +21,29 @@ internal class ShaderProgram : IDisposable
         _gl.Uniform1(location, value);
     }
 
-    public unsafe void SetUniform1(string uniformName, Matrix4x4 matrix)
+    public void SetUniform1(string uniformName, Matrix4x4 matrix)
     {
         var location = _gl.GetUniformLocation(_handle, uniformName);
-        // there is an overload that takes a Span<float>,
-        // which would enable this method to be safe, but there's no way to safely get long lasting span of a matrix
-        _gl.UniformMatrix4(location, 1, false, (float*)&matrix);
+        Span<float> matrixSpan = stackalloc float[16]
+        {
+            matrix.M11,
+            matrix.M12,
+            matrix.M13,
+            matrix.M14,
+            matrix.M21,
+            matrix.M22,
+            matrix.M23,
+            matrix.M24,
+            matrix.M31,
+            matrix.M32,
+            matrix.M33,
+            matrix.M34,
+            matrix.M41,
+            matrix.M42,
+            matrix.M43,
+            matrix.M44
+        };
+        _gl.UniformMatrix4(location, 1, false, matrixSpan);
     }
 
     public void UseProgram()

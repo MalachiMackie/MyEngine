@@ -1,9 +1,9 @@
 ﻿using MyEngine.Assets;
 using MyEngine.Core;
-using MyEngine.ImGui;
 using MyEngine.Input;
 using MyEngine.Physics;
 using MyEngine.Rendering;
+using MyEngine.Silk.NET;
 using MyEngine.UI;
 using MyGame.Systems;
 
@@ -27,10 +27,9 @@ public class AppEntrypoint : IAppEntrypoint
             .AddSystem<InitUiSystem>(UpdateSystemStage.Instance)
             .AddPlugin(new CorePlugin())
             .AddPlugin(new Physics2DPlugin())
-            .AddPlugin(new InputPlugin())
+            .AddPlugin(new SilkPlugin())
             .AddPlugin(new RenderPlugin("My Game", 800, 600))
             .AddPlugin(new AssetPlugin())
-            .AddPlugin(new ImGuiPlugin())
             .AddPlugin(new UIPlugin());
     }
 }
