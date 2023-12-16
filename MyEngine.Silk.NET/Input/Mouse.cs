@@ -2,7 +2,7 @@
 using MyEngine.Input;
 using ISilkMouse = Silk.NET.Input.IMouse;
 
-namespace MyEngine.Silk.NET;
+namespace MyEngine.Silk.NET.Input;
 
 internal class Mouse : IMouse
 {

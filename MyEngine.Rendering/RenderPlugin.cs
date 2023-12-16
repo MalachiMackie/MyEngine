@@ -6,6 +6,8 @@ using MyEngine.Rendering.RenderSystems;
 [assembly: InternalsVisibleTo("MyEngine.Input")]
 [assembly: InternalsVisibleTo("MyEngine.ImGui")]
 [assembly: InternalsVisibleTo("MyEngine.Runtime")]
+[assembly: InternalsVisibleTo("MyEngine.Rendering.Tests")]
+[assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 
 namespace MyEngine.Rendering;
 
@@ -31,7 +33,7 @@ public class RenderPlugin : IPlugin
             .AddSystemStage(PreRenderSystemStage.Instance, 6)
             .AddSystemStage(RenderSystemStage.Instance, 5)
             .AddResource<ILineRenderResource>(new LineRenderResource())
-            .AddResource(new RenderCommandQueue())
+            .AddResource<IRenderCommandQueue>(new RenderCommandQueue())
             .AddResource(new RenderStats())
             .AddSystem<RenderSystem>(RenderSystemStage.Instance)
             .AddSystem<LineRenderSystem>(PreRenderSystemStage.Instance)

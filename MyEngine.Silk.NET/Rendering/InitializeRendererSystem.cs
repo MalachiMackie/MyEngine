@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MyEngine.Core.Ecs.Resources;
+﻿using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 using MyEngine.Rendering;
+using MyEngine.Silk.NET.Input;
+using MyEngine.Silk.NET.Rendering;
 using Silk.NET.OpenGL;
 
 namespace MyEngine.Silk.NET;

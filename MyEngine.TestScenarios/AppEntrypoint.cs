@@ -1,6 +1,5 @@
 ﻿using MyEngine.Assets;
 using MyEngine.Core;
-using MyEngine.Input;
 using MyEngine.Physics;
 using MyEngine.Rendering;
 using MyEngine.Silk.NET;

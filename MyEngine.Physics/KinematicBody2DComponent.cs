@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using MyEngine.Core.Ecs.Components;
+﻿using MyEngine.Core.Ecs.Components;
 
 namespace MyEngine.Physics;
 

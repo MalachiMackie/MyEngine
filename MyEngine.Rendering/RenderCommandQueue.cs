@@ -2,13 +2,20 @@
 
 namespace MyEngine.Rendering;
 
-public class RenderCommandQueue : IResource
+public interface IRenderCommandQueue : IResource
+{
+    public void Enqueue(IRenderCommand command);
+    internal IEnumerable<IRenderCommand> Flush();
+}
+
+
+public class RenderCommandQueue : IRenderCommandQueue
 {
     private readonly Queue<IRenderCommand> _queue = new();
 
     public void Enqueue(IRenderCommand command) => _queue.Enqueue(command);
 
-    internal IEnumerable<IRenderCommand> Flush()
+    public IEnumerable<IRenderCommand> Flush()
     {
         while (_queue.TryDequeue(out var command))
         {

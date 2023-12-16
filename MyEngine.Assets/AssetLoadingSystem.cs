@@ -5,12 +5,12 @@ namespace MyEngine.Assets;
 internal class AssetLoadingSystem : ISystem
 {
     private readonly IAssetCommands _assetCommands;
-    private readonly IEditableAssetCollection _editableAssetCollection;
+    private readonly IAssetCollection _assetCollection;
 
-    internal AssetLoadingSystem(IAssetCommands assetCommands, IEditableAssetCollection editableAssetCollection)
+    internal AssetLoadingSystem(IAssetCommands assetCommands, IAssetCollection assetCollection)
     {
         _assetCommands = assetCommands;
-        _editableAssetCollection = editableAssetCollection;
+        _assetCollection = assetCollection;
     }
 
     public void Run(double _)
@@ -26,14 +26,14 @@ internal class AssetLoadingSystem : ISystem
                         {
                             // todo: handle failure
                             var loadedAsset = await loadAssetCommand.loadFunc();
-                            _editableAssetCollection.AddAsset(loadedAsset);
+                            _assetCollection.AddAsset(loadedAsset);
                         });
                         break;
                     }
                 case IAssetCommands.CreateAssetCommand createAssetCommand:
                     {
                         var result = createAssetCommand.createFunc();
-                        _editableAssetCollection.AddAsset(result);
+                        _assetCollection.AddAsset(result);
                         break;
                 }
             }

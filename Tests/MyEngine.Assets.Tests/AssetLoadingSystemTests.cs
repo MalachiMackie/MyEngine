@@ -5,14 +5,14 @@ namespace MyEngine.Assets.Tests;
 
 public class AssetLoadingSystemTests
 {
-    private readonly IEditableAssetCollection _editableAssetCollection = A.Fake<IEditableAssetCollection>();
+    private readonly IAssetCollection _assetCollection = A.Fake<IAssetCollection>();
     private readonly IAssetCommands _assetCommands = A.Fake<IAssetCommands>();
 
     private readonly AssetLoadingSystem _system;
 
     public AssetLoadingSystemTests()
     {
-        _system = new(_assetCommands, _editableAssetCollection);
+        _system = new(_assetCommands, _assetCollection);
     }
 
     [Fact]
@@ -34,15 +34,15 @@ public class AssetLoadingSystemTests
 
         _system.Run(1);
 
-        A.CallTo(() => _editableAssetCollection.AddAsset(An<AssetLoadingSystemAsset>.That.Matches(x => x.Id == asset1.Id)))
+        A.CallTo(() => _assetCollection.AddAsset(An<AssetLoadingSystemAsset>.That.Matches(x => x.Id == asset1.Id)))
             .MustHaveHappened();
 
         _system.Run(1);
 
-        A.CallTo(() => _editableAssetCollection.AddAsset(An<AssetLoadingSystemAsset>._))
+        A.CallTo(() => _assetCollection.AddAsset(An<AssetLoadingSystemAsset>._))
             .MustHaveHappenedOnceExactly();
 
-        A.CallTo(() => _editableAssetCollection.AddAsset(An<AssetLoadingSystemAsset>.That.Matches(x => x.Id == asset2.Id)))
+        A.CallTo(() => _assetCollection.AddAsset(An<AssetLoadingSystemAsset>.That.Matches(x => x.Id == asset2.Id)))
             .Invokes(taskCompletionSource.SetResult);
 
         _system.Run(1);

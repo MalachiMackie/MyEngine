@@ -6,14 +6,10 @@ namespace MyEngine.Assets;
 public interface IAssetCollection : IResource
 {
     public Result<TAsset?> TryGetAsset<TAsset>(AssetId id);
+    internal Result<Unit> AddAsset(IAsset asset);
 }
 
-internal interface IEditableAssetCollection : IResource
-{
-    public Result<Unit> AddAsset(IAsset asset);
-}
-
-internal class AssetCollection : IAssetCollection, IEditableAssetCollection
+internal class AssetCollection : IAssetCollection
 {
     private readonly Dictionary<AssetId, IAsset> _assets = new();
 

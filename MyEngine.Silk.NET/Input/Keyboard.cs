@@ -2,7 +2,7 @@
 using ISilkKeyboard = Silk.NET.Input.IKeyboard;
 using SilkKey = Silk.NET.Input.Key;
 
-namespace MyEngine.Silk.NET;
+namespace MyEngine.Silk.NET.Input;
 
 internal class Keyboard : IKeyboard
 {

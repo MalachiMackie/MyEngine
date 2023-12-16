@@ -1,5 +1,4 @@
 ﻿using MyEngine.Core;
-using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 using MyEngine.Input;
 

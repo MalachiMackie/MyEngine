@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using MyEngine.Core;
+using MyEngine.Silk.NET.Input;
 
 [assembly: InternalsVisibleTo("MyEngine.Runtime")]
 

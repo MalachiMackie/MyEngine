@@ -1,5 +1,4 @@
 ﻿using System.Numerics;
-using MyEngine.Assets;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 using MyEngine.UI;

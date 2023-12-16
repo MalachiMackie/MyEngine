@@ -1,18 +1,19 @@
 ﻿using System.Numerics;
 using MyEngine.Utils;
+using static MyEngine.Rendering.ILineRenderResource;
 
 namespace MyEngine.Rendering;
 
 internal class LineRenderResource : ILineRenderResource
 {
-    private readonly Queue<ILineRenderResource.Line> _lines = new();
+    private readonly Queue<Line> _lines = new();
 
     public void RenderLine(Vector3 Start, Vector3 End)
     {
-        _lines.Enqueue(new ILineRenderResource.Line(Start, End));
+        _lines.Enqueue(new Line(Start, End));
     }
 
-    public IEnumerable<ILineRenderResource.Line> Flush()
+    public IEnumerable<Line> Flush()
     {
         while (_lines.TryDequeue(out var line))
         {
@@ -48,12 +49,12 @@ internal class LineRenderResource : ILineRenderResource
             }
             if (previous.HasValue)
             {
-                _lines.Enqueue(new ILineRenderResource.Line(previous.Value, point));
+                _lines.Enqueue(new Line(previous.Value, point));
             }
             previous = point;
         }
-        _lines.Enqueue(new ILineRenderResource.Line(previous!.Value, first!.Value));
+        _lines.Enqueue(new Line(previous!.Value, first!.Value));
 
-        return Result.Success<Unit>(Unit.Value);
+        return Result.Success(Unit.Value);
     }
 }

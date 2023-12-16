@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MyEngine.Core.Ecs.Systems;
-using MyEngine.Input;
+﻿using MyEngine.Core.Ecs.Systems;
 
-namespace MyEngine.Silk.NET;
+namespace MyEngine.Silk.NET.Input;
 
 internal class InputSyncSystem : ISystem
 {

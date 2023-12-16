@@ -1,6 +1,4 @@
-﻿using FluentAssertions;
-
-namespace MyEngine.Input.Tests;
+﻿namespace MyEngine.Input.Tests;
 
 //public class KeyboardTests
 //{

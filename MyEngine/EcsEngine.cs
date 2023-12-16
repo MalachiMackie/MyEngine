@@ -1,7 +1,6 @@
 ﻿using MyEngine.Core;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
-using MyEngine.Rendering;
 using System.Diagnostics;
 
 namespace MyEngine.Runtime;

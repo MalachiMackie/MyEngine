@@ -3,7 +3,8 @@ using MyEngine.Core.Ecs.Systems;
 using Silk.NET.Input;
 using Silk.NET.Windowing;
 
-namespace MyEngine.Silk.NET;
+namespace MyEngine.Silk.NET.Input;
+
 internal class InitializeInputSystem : IStartupSystem
 {
     private readonly SilkView _silkView;
@@ -27,12 +28,12 @@ internal class InitializeInputSystem : IStartupSystem
         var silkMouse = input.Mice[0];
         var mouse = new Mouse(silkMouse);
         var keyboard = new Keyboard(silkKeyboard);
-        _resourceRegistrationResource.AddResource<Mouse, Input.IMouse>(mouse);
-        _resourceRegistrationResource.AddResource<Keyboard, Input.IKeyboard>(keyboard);
+        _resourceRegistrationResource.AddResource<Mouse, MyEngine.Input.IMouse>(mouse);
+        _resourceRegistrationResource.AddResource<Keyboard, MyEngine.Input.IKeyboard>(keyboard);
     }
 }
 
-internal class SilkView : MyEngine.Core.IView
+internal class SilkView : Core.IView
 {
     public required IView View { get; init; }
 
@@ -41,7 +42,8 @@ internal class SilkView : MyEngine.Core.IView
         if (View.IsInitialized)
         {
             loadAction();
-        } else
+        }
+        else
         {
             View.Load += loadAction;
         }

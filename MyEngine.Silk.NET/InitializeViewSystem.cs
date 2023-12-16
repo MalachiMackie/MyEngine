@@ -2,6 +2,7 @@
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 using MyEngine.Rendering;
+using MyEngine.Silk.NET.Input;
 using Silk.NET.Windowing;
 
 namespace MyEngine.Silk.NET;

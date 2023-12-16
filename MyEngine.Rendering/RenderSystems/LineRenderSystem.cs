@@ -4,10 +4,10 @@ namespace MyEngine.Rendering;
 
 public class LineRenderSystem : ISystem
 {
-    private readonly RenderCommandQueue _commandQueue;
+    private readonly IRenderCommandQueue _commandQueue;
     private readonly ILineRenderResource _lineRenderResource;
 
-    public LineRenderSystem(RenderCommandQueue commandQueue, ILineRenderResource lineRenderResource)
+    internal LineRenderSystem(IRenderCommandQueue commandQueue, ILineRenderResource lineRenderResource)
     {
         _commandQueue = commandQueue;
         _lineRenderResource = lineRenderResource;

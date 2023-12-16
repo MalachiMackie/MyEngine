@@ -9,6 +9,8 @@ using MyEngine.Rendering.OpenGL;
 using MyEngine.Utils;
 using Silk.NET.OpenGL;
 
+namespace MyEngine.Silk.NET.Rendering;
+
 internal sealed class OpenGLRenderer : IRenderer
 {
     private OpenGLRenderer(GL openGL,

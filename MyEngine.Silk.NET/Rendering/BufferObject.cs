@@ -1,6 +1,6 @@
 ﻿using Silk.NET.OpenGL;
 
-namespace MyEngine.Rendering.OpenGL;
+namespace MyEngine.Silk.NET.Rendering;
 
 internal class BufferObject : IDisposable
 {

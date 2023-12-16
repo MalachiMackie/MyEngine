@@ -11,10 +11,8 @@ public class AssetPlugin : IPlugin
 {
     public AppBuilder Register(AppBuilder builder)
     {
-        var assetCollection = new AssetCollection();
         return builder.AddSystem<AssetLoadingSystem>(PostUpdateSystemStage.Instance)
             .AddResource<IAssetCommands>(new AssetCommands())
-            .AddResource<IAssetCollection>(assetCollection)
-            .AddResource<IEditableAssetCollection>(assetCollection);
+            .AddResource<IAssetCollection>(new AssetCollection());
     }
 }
