@@ -7,9 +7,9 @@ namespace MyEngine.Rendering.RenderSystems;
 public class SpriteRenderSystem : ISystem
 {
     private readonly IQuery<SpriteComponent, TransformComponent, OptionalComponent<TransparencyComponent>> _query;
-    private readonly RenderCommandQueue _commandQueue;
+    private readonly IRenderCommandQueue _commandQueue;
 
-    public SpriteRenderSystem(RenderCommandQueue commandQueue, IQuery<SpriteComponent, TransformComponent, OptionalComponent<TransparencyComponent>> query)
+    public SpriteRenderSystem(IRenderCommandQueue commandQueue, IQuery<SpriteComponent, TransformComponent, OptionalComponent<TransparencyComponent>> query)
     {
         _commandQueue = commandQueue;
         _query = query;

@@ -8,14 +8,14 @@ namespace MyEngine.Rendering.RenderSystems;
 
 public class UIRenderSystem : ISystem
 {
-    private readonly RenderCommandQueue _renderCommandQueue;
+    private readonly IRenderCommandQueue _renderCommandQueue;
     private readonly IQuery<UICanvasComponent, ChildrenComponent> _canvasQuery;
     private readonly IQuery<UITextComponent, UITransformComponent, OptionalComponent<ChildrenComponent>, OptionalComponent<UITransparencyComponent>> _textQuery;
     private readonly IQuery<UIBoxComponent, UITransformComponent, OptionalComponent<ChildrenComponent>, OptionalComponent<UITransparencyComponent>> _boxQuery;
 
     public UIRenderSystem(IQuery<UITextComponent, UITransformComponent, OptionalComponent<ChildrenComponent>, OptionalComponent<UITransparencyComponent>> textQuery,
         IQuery<UICanvasComponent, ChildrenComponent> canvasQuery,
-        RenderCommandQueue renderCommandQueue,
+        IRenderCommandQueue renderCommandQueue,
         IQuery<UIBoxComponent, UITransformComponent, OptionalComponent<ChildrenComponent>, OptionalComponent<UITransparencyComponent>> boxQuery)
     {
         _textQuery = textQuery;

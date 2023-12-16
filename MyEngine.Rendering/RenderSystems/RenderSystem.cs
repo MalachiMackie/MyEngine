@@ -9,7 +9,7 @@ namespace MyEngine.Rendering;
 internal class RenderSystem : ISystem
 {
     private readonly IRenderer _renderer;
-    private readonly RenderCommandQueue _renderCommandQueue;
+    private readonly IRenderCommandQueue _renderCommandQueue;
     private readonly IQuery<Camera3DComponent, TransformComponent> _camera3DQuery;
     private readonly IQuery<Camera2DComponent, TransformComponent> _camera2DQuery;
     private readonly RenderStats _renderStats;
@@ -18,7 +18,7 @@ internal class RenderSystem : ISystem
         IRenderer renderer,
         IQuery<Camera3DComponent, TransformComponent> camera3DQuery,
         IQuery<Camera2DComponent, TransformComponent> camera2DQuery,
-        RenderCommandQueue renderCommandQueue,
+        IRenderCommandQueue renderCommandQueue,
         RenderStats renderStats)
     {
         _renderer = renderer;

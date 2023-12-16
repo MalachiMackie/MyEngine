@@ -1,4 +1,12 @@
-﻿namespace MyEngine.Core;
+﻿using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("MyEngine.Runtime")]
+[assembly: InternalsVisibleTo("MyEngine.Physics")]
+[assembly: InternalsVisibleTo("MyEngine.Core.Tests")]
+[assembly: InternalsVisibleTo("MyEngine.SourceGenerator.Tests")]
+[assembly: InternalsVisibleTo("MyEngine.Rendering.Tests")]
+
+namespace MyEngine.Core;
 
 public class CorePlugin : IPlugin
 {

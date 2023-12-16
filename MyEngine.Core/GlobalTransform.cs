@@ -2,7 +2,7 @@
 
 namespace MyEngine.Core;
 
-public class GlobalTransform
+public class GlobalTransform : IEquatable<GlobalTransform>
 {
     public record struct PositionRotationScale(Vector3 Position, Quaternion Rotation, Vector3 Scale);
 
@@ -72,5 +72,10 @@ public class GlobalTransform
 
         ModelMatrix = localMatrix * parentTransform.ModelMatrix;
         Scale = parentTransform.Scale * localTransform.scale;
+    }
+
+    public bool Equals(GlobalTransform? other)
+    {
+        return ModelMatrix == other?.ModelMatrix;
     }
 }
