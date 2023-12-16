@@ -22,6 +22,7 @@ public class SpriteRenderSystemTests
     [Fact]
     public void ShouldEnqueueSprites()
     {
+        Assert.Fail("Testing pre-commit hook");
         var spriteComponent = new SpriteComponent(A.Dummy<Sprite>());
         var transform1 = new Transform(new Vector3(0f, 1f, 2f), Quaternion.Identity, Vector3.One);
         var transform2 = new Transform(new Vector3(1f, 2f, 3f), Quaternion.Identity, Vector3.One);
