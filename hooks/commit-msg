@@ -18,7 +18,18 @@
 # This example catches duplicate Signed-off-by lines.
 
 test "" = "$(grep 'WIP' "$1")" || {
+	echo "WIP Commit... skipping tests"
 	exit 0
 }
 
-dotnet test || exit 1
+if -n dotnet test {
+	echo "
+
+Tests failed... Aborting commit"
+	exit 1
+}
+
+echo "
+
+Tests passed"
+exit 0
