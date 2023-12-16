@@ -22,14 +22,20 @@ test "" = "$(grep 'WIP' "$1")" || {
 	exit 0
 }
 
-if -n dotnet test {
+dotnet test
+
+if [ $? -eq 0 ]
+then
+
+	echo "
+
+Tests passed"
+	exit 0
+
+else
 	echo "
 
 Tests failed... Aborting commit"
 	exit 1
-}
+fi
 
-echo "
-
-Tests passed"
-exit 0
