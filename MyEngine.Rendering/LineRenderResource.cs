@@ -27,6 +27,10 @@ internal class LineRenderResource : ILineRenderResource
         {
             return Result.Failure<Unit>("Cannot have less than 3 segments for a circle line render");
         }
+        if (radius <= 0)
+        {
+            return Result.Failure<Unit>("Radius must be greater than 0 for a line circle render");
+        }
 
         segments ??= 15;
         var angleDegrees = 360.0f / segments.Value;
