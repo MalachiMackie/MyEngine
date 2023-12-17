@@ -54,6 +54,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Rendering.Dummies"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Tests.Utils", "Tests\MyEngine.Tests.Utils\MyEngine.Tests.Utils.csproj", "{772D5271-7F77-4A92-85EB-3B40F4829743}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Physics.Bepu", "MyEngine.Physics.Bepu\MyEngine.Physics.Bepu.csproj", "{30031BB8-A552-4B8D-822B-DB8787631F5B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -136,6 +138,10 @@ Global
 		{772D5271-7F77-4A92-85EB-3B40F4829743}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{772D5271-7F77-4A92-85EB-3B40F4829743}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{772D5271-7F77-4A92-85EB-3B40F4829743}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30031BB8-A552-4B8D-822B-DB8787631F5B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30031BB8-A552-4B8D-822B-DB8787631F5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30031BB8-A552-4B8D-822B-DB8787631F5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30031BB8-A552-4B8D-822B-DB8787631F5B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

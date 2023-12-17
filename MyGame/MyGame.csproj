@@ -10,6 +10,7 @@
     <ProjectReference Include="..\MyEngine.Assets\MyEngine.Assets.csproj" />
     <ProjectReference Include="..\MyEngine.Core\MyEngine.Core.csproj" />
     <ProjectReference Include="..\MyEngine.Input\MyEngine.Input.csproj" />
+    <ProjectReference Include="..\MyEngine.Physics.Bepu\MyEngine.Physics.Bepu.csproj" />
     <ProjectReference Include="..\MyEngine.Physics\MyEngine.Physics.csproj" />
     <ProjectReference Include="..\MyEngine.Rendering\MyEngine.Rendering.csproj" />
     <ProjectReference Include="..\MyEngine.Silk.NET\MyEngine.Silk.NET.csproj" />

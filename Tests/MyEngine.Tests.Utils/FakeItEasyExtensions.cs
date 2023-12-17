@@ -18,7 +18,7 @@ public static class FakeItEasyExtensions
             actual.Should().BeEquivalentTo(expected);
             return true;
         }
-        catch (ExpectationException _)
+        catch (ExpectationException)
         {
             return false;
         }

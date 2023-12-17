@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BepuPhysics" Version="2.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MyEngine.Core\MyEngine.Core.csproj" />
+    <ProjectReference Include="..\MyEngine.Physics\MyEngine.Physics.csproj" />
+    <ProjectReference Include="..\MyEngine.Utils\MyEngine.Utils.csproj" />
+  </ItemGroup>
+
+</Project>

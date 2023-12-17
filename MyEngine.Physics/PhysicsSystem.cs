@@ -10,7 +10,7 @@ public class PhysicsSystem : ISystem
 {
     private readonly PhysicsResource _physicsResource;
     private readonly CollisionsResource _collisionsResource;
-    private readonly BepuPhysicsAdapter _physicsAdapter;
+    private readonly IPhysicsAdapter _physicsAdapter;
     private readonly IQuery<TransformComponent, StaticBody2DComponent, Collider2DComponent> _staticBodiesQuery;
     private readonly IQuery<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<ParentComponent>, OptionalComponent<VelocityComponent>> _dynamicBodiesQuery;
     private readonly IQuery<TransformComponent, KinematicBody2DComponent, Collider2DComponent, OptionalComponent<ParentComponent>> _kinematicBodiesQuery;
@@ -18,7 +18,7 @@ public class PhysicsSystem : ISystem
 
     public PhysicsSystem(PhysicsResource physicsResource,
         CollisionsResource collisionsResource,
-        BepuPhysicsAdapter physicsAdapter,
+        IPhysicsAdapter physicsAdapter,
         IQuery<TransformComponent, StaticBody2DComponent, Collider2DComponent> staticBodiesQuery,
         IQuery<TransformComponent, DynamicBody2DComponent, Collider2DComponent, OptionalComponent<ParentComponent>, OptionalComponent<VelocityComponent>> dynamicBodiesQuery,
         IQuery<TransformComponent, KinematicBody2DComponent, Collider2DComponent, OptionalComponent<ParentComponent>> kinematicBodiesQuery,

@@ -1,4 +1,6 @@
-﻿using BepuPhysics;
+﻿using System.Diagnostics;
+using System.Numerics;
+using BepuPhysics;
 using BepuPhysics.Collidables;
 using BepuPhysics.CollisionDetection;
 using BepuPhysics.Constraints;
@@ -6,10 +8,9 @@ using BepuUtilities;
 using BepuUtilities.Memory;
 using MyEngine.Core;
 using MyEngine.Core.Ecs;
-using MyEngine.Core.Ecs.Resources;
 using MyEngine.Utils;
-using System.Diagnostics;
-using System.Numerics;
+
+using static MyEngine.Physics.IPhysicsAdapter;
 
 namespace MyEngine.Physics;
 
@@ -161,7 +162,7 @@ internal struct NarrowPhaseCallback : INarrowPhaseCallbacks
     }
 }
 
-public class BepuPhysicsAdapter : IResource
+public class BepuPhysicsAdapter : IPhysicsAdapter
 {
     private readonly Simulation _simulation;
     private readonly BufferPool _bufferPool;
@@ -268,13 +269,6 @@ public class BepuPhysicsAdapter : IResource
         return _dynamicHandles.Keys;
     }
 
-    public enum RigidBodyType
-    {
-        Static,
-        Dynamic,
-        Kinematic
-    }
-
     private enum ShapeType
     {
         Box2D,
@@ -282,15 +276,6 @@ public class BepuPhysicsAdapter : IResource
         Box3D,
         Sphere3D
     }
-
-    public readonly record struct ColliderPositionCollider(BoxCollider2D? BoxCollider2D, CircleCollider2D? CircleCollider2D);
-
-    public readonly record struct ColliderPosition(
-        Vector3 Position,
-        Quaternion Rotation,
-        ColliderPositionCollider Collider,
-        RigidBodyType RigidBodyType
-        );
 
     private ColliderPositionCollider GetColliderShape(TypedIndex shapeIndex, ShapeType shapeType)
     {

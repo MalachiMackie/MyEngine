@@ -1,6 +1,7 @@
 ﻿using MyEngine.Assets;
 using MyEngine.Core;
 using MyEngine.Physics;
+using MyEngine.Physics.Bepu;
 using MyEngine.Rendering;
 using MyEngine.Silk.NET;
 using MyEngine.UI;
@@ -25,7 +26,7 @@ public class AppEntrypoint : IAppEntrypoint
             .AddSystem<ToggleColliderDebugDisplaySystem>(UpdateSystemStage.Instance)
             .AddSystem<InitUiSystem>(UpdateSystemStage.Instance)
             .AddPlugin(new CorePlugin())
-            .AddPlugin(new Physics2DPlugin())
+            .AddPlugin(new BepuPhysicsPlugin())
             .AddPlugin(new SilkPlugin())
             .AddPlugin(new RenderPlugin("My Game", 800, 600))
             .AddPlugin(new AssetPlugin())

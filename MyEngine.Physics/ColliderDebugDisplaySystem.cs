@@ -8,11 +8,11 @@ namespace MyEngine.Physics;
 
 public class ColliderDebugDisplaySystem : ISystem
 {
-    private readonly BepuPhysicsAdapter _physicsAdapter;
+    private readonly IPhysicsAdapter _physicsAdapter;
     private readonly DebugColliderDisplayResource _debugColliderDisplayResource;
     private readonly ILineRenderResource _lineRenderResource;
 
-    public ColliderDebugDisplaySystem(BepuPhysicsAdapter physicsAdapter, ILineRenderResource lineRenderResource, DebugColliderDisplayResource debugColliderDisplayResource)
+    public ColliderDebugDisplaySystem(IPhysicsAdapter physicsAdapter, ILineRenderResource lineRenderResource, DebugColliderDisplayResource debugColliderDisplayResource)
     {
         _physicsAdapter = physicsAdapter;
         _lineRenderResource = lineRenderResource;
