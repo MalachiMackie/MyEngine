@@ -52,6 +52,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.Rendering.Tests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Rendering.Dummies", "Tests\MyEngine.Rendering.Dummies\MyEngine.Rendering.Dummies.csproj", "{348ABBE0-339A-4B15-9C0B-CF03B994286B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Tests.Utils", "Tests\MyEngine.Tests.Utils\MyEngine.Tests.Utils.csproj", "{772D5271-7F77-4A92-85EB-3B40F4829743}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -130,6 +132,10 @@ Global
 		{348ABBE0-339A-4B15-9C0B-CF03B994286B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{348ABBE0-339A-4B15-9C0B-CF03B994286B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{348ABBE0-339A-4B15-9C0B-CF03B994286B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{772D5271-7F77-4A92-85EB-3B40F4829743}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{772D5271-7F77-4A92-85EB-3B40F4829743}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{772D5271-7F77-4A92-85EB-3B40F4829743}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{772D5271-7F77-4A92-85EB-3B40F4829743}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -142,6 +148,7 @@ Global
 		{49B3A985-6C51-44F2-ADE4-9E03E3B90DCD} = {3EAC168D-DFE5-4960-9B56-F9592DABE617}
 		{68640218-D976-45A1-8A69-C4085A294793} = {3EAC168D-DFE5-4960-9B56-F9592DABE617}
 		{348ABBE0-339A-4B15-9C0B-CF03B994286B} = {3EAC168D-DFE5-4960-9B56-F9592DABE617}
+		{772D5271-7F77-4A92-85EB-3B40F4829743} = {3EAC168D-DFE5-4960-9B56-F9592DABE617}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AFF7B083-474C-4C13-8E07-C7FFC9DC727B}

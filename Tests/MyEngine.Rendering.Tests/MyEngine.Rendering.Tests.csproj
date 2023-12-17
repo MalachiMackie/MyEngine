@@ -27,6 +27,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\MyEngine.Rendering\MyEngine.Rendering.csproj" />
     <ProjectReference Include="..\MyEngine.Rendering.Dummies\MyEngine.Rendering.Dummies.csproj" />
+    <ProjectReference Include="..\MyEngine.Tests.Utils\MyEngine.Tests.Utils.csproj" />
   </ItemGroup>
 
 </Project>

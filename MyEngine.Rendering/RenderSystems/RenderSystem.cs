@@ -30,15 +30,10 @@ internal class RenderSystem : ISystem
 
     public void Run(double deltaTime)
     {
-
-        if (!TryRender3D())
+        if (!TryRender2D())
         {
-            if (!TryRender2D())
-            {
-                Console.WriteLine("No Camera was found");
-            }
+            Console.WriteLine("No Camera was found");
         }
-
     }
 
     private bool TryRender3D()
