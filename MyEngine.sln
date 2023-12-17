@@ -56,6 +56,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Tests.Utils", "Tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Physics.Bepu", "MyEngine.Physics.Bepu\MyEngine.Physics.Bepu.csproj", "{30031BB8-A552-4B8D-822B-DB8787631F5B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Physics.Tests", "Tests\MyEngine.Physics.Tests\MyEngine.Physics.Tests.csproj", "{15AD2D85-982B-406E-A55C-E7128C30B701}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.UI.Tests", "Tests\MyEngine.UI.Tests\MyEngine.UI.Tests.csproj", "{24AEACA4-819D-4FE4-A39F-83716712E1ED}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -142,6 +146,14 @@ Global
 		{30031BB8-A552-4B8D-822B-DB8787631F5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30031BB8-A552-4B8D-822B-DB8787631F5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{30031BB8-A552-4B8D-822B-DB8787631F5B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15AD2D85-982B-406E-A55C-E7128C30B701}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15AD2D85-982B-406E-A55C-E7128C30B701}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15AD2D85-982B-406E-A55C-E7128C30B701}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15AD2D85-982B-406E-A55C-E7128C30B701}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24AEACA4-819D-4FE4-A39F-83716712E1ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24AEACA4-819D-4FE4-A39F-83716712E1ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24AEACA4-819D-4FE4-A39F-83716712E1ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24AEACA4-819D-4FE4-A39F-83716712E1ED}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -155,6 +167,8 @@ Global
 		{68640218-D976-45A1-8A69-C4085A294793} = {3EAC168D-DFE5-4960-9B56-F9592DABE617}
 		{348ABBE0-339A-4B15-9C0B-CF03B994286B} = {3EAC168D-DFE5-4960-9B56-F9592DABE617}
 		{772D5271-7F77-4A92-85EB-3B40F4829743} = {3EAC168D-DFE5-4960-9B56-F9592DABE617}
+		{15AD2D85-982B-406E-A55C-E7128C30B701} = {3EAC168D-DFE5-4960-9B56-F9592DABE617}
+		{24AEACA4-819D-4FE4-A39F-83716712E1ED} = {3EAC168D-DFE5-4960-9B56-F9592DABE617}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AFF7B083-474C-4C13-8E07-C7FFC9DC727B}
