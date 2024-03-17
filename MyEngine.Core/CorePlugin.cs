@@ -5,6 +5,7 @@
 [assembly: InternalsVisibleTo("MyEngine.Core.Tests")]
 [assembly: InternalsVisibleTo("MyEngine.SourceGenerator.Tests")]
 [assembly: InternalsVisibleTo("MyEngine.Rendering.Tests")]
+[assembly: InternalsVisibleTo("MyEngine.UI.Tests")]
 
 namespace MyEngine.Core;
 

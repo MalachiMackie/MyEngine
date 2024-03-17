@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FakeItEasy" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\MyEngine.UI\MyEngine.UI.csproj" />
+    <ProjectReference Include="..\MyEngine.Rendering.Dummies\MyEngine.Rendering.Dummies.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -60,6 +60,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Physics.Tests", "T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.UI.Tests", "Tests\MyEngine.UI.Tests\MyEngine.UI.Tests.csproj", "{24AEACA4-819D-4FE4-A39F-83716712E1ED}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.UI.Dummies", "Tests\MyEngine.UI.Dummies\MyEngine.UI.Dummies.csproj", "{FB54074C-CB8D-4A9F-A7F9-C4A6124AA76A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -154,6 +156,10 @@ Global
 		{24AEACA4-819D-4FE4-A39F-83716712E1ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{24AEACA4-819D-4FE4-A39F-83716712E1ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{24AEACA4-819D-4FE4-A39F-83716712E1ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB54074C-CB8D-4A9F-A7F9-C4A6124AA76A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB54074C-CB8D-4A9F-A7F9-C4A6124AA76A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB54074C-CB8D-4A9F-A7F9-C4A6124AA76A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB54074C-CB8D-4A9F-A7F9-C4A6124AA76A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -169,6 +175,7 @@ Global
 		{772D5271-7F77-4A92-85EB-3B40F4829743} = {3EAC168D-DFE5-4960-9B56-F9592DABE617}
 		{15AD2D85-982B-406E-A55C-E7128C30B701} = {3EAC168D-DFE5-4960-9B56-F9592DABE617}
 		{24AEACA4-819D-4FE4-A39F-83716712E1ED} = {3EAC168D-DFE5-4960-9B56-F9592DABE617}
+		{FB54074C-CB8D-4A9F-A7F9-C4A6124AA76A} = {3EAC168D-DFE5-4960-9B56-F9592DABE617}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AFF7B083-474C-4C13-8E07-C7FFC9DC727B}
