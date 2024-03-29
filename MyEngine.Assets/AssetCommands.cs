@@ -14,15 +14,15 @@ public interface IAssetCommands : IResource
     public AssetId CreateAsset<TAsset, TCreateAssetData>(TCreateAssetData createAssetData)
         where TAsset : ICreatableAsset<TAsset, TCreateAssetData>;
 
-    internal interface IAssetCommand { }
+    public interface IAssetCommand { }
 
-    internal record LoadAssetCommand(AssetId assetId, Func<Task<IAsset>> loadFunc) : IAssetCommand;
+    internal record LoadAssetCommand(AssetId assetId, Func<Task<IAsset?>> loadFunc) : IAssetCommand;
     internal record CreateAssetCommand(AssetId assetId, Func<IAsset> createFunc) : IAssetCommand;
 
-    internal IEnumerable<IAssetCommand> FlushCommands();
+    public IEnumerable<IAssetCommand> FlushCommands();
 }
 
-internal class AssetCommands : IAssetCommands
+public class AssetCommands : IAssetCommands
 {
     private readonly IFileSystem _fileSystem;
 
@@ -44,8 +44,17 @@ internal class AssetCommands : IAssetCommands
             id,
             async () =>
             {
-                using var fileStream = _fileSystem.File.OpenRead(assetPath);
-                return await TAsset.LoadAsync(id, fileStream, loadAssetData);
+                try
+                {
+
+                    using var fileStream = _fileSystem.File.OpenRead(assetPath);
+                    return await TAsset.LoadAsync(id, fileStream, loadAssetData);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Failed to read asset: {0}", ex);
+                    return null;
+                }
             }));
 
         return id;
@@ -80,8 +89,16 @@ internal class AssetCommands : IAssetCommands
             id,
             async () =>
             {
-                using var fileStream = _fileSystem.File.OpenRead(assetPath);
-                return await TAsset.LoadAsync(id, fileStream);
+                try
+                {
+                    using var fileStream = _fileSystem.File.OpenRead(assetPath);
+                    return await TAsset.LoadAsync(id, fileStream);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Failed to load asset: {0}", ex);
+                    return null;
+                }
             }));
 
         return id;

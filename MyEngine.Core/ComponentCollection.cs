@@ -6,7 +6,7 @@ using MyEngine.Utils;
 
 namespace MyEngine.Core;
 
-internal class ComponentCollection
+public class ComponentCollection
 {
     private readonly Dictionary<Type, Dictionary<EntityId, IComponent>> _components = new();
 

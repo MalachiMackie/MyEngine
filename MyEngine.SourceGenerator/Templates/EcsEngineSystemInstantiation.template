@@ -1,4 +1,4 @@
-_systemInstantiations.Add(typeof({template:GlobalNamespace}{template:SystemFullyQualifiedName}), () =>
+systemInstantiations.Add(typeof({template:GlobalNamespace}{template:SystemFullyQualifiedName}), () =>
 {
     {template:GetQueryComponentFuncs}
     if ({template:ResourceChecks})

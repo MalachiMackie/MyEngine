@@ -2,10 +2,10 @@
 
 public class ParentComponent : IComponent
 {
-    internal ParentComponent(EntityId parent)
+    public ParentComponent(EntityId parent)
     {
         Parent = parent;
     }
 
-    public EntityId Parent { get; internal set; }
+    public EntityId Parent { get; set; }
 }

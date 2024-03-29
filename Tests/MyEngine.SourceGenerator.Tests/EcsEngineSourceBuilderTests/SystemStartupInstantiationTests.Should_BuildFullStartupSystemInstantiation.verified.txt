@@ -1,0 +1,10 @@
+﻿startupSystemInstantiations.Add(typeof(global::MyStartupSystem<string>), () =>
+{
+    if (_resourceContainer.TryGetResource<global::Parameter1<bool>>(out var resource1)
+        && _resourceContainer.TryGetResource<global::Parameter2<int>>(out var resource2))
+    {
+        return new global::MyStartupSystem<string>(resource1, resource2);
+    }
+
+    return null;
+});

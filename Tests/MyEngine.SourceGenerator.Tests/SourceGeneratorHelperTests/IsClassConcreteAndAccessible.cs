@@ -27,7 +27,7 @@ public class IsClassConcreteAndAccessible
             .OfType<ClassDeclarationSyntax>()
             .First();
 
-        var result = _helper.IsClassConcreteAndAccessible(semanticModel, classNode);
+        var result = _helper.IsClassConcreteAndAccessible(semanticModel.GetDeclaredSymbol(classNode)!);
         result.Should().BeTrue();
 
     }
@@ -50,7 +50,7 @@ public class IsClassConcreteAndAccessible
             .OfType<ClassDeclarationSyntax>()
             .First(x => semanticModel.GetDeclaredSymbol(x)?.Name == className);
 
-        var result = _helper.IsClassConcreteAndAccessible(semanticModel, classNode);
+        var result = _helper.IsClassConcreteAndAccessible(semanticModel.GetDeclaredSymbol(classNode)!);
         result.Should().BeFalse();
     }
 
@@ -71,7 +71,7 @@ public class IsClassConcreteAndAccessible
             .OfType<ClassDeclarationSyntax>()
             .First(x => semanticModel.GetDeclaredSymbol(x)?.Name == className);
 
-        var result = _helper.IsClassConcreteAndAccessible(semanticModel, classNode);
+        var result = _helper.IsClassConcreteAndAccessible(semanticModel.GetDeclaredSymbol(classNode)!);
         result.Should().BeTrue();
     }
 }

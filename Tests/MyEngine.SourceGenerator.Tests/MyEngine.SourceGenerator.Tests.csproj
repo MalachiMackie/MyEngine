@@ -39,4 +39,8 @@
     <ProjectReference Include="..\..\MyEngine.SourceGenerator\MyEngine.SourceGenerator.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="SourceGeneratorTests\Expectations\" />
+  </ItemGroup>
+
 </Project>

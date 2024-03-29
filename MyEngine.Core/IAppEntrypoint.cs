@@ -1,6 +1,6 @@
 ﻿namespace MyEngine.Core;
 
-[AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Assembly, AllowMultiple = false, Inherited = false)]
 public class AppEntrypointAttribute : Attribute
 {
 

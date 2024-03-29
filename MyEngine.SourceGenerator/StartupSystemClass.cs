@@ -5,12 +5,17 @@ namespace MyEngine.SourceGenerator
 {
     public sealed class StartupSystemConstructorParameter
     {
-        public string Name { get; set; }
+        public StartupSystemConstructorParameter(string name)
+        {
+            Name = name;
+        }
+
+        public string Name { get; }
     }
 
     public sealed class StartupSystemConstructor
     {
-        public static readonly StartupSystemConstructor NoConstructor = new StartupSystemConstructor(Array.Empty<StartupSystemConstructorParameter>());
+        public static readonly StartupSystemConstructor Empty = new StartupSystemConstructor(Array.Empty<StartupSystemConstructorParameter>());
         public IReadOnlyCollection<StartupSystemConstructorParameter> Parameters { get; }
 
         public StartupSystemConstructor(IReadOnlyCollection<StartupSystemConstructorParameter> parameters)

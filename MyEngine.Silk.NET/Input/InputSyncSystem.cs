@@ -2,7 +2,7 @@
 
 namespace MyEngine.Silk.NET.Input;
 
-internal class InputSyncSystem : ISystem
+public class InputSyncSystem : ISystem
 {
     private readonly Keyboard _keyboard;
     private readonly Mouse _mouse;

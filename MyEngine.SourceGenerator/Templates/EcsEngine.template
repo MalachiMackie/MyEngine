@@ -2,33 +2,55 @@
 #nullable enable
 #pragma warning disable CS0162 // Unreachable code detected
 
-namespace MyEngine.Runtime
+namespace {template:Namespace}
 {
-    internal partial class EcsEngine
+    public sealed class EcsEngineGlue : {template:GlobalNamespace}MyEngine.Core.Ecs.IEcsEngineGlue
     {
-        private static partial {template:GlobalNamespace}MyEngine.Core.IAppEntrypoint GetAppEntrypoint() => new {template:GlobalNamespace}{template:AppEntrypointName}();
+        private {template:GlobalNamespace}System.Collections.Generic.ISet<{template:GlobalNamespace}MyEngine.Core.Ecs.EntityId> _entities = null!;
+        private {template:GlobalNamespace}MyEngine.Core.ComponentCollection _components = null!;
+        private {template:GlobalNamespace}MyEngine.Core.Ecs.Resources.IResourceContainer _resourceContainer = null!;
 
-        private partial void AddStartupSystemInstantiations()
+        public void Init(
+            {template:GlobalNamespace}System.Collections.Generic.ISet<{template:GlobalNamespace}MyEngine.Core.Ecs.EntityId> entities,
+            {template:GlobalNamespace}MyEngine.Core.ComponentCollection components,
+            {template:GlobalNamespace}MyEngine.Core.Ecs.Resources.IResourceContainer resourceContainer)
         {
+            _entities = entities;
+            _components = components;
+            _resourceContainer = resourceContainer;
+        }
+
+        public {template:GlobalNamespace}MyEngine.Core.IAppEntrypoint GetAppEntrypoint() => new {template:GlobalNamespace}{template:AppEntrypointName}();
+
+        public Dictionary<System.Type, Func<{template:GlobalNamespace}MyEngine.Core.Ecs.Systems.IStartupSystem?>> GetStartupSystemInstantiations()
+        {
+            var startupSystemInstantiations = new Dictionary<System.Type, Func<{template:GlobalNamespace}MyEngine.Core.Ecs.Systems.IStartupSystem?>>();
+
             {template:StartupSystemInstantiations}
+
+            return startupSystemInstantiations;
         }
 
 
-        private partial void AddSystemInstantiations()
+        public Dictionary<System.Type, Func<{template:GlobalNamespace}MyEngine.Core.Ecs.Systems.ISystem?>> GetSystemInstantiations()
         {
+            var systemInstantiations = new Dictionary<System.Type, Func<{template:GlobalNamespace}MyEngine.Core.Ecs.Systems.ISystem?>>();
+
             {template:SystemInstantiations}
+
+            return systemInstantiations;
         }
 
-        private static partial IReadOnlyCollection<Type> GetAllStartupSystemTypes() =>
+        public IReadOnlyCollection<System.Type> GetAllStartupSystemTypes() =>
             {template:AllStartupSystemTypesArray};
 
-        private static partial IReadOnlyCollection<Type> GetAllSystemTypes() =>
+        public IReadOnlyCollection<System.Type> GetAllSystemTypes() =>
             {template:AllSystemTypesArray};
 
-        private static partial Dictionary<System.Type, System.Type[]> GetUninstantiatedStartupSystems() =>
+        public Dictionary<System.Type, System.Type[]> GetUninstantiatedStartupSystems() =>
             {template:UninstantiatedStartupSystemsDictionary};
 
-        private static partial Dictionary<System.Type, System.Type[]> GetUninstantiatedSystems() =>
+        public Dictionary<System.Type, System.Type[]> GetUninstantiatedSystems() =>
             {template:UninstantiatedSystemsDictionary};
     }
 }

@@ -33,7 +33,7 @@ public class GlobalTransform : IEquatable<GlobalTransform>
             }
         }
 
-        return Result.Success<PositionRotationScale>(new (translation, rotation, Scale));
+        return Result.Success<PositionRotationScale>(new(translation, rotation, Scale));
     }
 
 

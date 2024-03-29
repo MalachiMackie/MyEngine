@@ -1,6 +1,6 @@
-﻿using MyEngine.Utils;
+﻿using System.Numerics;
+using MyEngine.Utils;
 using Silk.NET.OpenGL;
-using System.Numerics;
 
 namespace MyEngine.Rendering.OpenGL;
 

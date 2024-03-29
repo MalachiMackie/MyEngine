@@ -6,7 +6,8 @@ using MyEngine.Silk.NET.Rendering;
 using Silk.NET.OpenGL;
 
 namespace MyEngine.Silk.NET;
-internal class InitializeRendererSystem : IStartupSystem
+
+public class InitializeRendererSystem : IStartupSystem
 {
     private readonly SilkView _silkView;
     private readonly ResourceRegistrationResource _resourceRegistrationResource;

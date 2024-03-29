@@ -13,13 +13,13 @@ public class EntityComponents
 public class EntityComponents<T> : EntityComponents
     where T : IComponent
 {
-    internal EntityComponents(EntityId entityId) : base(entityId)
+    public EntityComponents(EntityId entityId) : base(entityId)
     {
     }
 
     public required T Component1 { get; init; }
 
-    public static implicit operator T (EntityComponents<T> component)
+    public static implicit operator T(EntityComponents<T> component)
     {
         return component.Component1;
     }
@@ -29,7 +29,7 @@ public class EntityComponents<T1, T2> : EntityComponents
     where T1 : IComponent
     where T2 : IComponent
 {
-    internal EntityComponents(EntityId entityId) : base(entityId) { }
+    public EntityComponents(EntityId entityId) : base(entityId) { }
 
     public required T1 Component1 { get; init; }
     public required T2 Component2 { get; init; }
@@ -46,7 +46,7 @@ public class EntityComponents<T1, T2, T3> : EntityComponents
     where T2 : IComponent
     where T3 : IComponent
 {
-    internal EntityComponents(EntityId entityId) : base(entityId)
+    public EntityComponents(EntityId entityId) : base(entityId)
     {
 
     }
@@ -70,7 +70,7 @@ public class EntityComponents<T1, T2, T3, T4> : EntityComponents
     where T3 : IComponent
     where T4 : IComponent
 {
-    internal EntityComponents(EntityId entityId) : base(entityId)
+    public EntityComponents(EntityId entityId) : base(entityId)
     {
 
     }
@@ -95,7 +95,7 @@ public class EntityComponents<T1, T2, T3, T4, T5> : EntityComponents
     where T4 : IComponent
     where T5 : IComponent
 {
-    internal EntityComponents(EntityId entityId) : base(entityId)
+    public EntityComponents(EntityId entityId) : base(entityId)
     {
 
     }
@@ -124,7 +124,7 @@ public class EntityComponents<T1, T2, T3, T4, T5, T6> : EntityComponents
     where T5 : IComponent
     where T6 : IComponent
 {
-    internal EntityComponents(EntityId entityId) : base(entityId)
+    public EntityComponents(EntityId entityId) : base(entityId)
     {
 
     }

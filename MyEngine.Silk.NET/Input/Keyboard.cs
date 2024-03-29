@@ -4,7 +4,7 @@ using SilkKey = Silk.NET.Input.Key;
 
 namespace MyEngine.Silk.NET.Input;
 
-internal class Keyboard : IKeyboard
+public class Keyboard : IKeyboard
 {
     private readonly ISilkKeyboard _silkKeyboard;
     private readonly Dictionary<MyKey, KeyState> _keyStates = Enum.GetValues<MyKey>().ToDictionary(x => x, x => KeyState.NotPressed);

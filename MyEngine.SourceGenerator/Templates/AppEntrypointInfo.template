@@ -1,9 +1,0 @@
-namespace {template:Namespace}
-{
-	{template:AppEntrypointInfoAttribute}
-	public static class AppEntrypointInfo
-	{
-		{template:FullyQualifiedNameAttribute}
-		public const string FullyQualifiedName = "{template:FullyQualifiedName}"; 
-	}
-}

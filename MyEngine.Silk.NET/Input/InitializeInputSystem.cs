@@ -5,7 +5,7 @@ using Silk.NET.Windowing;
 
 namespace MyEngine.Silk.NET.Input;
 
-internal class InitializeInputSystem : IStartupSystem
+public class InitializeInputSystem : IStartupSystem
 {
     private readonly SilkView _silkView;
     private readonly ResourceRegistrationResource _resourceRegistrationResource;
@@ -33,7 +33,7 @@ internal class InitializeInputSystem : IStartupSystem
     }
 }
 
-internal class SilkView : Core.IView
+public class SilkView : Core.IView
 {
     public required IView View { get; init; }
 

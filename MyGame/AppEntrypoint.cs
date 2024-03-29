@@ -1,11 +1,12 @@
 ﻿using MyEngine.Assets;
 using MyEngine.Core;
-using MyEngine.Physics;
 using MyEngine.Physics.Bepu;
 using MyEngine.Rendering;
 using MyEngine.Silk.NET;
 using MyEngine.UI;
 using MyGame.Systems;
+
+[assembly: AppEntrypoint]
 
 namespace MyGame;
 

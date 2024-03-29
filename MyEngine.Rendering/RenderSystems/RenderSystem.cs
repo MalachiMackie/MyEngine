@@ -6,7 +6,7 @@ using MyEngine.Utils;
 
 namespace MyEngine.Rendering;
 
-internal class RenderSystem : ISystem
+public class RenderSystem : ISystem
 {
     private readonly IRenderer _renderer;
     private readonly IRenderCommandQueue _renderCommandQueue;

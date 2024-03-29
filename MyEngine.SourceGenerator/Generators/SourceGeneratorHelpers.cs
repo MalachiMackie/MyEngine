@@ -32,9 +32,12 @@ namespace MyEngine.SourceGenerator.Generators
                 .Any();
         }
 
-        public bool IsClassConcreteAndAccessible(SemanticModel semanticModel, ClassDeclarationSyntax classNode)
+        public bool IsClassConcreteAndAccessible(ISymbol symbol)
         {
-            var classSymbol = (INamedTypeSymbol)semanticModel.GetDeclaredSymbol(classNode)!;
+            if (!(symbol is INamedTypeSymbol classSymbol))
+            {
+                return false;
+            }
 
             if (classSymbol.IsAbstract)
             {
@@ -47,7 +50,7 @@ namespace MyEngine.SourceGenerator.Generators
             }
 
             // NotApplicable when no accessibility is declared, so internal is the default for classes
-            if (classSymbol.DeclaredAccessibility == Accessibility.Internal ||  classSymbol.DeclaredAccessibility == Accessibility.NotApplicable)
+            if (classSymbol.DeclaredAccessibility == Accessibility.Internal || classSymbol.DeclaredAccessibility == Accessibility.NotApplicable)
             {
                 var assembly = classSymbol.ContainingAssembly;
 
@@ -57,38 +60,21 @@ namespace MyEngine.SourceGenerator.Generators
             return false;
         }
 
-        public IEnumerable<ConstructorDeclarationSyntax> FilterConstructorsToAccessible(
-            SemanticModel semanticModel,
-            ClassDeclarationSyntax classNode,
-            IEnumerable<ConstructorDeclarationSyntax> constructors)
+        public IEnumerable<IMethodSymbol> GetAccessibleConstructors(
+            INamedTypeSymbol classSymbol)
         {
-            var classSymbol = semanticModel.GetDeclaredSymbol(classNode)!;
-
             var internalsAccessible = DoesAssemblyGiveEngineRuntimeAccessToInternals(classSymbol.ContainingAssembly);
 
-            return constructors
+            return classSymbol.InstanceConstructors
                 .Where(x =>
                 {
-                    var isAccessible = false;
-                    foreach (var token in x.Modifiers)
-                    {
-                        if (token.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.PublicKeyword))
-                        {
-                            isAccessible = true;
-                        }
-                        else if (token.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.InternalKeyword))
-                        {
-                            isAccessible = internalsAccessible;
-                        }
-
-                        if (isAccessible)
-                        {
-                            break;
-                        }
-                    }
-
-                    return isAccessible;
+                    return x.DeclaredAccessibility == Accessibility.Public || (x.DeclaredAccessibility == Accessibility.Internal && internalsAccessible);
                 });
+        }
+
+        public bool DoesClassNodeImplementInterface(INamedTypeSymbol classSymbol, string interfaceFullyQualifiedName)
+        {
+            return classSymbol.AllInterfaces.Any(x => x.ToDisplayString() == interfaceFullyQualifiedName);
         }
 
         public bool DoesClassNodeImplementInterface(SemanticModel semanticModel, ClassDeclarationSyntax classNode, string interfaceFullyQualifiedName)
@@ -114,6 +100,11 @@ namespace MyEngine.SourceGenerator.Generators
         {
             return typeInfo.ToDisplayString() == interfaceFullyQualifiedName
                 || typeInfo.AllInterfaces.Any(x => x.ToDisplayString() == interfaceFullyQualifiedName);
+        }
+
+        public bool DoesClassHaveAccessibleEmptyConstructor(INamedTypeSymbol classSymbol)
+        {
+            return classSymbol.InstanceConstructors.Any(x => x.Parameters.Length == 0 && x.DeclaredAccessibility == Accessibility.Public);
         }
 
         public bool DoesClassHaveAccessibleEmptyConstructor(ClassDeclarationSyntax classNode)
@@ -158,13 +149,7 @@ namespace MyEngine.SourceGenerator.Generators
 
         public static readonly Dictionary<EngineAttribute, EngineAttributeInfo> AttributeNames = new[]
         {
-            new EngineAttributeInfo(EngineAttribute.AppEntrypointInfoFullyQualifiedName, $"{CoreNamespace}.AppEntrypointInfoFullyQualifiedNameAttribute", $"[global::{CoreNamespace}.AppEntrypointInfoFullyQualifiedName]"),
             new EngineAttributeInfo(EngineAttribute.AppEntrypoint, $"{CoreNamespace}.AppEntrypointAttribute", $"[global::{CoreNamespace}.AppEntrypoint]"),
-            new EngineAttributeInfo(EngineAttribute.AppEntrypointInfo, $"{CoreNamespace}.AppEntrypointInfoAttribute", $"[global::{CoreNamespace}.AppEntrypointInfo]"),
-            new EngineAttributeInfo(EngineAttribute.AppSystemsInfo, $"{CoreNamespace}.AppSystemsInfoAttribute", $"[global::{CoreNamespace}.AppSystemsInfo]"),
-            new EngineAttributeInfo(EngineAttribute.EngineRuntimeAssembly, $"{CoreNamespace}.EngineRuntimeAssemblyAttribute", $"[global::{CoreNamespace}.EngineRuntimeAssembly]"),
-            new EngineAttributeInfo(EngineAttribute.SystemClasses, $"{CoreNamespace}.SystemClassesAttribute", $"[global::{CoreNamespace}.SystemClasses]"),
-            new EngineAttributeInfo(EngineAttribute.StartupSystemClasses, $"{CoreNamespace}.StartupSystemClassesAttribute", $"[global::{CoreNamespace}.StartupSystemClasses]"),
         }.ToDictionary(x => x.Attribute);
 
         public bool DoesAttributeMatch(AttributeData attributeData, EngineAttribute expectedAttribute)

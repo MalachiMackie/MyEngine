@@ -1,12 +1,12 @@
-﻿using MyEngine.Core.Ecs.Resources;
+﻿using System.Diagnostics.CodeAnalysis;
+using MyEngine.Core.Ecs.Resources;
 using MyEngine.Utils;
-using System.Diagnostics.CodeAnalysis;
 
 namespace MyEngine.Runtime;
 
-internal class ResourceContainer
+internal class ResourceContainer : IResourceContainer
 {
-    private readonly Dictionary<Type, object> _resources = new();
+    private readonly Dictionary<Type, object> _resources = [];
 
     public bool TryGetResource<T>([NotNullWhen(true)] out T? resource) where T : class, IResource
     {

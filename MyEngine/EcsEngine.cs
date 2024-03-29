@@ -1,4 +1,5 @@
 ﻿using MyEngine.Core;
+using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Resources;
 using MyEngine.Core.Ecs.Systems;
 using System.Diagnostics;
@@ -13,36 +14,42 @@ internal partial class EcsEngine
 
     private readonly AppBuilder _appBuilder = new();
     private readonly ResourceContainer _resourceContainer = new();
-    private readonly HashSet<Core.Ecs.EntityId> _entities = new();
+    private readonly HashSet<EntityId> _entities = [];
     private readonly ComponentCollection _components = new();
     private bool _inStartupStage = true;
-    private readonly Dictionary<Type, Func<IStartupSystem?>> _startupSystemInstantiations = new();
-    private readonly Dictionary<Type, Func<ISystem?>> _systemInstantiations = new();
+    private readonly Dictionary<Type, Func<IStartupSystem?>> _startupSystemInstantiations;
+    private readonly Dictionary<Type, Func<ISystem?>> _systemInstantiations;
     private readonly Queue<IStartupSystem> _startupSystems = new();
     private StageSystems[] _systems = null!;
 
-    private readonly IReadOnlyCollection<Type> _allStartupSystemTypes = GetAllStartupSystemTypes();
-    private readonly IReadOnlyCollection<Type> _allSystemTypes = GetAllSystemTypes();
-    private readonly Dictionary<Type, Type[]> _uninstantiatedStartupSystems = GetUninstantiatedStartupSystems();
-    private readonly Dictionary<Type, Type[]> _uninstantiatedSystems = GetUninstantiatedSystems();
+    private readonly IReadOnlyCollection<Type> _allStartupSystemTypes;
+    private readonly IReadOnlyCollection<Type> _allSystemTypes;
+    private readonly Dictionary<Type, Type[]> _uninstantiatedStartupSystems;
+    private readonly Dictionary<Type, Type[]> _uninstantiatedSystems;
 
-    public EcsEngine()
+    public EcsEngine(IEcsEngineGlue ecsEngineGlue)
     {
-        var appEntrypoint = GetAppEntrypoint();
+        var appEntrypoint = ecsEngineGlue.GetAppEntrypoint();
+        _allStartupSystemTypes = ecsEngineGlue.GetAllStartupSystemTypes();
+        _allSystemTypes = ecsEngineGlue.GetAllSystemTypes();
+        _uninstantiatedStartupSystems = ecsEngineGlue.GetUninstantiatedStartupSystems();
+        _uninstantiatedSystems = ecsEngineGlue.GetUninstantiatedSystems();
+        _systemInstantiations = ecsEngineGlue.GetSystemInstantiations();
+        _startupSystemInstantiations = ecsEngineGlue.GetStartupSystemInstantiations();
+
         appEntrypoint.BuildApp(_appBuilder);
+
+        ecsEngineGlue.Init(_entities, _components, _resourceContainer);
     }
 
     private void Setup()
     {
-        AddSystemInstantiations();
-        AddStartupSystemInstantiations();
-
         // source generator adds all system types found, but maybe we don't want all the systems.
         // remove any we dont want
         var appBuilderSystemTypes = _appBuilder.StagesAndSystems.SelectMany(x => x.Value.SystemTypes);
         _systems = _appBuilder.StagesAndSystems
             .OrderBy(x => x.Value.Order)
-            .Select(x => new StageSystems(x.Key, new List<ISystem>()))
+            .Select(x => new StageSystems(x.Key, []))
             .ToArray();
 
         foreach (var systemType in _allSystemTypes.Except(appBuilderSystemTypes))
@@ -207,11 +214,7 @@ internal partial class EcsEngine
         RegisterResource(typeof(T), resource);
     }
 
-    private partial void AddSystemInstantiations();
-    private partial void AddStartupSystemInstantiations();
-    private static partial IAppEntrypoint GetAppEntrypoint();
-    private static partial IReadOnlyCollection<Type> GetAllStartupSystemTypes();
-    private static partial IReadOnlyCollection<Type> GetAllSystemTypes();
-    private static partial Dictionary<Type, Type[]> GetUninstantiatedStartupSystems();
-    private static partial Dictionary<Type, Type[]> GetUninstantiatedSystems();
+    
 }
+
+

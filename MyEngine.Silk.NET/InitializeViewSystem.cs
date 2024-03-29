@@ -7,7 +7,7 @@ using Silk.NET.Windowing;
 
 namespace MyEngine.Silk.NET;
 
-internal class InitializeViewSystem : IStartupSystem
+public class InitializeViewSystem : IStartupSystem
 {
     private readonly InitialWindowProps _initialWindowProps;
     private readonly ResourceRegistrationResource _resourceRegistrationResource;
@@ -33,7 +33,7 @@ internal class InitializeViewSystem : IStartupSystem
     }
 }
 
-internal class OpenGLWindowUpdateRunner : IEcsUpdateRunner
+public class OpenGLWindowUpdateRunner : IEcsUpdateRunner
 {
     private readonly SilkView _view;
 

@@ -7,7 +7,7 @@ namespace MyEngine.Core;
 /// <summary>
 ///  System to sync local Transform changes up to GlobalTransform
 /// </summary>
-internal class TransformSyncSystem : ISystem
+public class TransformSyncSystem : ISystem
 {
     private readonly IQuery<TransformComponent, OptionalComponent<ParentComponent>, OptionalComponent<ChildrenComponent>> _query;
 

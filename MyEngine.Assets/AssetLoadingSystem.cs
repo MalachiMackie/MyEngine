@@ -2,12 +2,12 @@
 
 namespace MyEngine.Assets;
 
-internal class AssetLoadingSystem : ISystem
+public class AssetLoadingSystem : ISystem
 {
     private readonly IAssetCommands _assetCommands;
     private readonly IAssetCollection _assetCollection;
 
-    internal AssetLoadingSystem(IAssetCommands assetCommands, IAssetCollection assetCollection)
+    public AssetLoadingSystem(IAssetCommands assetCommands, IAssetCollection assetCollection)
     {
         _assetCommands = assetCommands;
         _assetCollection = assetCollection;
@@ -26,7 +26,14 @@ internal class AssetLoadingSystem : ISystem
                         {
                             // todo: handle failure
                             var loadedAsset = await loadAssetCommand.loadFunc();
-                            _assetCollection.AddAsset(loadedAsset);
+                            if (loadedAsset is not null)
+                            {
+                                _assetCollection.AddAsset(loadedAsset);
+                            }
+                            else
+                            {
+                                // todo: mark as failure
+                            }
                         });
                         break;
                     }
@@ -35,7 +42,7 @@ internal class AssetLoadingSystem : ISystem
                         var result = createAssetCommand.createFunc();
                         _assetCollection.AddAsset(result);
                         break;
-                }
+                    }
             }
         }
     }

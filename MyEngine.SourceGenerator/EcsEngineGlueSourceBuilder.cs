@@ -3,11 +3,11 @@ using System.Linq;
 
 namespace MyEngine.SourceGenerator
 {
-    public class EcsEngineSourceBuilder
+    public class EcsEngineGlueSourceBuilder
     {
-        public static (string FileName, string Contents) BuildEcsEngineSource(
-            IReadOnlyCollection<StartupSystemClassDto> startupSystemClassModels,
-            IReadOnlyCollection<SystemClassDto> systemClassModels,
+        public static (string FileName, string Contents) BuildEcsEngineGlueSource(
+            IReadOnlyCollection<StartupSystemClass> startupSystemClassModels,
+            IReadOnlyCollection<SystemClass> systemClassModels,
             string appEntrypointFullyQualifiedName)
         {
             var ecsEngineTemplate = SourceTemplate.LoadFromEmbeddedResource("EcsEngine.template");
@@ -16,6 +16,7 @@ namespace MyEngine.SourceGenerator
             var systemInstantiations = systemClassModels.Select(BuildSystemInstantiation);
 
             ecsEngineTemplate.SubstitutePart("GlobalNamespace", "global::");
+            ecsEngineTemplate.SubstitutePart("Namespace", "MyEngine.Runtime");
             ecsEngineTemplate.SubstitutePart("AppEntrypointName", appEntrypointFullyQualifiedName);
             ecsEngineTemplate.SubstitutePart("StartupSystemInstantiations", string.Join("\r\n\r\n", startupSystemInstantiations));
             ecsEngineTemplate.SubstitutePart("SystemInstantiations", string.Join("\r\n\r\n", systemInstantiations));
@@ -43,15 +44,15 @@ namespace MyEngine.SourceGenerator
                 ? "new ()"
                 : $@"new ()
 {{
-    {string.Join(",\r\n    ", systemClassModels.Select(x => $"{{ typeof(global::{x.FullyQualifiedName}), {(x.Constructor.TotalParameters == 0 ? "Array.Empty<Type>()" : $"new Type[] {{ {string.Join(", ", x.Constructor.ResourceParameters.Select(y => $"typeof(global::{y.Name})"))} }}")} }}"))}
+    {string.Join(",\r\n    ", systemClassModels.Select(x => $"{{ typeof(global::{x.FullyQualifiedName}), {(x.Constructor.TotalParameters == 0 ? "Array.Empty<Type>()" : $"new Type[] {{ {string.Join(", ", x.Constructor.ResourceParameters.Select(y => $"typeof(global::{y.Value.Name})"))} }}")} }}"))}
 }}");
 
             var ecsEngineBody = ecsEngineTemplate.Build();
 
-            return ("EcsEngine.g.cs", ecsEngineBody);
+            return ("EcsEngineGlue.g.cs", ecsEngineBody);
         }
 
-        public static string BuildStartupSystemInstantiation(StartupSystemClassDto systemClass)
+        public static string BuildStartupSystemInstantiation(StartupSystemClass systemClass)
         {
             var template = SourceTemplate.LoadFromEmbeddedResource("EcsEngineStartupSystemInstantiation.template");
             template.SubstitutePart("StartupSystemFullyQualifiedName", systemClass.FullyQualifiedName);
@@ -70,19 +71,19 @@ namespace MyEngine.SourceGenerator
             return template.Build();
         }
 
-        public static string BuildSystemInstantiation(SystemClassDto systemClass)
+        public static string BuildSystemInstantiation(SystemClass systemClass)
         {
             var sourceTemplate = SourceTemplate.LoadFromEmbeddedResource("EcsEngineSystemInstantiation.template");
             sourceTemplate.SubstitutePart("SystemFullyQualifiedName", systemClass.FullyQualifiedName);
 
             var getComponentFuncs = systemClass.Constructor.QueryParameters
-                .Select((x, i) => BuildGetComponentsFunc(x.TypeParameters, i + 1))
+                .Select((x, i) => BuildGetComponentsFunc(x.Value.TypeParameters, i + 1))
                 .ToArray();
             sourceTemplate.SubstitutePart("GetQueryComponentFuncs", string.Join("\r\n\r\n", getComponentFuncs));
 
             var resourceChecks = systemClass.Constructor.ResourceParameters
                 .Select((x, i) => (Parameter: x, Index: i))
-                .ToDictionary(x => x.Parameter.Name, x => (ResourceCheck: $"_resourceContainer.TryGetResource<global::{x.Parameter.Name}>(out var resource{x.Index})", ParameterName: $"resource{x.Index}"));
+                .ToDictionary(x => x.Parameter.Value.Name, x => (ResourceCheck: $"_resourceContainer.TryGetResource<global::{x.Parameter.Value.Name}>(out var resource{x.Index})", ParameterName: $"resource{x.Index}"));
 
             if (resourceChecks.Count > 0)
             {
@@ -94,12 +95,12 @@ namespace MyEngine.SourceGenerator
             }
 
             var parameters = new string[systemClass.Constructor.TotalParameters];
-            foreach (var (parameterIndex, queryIndex) in systemClass.Constructor.QueryParameters.Select((x, i) => (x.ParameterIndex, i)))
+            foreach (var (parameterIndex, queryIndex) in systemClass.Constructor.QueryParameters.Select((x, i) => (x.Key, i)))
             {
-                parameters[parameterIndex] = $"global::MyEngine.Runtime.Query.Create(_components, _entities, GetQuery{queryIndex + 1}Components)";
+                parameters[parameterIndex] = $"global::MyEngine.Core.Ecs.Query.Create(_components, _entities, GetQuery{queryIndex + 1}Components)";
             }
 
-            foreach (var (parameterIndex, resourceParameter) in systemClass.Constructor.ResourceParameters.Select(x => (x.ParameterIndex, x.Name)))
+            foreach (var (parameterIndex, resourceParameter) in systemClass.Constructor.ResourceParameters.Select(x => (x.Key, x.Value.Name)))
             {
                 parameters[parameterIndex] = resourceChecks[resourceParameter].ParameterName;
             }
@@ -110,7 +111,7 @@ namespace MyEngine.SourceGenerator
             return sourceTemplate.Build();
         }
 
-        private static string BuildGetComponentsFunc(IReadOnlyCollection<QueryComponentTypeParameterDto> queryParameters, int queryNumber)
+        private static string BuildGetComponentsFunc(IReadOnlyCollection<QueryComponentTypeParameter> queryParameters, int queryNumber)
         {
             var template = SourceTemplate.LoadFromEmbeddedResource("EcsEngineSystemInstantiationGetComponentFunc.template");
             var entityComponentsTypeArguments = string.Join(",\r\n",

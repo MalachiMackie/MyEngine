@@ -9,9 +9,6 @@ public class FailedResultValueRetrievalException : Exception
     public FailedResultValueRetrievalException() { }
     public FailedResultValueRetrievalException(string message) : base(message) { }
     public FailedResultValueRetrievalException(string message, Exception inner) : base(message, inner) { }
-    protected FailedResultValueRetrievalException(
-      System.Runtime.Serialization.SerializationInfo info,
-      System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
 }
 
 
@@ -21,9 +18,6 @@ public class SuccessfulResultErrorRetrievalException : Exception
     public SuccessfulResultErrorRetrievalException() { }
     public SuccessfulResultErrorRetrievalException(string message) : base(message) { }
     public SuccessfulResultErrorRetrievalException(string message, Exception inner) : base(message, inner) { }
-    protected SuccessfulResultErrorRetrievalException(
-      System.Runtime.Serialization.SerializationInfo info,
-      System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
 }
 
 public static class Result

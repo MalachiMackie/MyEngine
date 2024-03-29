@@ -9,7 +9,7 @@ public interface IAssetCollection : IResource
     internal Result<Unit> AddAsset(IAsset asset);
 }
 
-internal class AssetCollection : IAssetCollection
+public class AssetCollection : IAssetCollection
 {
     private readonly Dictionary<AssetId, IAsset> _assets = new();
 

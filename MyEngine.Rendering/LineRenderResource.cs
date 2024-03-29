@@ -4,7 +4,7 @@ using static MyEngine.Rendering.ILineRenderResource;
 
 namespace MyEngine.Rendering;
 
-internal class LineRenderResource : ILineRenderResource
+public class LineRenderResource : ILineRenderResource
 {
     private readonly Queue<Line> _lines = new();
 

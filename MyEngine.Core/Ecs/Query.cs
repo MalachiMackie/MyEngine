@@ -1,12 +1,10 @@
 ﻿using System.Collections;
-using MyEngine.Core;
-using MyEngine.Core.Ecs;
 using MyEngine.Core.Ecs.Components;
 using MyEngine.Utils;
 
-namespace MyEngine.Runtime;
+namespace MyEngine.Core.Ecs;
 
-internal static class Query
+public static class Query
 {
     public static IQuery<T> Create<T>(ComponentCollection componentCollection, ISet<EntityId> entities, Func<EntityId, EntityComponents<T>?>? tryGetForEntity = null)
         where T : IComponent
@@ -90,7 +88,7 @@ internal static class Query
     }
 }
 
-internal class Query<T> : IQuery<T>
+public class Query<T> : IQuery<T>
     where T : IComponent
 {
     public required Func<IEnumerable<EntityComponents<T>>> GetAllImpl { get; init; }
@@ -112,7 +110,7 @@ internal class Query<T> : IQuery<T>
     }
 }
 
-internal class Query<T1, T2> : IQuery<T1, T2>
+public class Query<T1, T2> : IQuery<T1, T2>
     where T1 : IComponent
     where T2 : IComponent
 {
@@ -133,7 +131,7 @@ internal class Query<T1, T2> : IQuery<T1, T2>
     }
 }
 
-internal class Query<T1, T2, T3> : IQuery<T1, T2, T3>
+public class Query<T1, T2, T3> : IQuery<T1, T2, T3>
     where T1 : IComponent
     where T2 : IComponent
     where T3 : IComponent
@@ -155,7 +153,7 @@ internal class Query<T1, T2, T3> : IQuery<T1, T2, T3>
     }
 }
 
-internal class Query<T1, T2, T3, T4> : IQuery<T1, T2, T3, T4>
+public class Query<T1, T2, T3, T4> : IQuery<T1, T2, T3, T4>
     where T1 : IComponent
     where T2 : IComponent
     where T3 : IComponent
@@ -178,7 +176,7 @@ internal class Query<T1, T2, T3, T4> : IQuery<T1, T2, T3, T4>
     }
 }
 
-internal class Query<T1, T2, T3, T4, T5> : IQuery<T1, T2, T3, T4, T5>
+public class Query<T1, T2, T3, T4, T5> : IQuery<T1, T2, T3, T4, T5>
     where T1 : IComponent
     where T2 : IComponent
     where T3 : IComponent
@@ -204,7 +202,7 @@ internal class Query<T1, T2, T3, T4, T5> : IQuery<T1, T2, T3, T4, T5>
 
 
 
-internal class Query<T1, T2, T3, T4, T5, T6> : IQuery<T1, T2, T3, T4, T5, T6>
+public class Query<T1, T2, T3, T4, T5, T6> : IQuery<T1, T2, T3, T4, T5, T6>
     where T1 : IComponent
     where T2 : IComponent
     where T3 : IComponent

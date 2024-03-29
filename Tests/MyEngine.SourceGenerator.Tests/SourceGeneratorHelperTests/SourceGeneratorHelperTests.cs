@@ -84,13 +84,7 @@ public class SourceGeneratorHelperTests
     }
 
     [Theory]
-    [InlineData("MyEngine.Core.SystemClassesAttribute", EngineAttribute.SystemClasses, AttributeType.Field)]
-    [InlineData("MyEngine.Core.StartupSystemClassesAttribute", EngineAttribute.StartupSystemClasses, AttributeType.Field)]
     [InlineData("MyEngine.Core.AppEntrypointAttribute", EngineAttribute.AppEntrypoint, AttributeType.Class)]
-    [InlineData("MyEngine.Core.AppEntrypointInfoAttribute", EngineAttribute.AppEntrypointInfo, AttributeType.Class)]
-    [InlineData("MyEngine.Core.AppEntrypointInfoFullyQualifiedNameAttribute", EngineAttribute.AppEntrypointInfoFullyQualifiedName, AttributeType.Field)]
-    [InlineData("MyEngine.Core.AppSystemsInfoAttribute", EngineAttribute.AppSystemsInfo, AttributeType.Class)]
-    [InlineData("MyEngine.Core.EngineRuntimeAssemblyAttribute", EngineAttribute.EngineRuntimeAssembly, AttributeType.Assembly)]
     public void DoesAttributeMatch_Should_ReturnTrue(string attributeFullyQualifiedName, EngineAttribute attribute, AttributeType attributeType)
     {
         string source;
@@ -186,7 +180,7 @@ public class SourceGeneratorHelperTests
             .GetAttributes()
             .Single();
 
-        var result = _helper.DoesAttributeMatch(attributeData, EngineAttribute.AppSystemsInfo);
+        var result = _helper.DoesAttributeMatch(attributeData, EngineAttribute.AppEntrypoint);
         result.Should().BeFalse();
     }
 }

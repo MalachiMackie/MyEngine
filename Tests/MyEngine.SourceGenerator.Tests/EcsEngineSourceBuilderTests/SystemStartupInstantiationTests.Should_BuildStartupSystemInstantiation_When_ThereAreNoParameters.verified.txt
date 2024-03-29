@@ -1,0 +1,9 @@
+﻿startupSystemInstantiations.Add(typeof(global::MyStartupSystem), () =>
+{
+    if (true)
+    {
+        return new global::MyStartupSystem();
+    }
+
+    return null;
+});

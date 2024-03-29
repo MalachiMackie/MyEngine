@@ -1,64 +1,31 @@
 ﻿namespace MyEngine.SourceGenerator.Tests.EcsEngineSourceBuilderTests;
+
+[UsesVerify]
 public class SystemStartupInstantiationTests
 {
-
     [Fact]
-    public void Should_BuildFullStartupSystemInstantiation()
+    public async Task Should_BuildFullStartupSystemInstantiation()
     {
-        var startupSystemClass = new StartupSystemClassDto
-        {
-            FullyQualifiedName = "MyStartupSystem<string>",
-            Constructor = new StartupSystemConstructorDto
+        var startupSystemClass = new StartupSystemClass(
+            "MyStartupSystem<string>",
+            new StartupSystemConstructor(new[]
             {
-                Parameters = new[]
-                {
-                    new StartupSystemConstructorParameterDto()
-                    {
-                        Name = "Parameter1<bool>"
-                    },
-                    new StartupSystemConstructorParameterDto()
-                    {
-                        Name = "Parameter2<int>"
-                    }
-                }
-            }
-        };
+                new StartupSystemConstructorParameter("Parameter1<bool>"),
+                new StartupSystemConstructorParameter("Parameter2<int>"),
+            }));
 
-        var output = EcsEngineSourceBuilder.BuildStartupSystemInstantiation(startupSystemClass);
+        var output = EcsEngineGlueSourceBuilder.BuildStartupSystemInstantiation(startupSystemClass);
 
-        output.Should().Be(@"_startupSystemInstantiations.Add(typeof(global::MyStartupSystem<string>), () =>
-{
-    if (_resourceContainer.TryGetResource<global::Parameter1<bool>>(out var resource1)
-        && _resourceContainer.TryGetResource<global::Parameter2<int>>(out var resource2))
-    {
-        return new global::MyStartupSystem<string>(resource1, resource2);
-    }
-
-    return null;
-});
-");
+        await Verify(output);
     }
 
     [Fact]
-    public void Should_BuildStartupSystemInstantiation_When_ThereAreNoParameters()
+    public async Task Should_BuildStartupSystemInstantiation_When_ThereAreNoParameters()
     {
-        var startupSystemClass = new StartupSystemClassDto
-        {
-            Constructor = new StartupSystemConstructorDto() { Parameters = Array.Empty<StartupSystemConstructorParameterDto>() },
-            FullyQualifiedName = "MyStartupSystem"
-        };
+        var startupSystemClass = new StartupSystemClass("MyStartupSystem", StartupSystemConstructor.Empty);
 
-        var output = EcsEngineSourceBuilder.BuildStartupSystemInstantiation(startupSystemClass);
+        var output = EcsEngineGlueSourceBuilder.BuildStartupSystemInstantiation(startupSystemClass);
 
-        output.Should().Be(@"_startupSystemInstantiations.Add(typeof(global::MyStartupSystem), () =>
-{
-    if (true)
-    {
-        return new global::MyStartupSystem();
-    }
-
-    return null;
-});
-");
+        await Verify(output);
     }
 }

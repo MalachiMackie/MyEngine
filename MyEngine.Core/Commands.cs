@@ -5,7 +5,7 @@ using MyEngine.Utils;
 
 namespace MyEngine.Core;
 
-internal class Commands : ICommands
+public class Commands : ICommands
 {
     private readonly ICollection<EntityId> _entities;
     private readonly ComponentCollection _componentCollection;

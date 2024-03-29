@@ -29,12 +29,24 @@ namespace MyEngine.SourceGenerator
         {
             QueryParameters[TotalParameters] = parameter;
             TotalParameters++;
-        } 
+        }
+
+        public SystemConstructor WithParameter(SystemConstructorQueryParameter parameter)
+        {
+            AddParameter(parameter);
+            return this;
+        }
 
         public void AddParameter(SystemConstructorResourceParameter parameter)
         {
             ResourceParameters[TotalParameters] = parameter;
             TotalParameters++;
+        }
+
+        public SystemConstructor WithParameter(SystemConstructorResourceParameter parameter)
+        {
+            AddParameter(parameter);
+            return this;
         }
     }
 
@@ -70,7 +82,7 @@ namespace MyEngine.SourceGenerator
         public MetaComponentType? MetaComponentType { get; }
 
         public string ComponentTypeName { get; }
-    } 
+    }
 
     public enum MetaComponentType
     {
