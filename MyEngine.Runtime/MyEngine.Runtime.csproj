@@ -1,0 +1,56 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MyEngine.Assets\MyEngine.Assets.csproj" />
+    <ProjectReference Include="..\MyEngine.Core\MyEngine.Core.csproj" />
+    <ProjectReference Include="..\MyEngine.Input\MyEngine.Input.csproj" />
+    <ProjectReference Include="..\MyEngine.Physics\MyEngine.Physics.csproj" />
+    <ProjectReference Include="..\MyEngine.Rendering\MyEngine.Rendering.csproj" />
+    <ProjectReference Include="..\MyEngine.Silk.NET\MyEngine.Silk.NET.csproj" />
+    <ProjectReference Include="..\MyEngine.TestScenarios\MyEngine.TestScenarios.csproj" />
+    <ProjectReference Include="..\MyEngine.UI\MyEngine.UI.csproj" />
+    <ProjectReference Include="..\MyEngine.Utils\MyEngine.Utils.csproj" />
+    <!--
+    <ProjectReference Include="..\MyGame\MyGame.csproj" />
+    -->
+  </ItemGroup>
+
+  <ItemGroup>
+      <ProjectReference Include="../MyEngine.SourceGenerator/MyEngine.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="MyEngine.SourceGenerator.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="ball.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Hermit-Regular-fed68123.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="silk.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="White.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

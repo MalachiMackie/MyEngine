@@ -183,13 +183,15 @@ internal sealed class OpenGLRenderer : IRenderer
         openGL.VertexAttribDivisor(9, 1);
         openGL.VertexAttribDivisor(10, 1);
 
+        var currentProcessDirectory = Path.GetDirectoryName(Environment.ProcessPath);
+
         // todo: custom shaders
-        var vertexCode = File.ReadAllText(Path.Join("Shaders", "shader.vert"));
-        var lineVertexCode = File.ReadAllText(Path.Join("Shaders", "lineShader.vert"));
-        var fragmentCode = File.ReadAllText(Path.Join("Shaders", "shader.frag"));
-        var lineFragmentCode = File.ReadAllText(Path.Join("Shaders", "lineShader.frag"));
-        var textVertexCode = File.ReadAllText(Path.Join("Shaders", "textShader.vert"));
-        var textFragmentCode = File.ReadAllText(Path.Join("Shaders", "textShader.frag"));
+        var vertexCode = File.ReadAllText(Path.Join(currentProcessDirectory, "Shaders", "shader.vert"));
+        var lineVertexCode = File.ReadAllText(Path.Join(currentProcessDirectory, "Shaders", "lineShader.vert"));
+        var fragmentCode = File.ReadAllText(Path.Join(currentProcessDirectory, "Shaders", "shader.frag"));
+        var lineFragmentCode = File.ReadAllText(Path.Join(currentProcessDirectory, "Shaders", "lineShader.frag"));
+        var textVertexCode = File.ReadAllText(Path.Join(currentProcessDirectory, "Shaders", "textShader.vert"));
+        var textFragmentCode = File.ReadAllText(Path.Join(currentProcessDirectory, "Shaders", "textShader.frag"));
 
         var spriteShaderResult = ShaderProgram.Create(openGL, vertexCode, fragmentCode);
         if (!spriteShaderResult.TryGetValue(out var shader))
@@ -284,10 +286,10 @@ internal sealed class OpenGLRenderer : IRenderer
         return origin switch
         {
             //                          LeftEdge             RightEdge          BottomEdge          TopEdge
-            SpriteOrigin.BottomLeft =>  (0f,                 dimensions.X,      0f,                 dimensions.Y),
-            SpriteOrigin.BottomRight => (-dimensions.X,      0f,                0f,                 dimensions.Y),
-            SpriteOrigin.TopLeft =>     (0f,                 dimensions.X,      -dimensions.Y,      0f),
-            SpriteOrigin.TopRight =>    (-dimensions.X,      0f,                -dimensions.Y,      0f),
+            SpriteOrigin.BottomLeft => (0f, dimensions.X, 0f, dimensions.Y),
+            SpriteOrigin.BottomRight => (-dimensions.X, 0f, 0f, dimensions.Y),
+            SpriteOrigin.TopLeft => (0f, dimensions.X, -dimensions.Y, 0f),
+            SpriteOrigin.TopRight => (-dimensions.X, 0f, -dimensions.Y, 0f),
             _ or SpriteOrigin.Center => (-dimensions.X / 2f, dimensions.X / 2f, -dimensions.Y / 2f, dimensions.Y / 2f),
         };
     }

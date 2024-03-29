@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33424.131
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.Runtime", "MyEngine\MyEngine.Runtime.csproj", "{B292EECF-3D46-4B01-9A17-307B857C7649}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.Runtime", "MyEngine.Runtime\MyEngine.Runtime.csproj", "{B292EECF-3D46-4B01-9A17-307B857C7649}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyGame", "MyGame\MyGame.csproj", "{22FABECC-FCF4-4704-9B34-81A51F43D0C7}"
 EndProject
@@ -50,17 +50,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.Silk.NET", "MyEngi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.Rendering.Tests", "Tests\MyEngine.Rendering.Tests\MyEngine.Rendering.Tests.csproj", "{68640218-D976-45A1-8A69-C4085A294793}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Rendering.Dummies", "Tests\MyEngine.Rendering.Dummies\MyEngine.Rendering.Dummies.csproj", "{348ABBE0-339A-4B15-9C0B-CF03B994286B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.Rendering.Dummies", "Tests\MyEngine.Rendering.Dummies\MyEngine.Rendering.Dummies.csproj", "{348ABBE0-339A-4B15-9C0B-CF03B994286B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Tests.Utils", "Tests\MyEngine.Tests.Utils\MyEngine.Tests.Utils.csproj", "{772D5271-7F77-4A92-85EB-3B40F4829743}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.Tests.Utils", "Tests\MyEngine.Tests.Utils\MyEngine.Tests.Utils.csproj", "{772D5271-7F77-4A92-85EB-3B40F4829743}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Physics.Bepu", "MyEngine.Physics.Bepu\MyEngine.Physics.Bepu.csproj", "{30031BB8-A552-4B8D-822B-DB8787631F5B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.Physics.Bepu", "MyEngine.Physics.Bepu\MyEngine.Physics.Bepu.csproj", "{30031BB8-A552-4B8D-822B-DB8787631F5B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.Physics.Tests", "Tests\MyEngine.Physics.Tests\MyEngine.Physics.Tests.csproj", "{15AD2D85-982B-406E-A55C-E7128C30B701}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.Physics.Tests", "Tests\MyEngine.Physics.Tests\MyEngine.Physics.Tests.csproj", "{15AD2D85-982B-406E-A55C-E7128C30B701}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.UI.Tests", "Tests\MyEngine.UI.Tests\MyEngine.UI.Tests.csproj", "{24AEACA4-819D-4FE4-A39F-83716712E1ED}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.UI.Tests", "Tests\MyEngine.UI.Tests\MyEngine.UI.Tests.csproj", "{24AEACA4-819D-4FE4-A39F-83716712E1ED}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine.UI.Dummies", "Tests\MyEngine.UI.Dummies\MyEngine.UI.Dummies.csproj", "{FB54074C-CB8D-4A9F-A7F9-C4A6124AA76A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyEngine.UI.Dummies", "Tests\MyEngine.UI.Dummies\MyEngine.UI.Dummies.csproj", "{FB54074C-CB8D-4A9F-A7F9-C4A6124AA76A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyEngine", "MyEngine\MyEngine.csproj", "{05133EF0-8A12-4D1A-9CE6-78B35CDD8FAE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -160,6 +162,10 @@ Global
 		{FB54074C-CB8D-4A9F-A7F9-C4A6124AA76A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FB54074C-CB8D-4A9F-A7F9-C4A6124AA76A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FB54074C-CB8D-4A9F-A7F9-C4A6124AA76A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05133EF0-8A12-4D1A-9CE6-78B35CDD8FAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05133EF0-8A12-4D1A-9CE6-78B35CDD8FAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05133EF0-8A12-4D1A-9CE6-78B35CDD8FAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05133EF0-8A12-4D1A-9CE6-78B35CDD8FAE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

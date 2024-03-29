@@ -27,14 +27,14 @@ internal class Program
 
         if (glueType is null)
         {
-            Console.WriteLine("Could not load game dll");
+            Console.WriteLine("Could not find glue type in game dll");
             return;
         }
 
         var glueInstance = Activator.CreateInstance(glueType);
         if (glueInstance is not IEcsEngineGlue ecsEngineGlue)
         {
-            Console.WriteLine("Could not load game dll");
+            Console.WriteLine("Could not create glue instance from game dll");
             return;
         }
 

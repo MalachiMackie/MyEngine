@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <VersionPrefix>0.0.1</VersionPrefix>
+    <VersionSuffix>alpha3</VersionSuffix>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Teronis.MSBuild.Packaging.ProjectBuildInPackage" Version="1.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MyEngine.Assets\MyEngine.Assets.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\MyEngine.Core\MyEngine.Core.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\MyEngine.Input\MyEngine.Input.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\MyEngine.Physics.Bepu\MyEngine.Physics.Bepu.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\MyEngine.Physics\MyEngine.Physics.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\MyEngine.Rendering\MyEngine.Rendering.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\MyEngine.Silk.NET\MyEngine.Silk.NET.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\MyEngine.UI\MyEngine.UI.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\MyEngine.Utils\MyEngine.Utils.csproj" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>
