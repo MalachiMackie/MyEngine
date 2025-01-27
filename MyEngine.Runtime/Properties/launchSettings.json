@@ -2,7 +2,7 @@
   "profiles": {
     "MyGame": {
       "commandName": "Project",
-      "commandLineArgs": "C:/Code/Projects/MyEngine/MyGame/bin/Debug/net8.0/MyGame.dll"
+      "commandLineArgs": "C:/Code/Projects/MyEngine/MyGame/bin/Debug/net9.0/MyGame.dll"
     }
   }
 }

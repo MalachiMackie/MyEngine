@@ -1,12 +1,3 @@
-.vs/
-**/obj
-**/bin
-**/Generated
-*.received.cs
-RenderDocCaptures/
-**/TestResults/
-
-# .idea ignore
 # Default ignored files
 /shelf/
 /workspace.xml
